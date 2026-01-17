@@ -1,0 +1,74 @@
+//! Application state structure.
+
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+use crate::models::Project;
+
+use super::actions::{AppAction, PinnedPopup, SortMode};
+use crate::ui::PopupMode;
+
+/// Request to open a popup.
+pub enum PopupRequest {
+    Dictionary(String, PopupMode),
+    Similar(usize),
+}
+
+/// Main application state: project data, UI state, and dialog states.
+pub struct DecryptionApp {
+    pub(super) project: Project,
+    pub(super) current_path: Option<PathBuf>,
+    pub(super) current_page: usize,
+    pub(super) page_size: usize,
+    pub(super) is_dirty: bool,
+    pub(super) pending_import: Option<(String, String, Option<String>)>,
+    pub(super) filter_text: String,
+    pub(super) sort_mode: SortMode,
+    pub(super) error_message: Option<String>,
+    pub(super) confirmation: Option<(String, AppAction)>,
+    pub(super) dictionary_mode: bool,
+
+    // Popup State
+    pub(super) definition_popup: Option<String>,
+    pub(super) reference_popup: Option<String>,
+    pub(super) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
+    pub(super) pinned_popups: Vec<PinnedPopup>,
+    pub(super) next_popup_id: u64,
+
+    // Caches
+    pub(super) cached_filtered_indices: Vec<usize>,
+    pub(super) cached_headword_lookup: Option<HashMap<String, Vec<usize>>>,
+    pub(super) cached_usage_lookup: Option<HashMap<String, Vec<usize>>>,
+
+    // Dirty flags
+    pub(super) filter_dirty: bool,
+    pub(super) lookups_dirty: bool,
+}
+
+impl Default for DecryptionApp {
+    fn default() -> Self {
+        Self {
+            project: Project::default(),
+            current_path: None,
+            current_page: 0,
+            page_size: 10,
+            is_dirty: false,
+            pending_import: None,
+            filter_text: String::new(),
+            sort_mode: SortMode::IndexAsc,
+            error_message: None,
+            confirmation: None,
+            dictionary_mode: false,
+            definition_popup: None,
+            reference_popup: None,
+            similar_popup: None,
+            pinned_popups: Vec::new(),
+            next_popup_id: 0,
+            cached_filtered_indices: Vec::new(),
+            cached_headword_lookup: None,
+            cached_usage_lookup: None,
+            filter_dirty: false,
+            lookups_dirty: false,
+        }
+    }
+}

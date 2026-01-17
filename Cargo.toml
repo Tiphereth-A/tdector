@@ -1,0 +1,11 @@
+[package]
+name = "tdector"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.33.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rfd = "0.17"
+tf-idf-vectorizer = "0.10.1"

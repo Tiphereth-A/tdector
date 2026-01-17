@@ -1,0 +1,166 @@
+# Based on https://github.com/typst/typst/blob/main/.github/workflows/release.yml and https://github.com/typstyle-rs/typstyle/blob/master/.github/workflows/build-binaries.yml
+
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/**'
+      - 'src/**'
+      - '*.toml'
+      - 'Cargo.lock'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/**'
+      - 'src/**'
+      - '*.toml'
+      - 'Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+  CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER: arm-linux-gnueabihf-gcc
+
+jobs:
+  build:
+    name: build (${{ matrix.platform }}-${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: win32
+            arch: x64
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            platform: win32
+            arch: arm64
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            platform: linux
+            arch: x64
+          - os: ubuntu-24.04
+            target: aarch64-unknown-linux-gnu
+            platform: linux
+            arch: arm64
+          - os: ubuntu-24.04
+            target: arm-unknown-linux-gnueabihf
+            platform: linux
+            arch: armhf
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            platform: darwin
+            arch: x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: darwin
+            arch: arm64
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Install llvm
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install llvm
+      - name: Install AArch64 target toolchain
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-aarch64-linux-gnu
+      - name: Install ARM target toolchain
+        if: matrix.target == 'arm-unknown-linux-gnueabihf'
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-arm-linux-gnueabihf
+
+      - name: Build binary
+        shell: pwsh
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+
+      - name: create artifact directory
+        shell: bash
+        run: |
+          directory=tdector-${{ matrix.target }}
+          mkdir $directory
+          if [ -f target/${{ matrix.target }}/release/tdector.exe ]; then
+            cp target/${{ matrix.target }}/release/tdector.exe $directory
+            7z a -r $directory.zip $directory
+          else
+            cp target/${{ matrix.target }}/release/tdector $directory
+            tar cJf $directory.tar.xz $directory
+          fi
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: tdector-${{ matrix.target }}
+          path: "tdector-${{ matrix.target }}.*"
+          retention-days: 3
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NAME: "${{ github.ref_name }}"
+        run: |
+          gh release create "${{ github.ref_name }}" "tdector-${{ matrix.target }}.*"
+
+  build_alpine:
+    name: build (x86_64-unknown-linux-musl)
+    runs-on: ubuntu-latest
+    container:
+      image: rust:alpine
+      volumes:
+        - /usr/local/cargo/registry:/usr/local/cargo/registry
+    env:
+      RUST_TARGET: x86_64-unknown-linux-musl
+      RUSTFLAGS: "-C target-feature=+crt-static"
+    steps:
+      - name: Install dependencies
+        run: apk add --no-cache git clang lld musl-dev nodejs npm yarn binutils github-cli
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build binary
+        run: |
+          cargo build --release --target ${{ env.RUST_TARGET }}
+
+      - name: Copy binary to output directory
+        run: |
+          cp "target/${{ env.RUST_TARGET }}/release/tdector" "tdector-${{ env.RUST_TARGET }}"
+
+      - uses: actions/upload-artifact@v6
+        if: github.event_name != 'release'
+        with:
+          name: tdector-${{ env.RUST_TARGET }}
+          path: "tdector-${{ env.RUST_TARGET }}.*"
+          retention-days: 3
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NAME: "${{ github.ref_name }}"
+        run: |
+          gh release create "${{ github.ref_name }}" "tdector-${{ env.RUST_TARGET }}.*"
