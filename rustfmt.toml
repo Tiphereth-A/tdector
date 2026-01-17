@@ -1,0 +1,7 @@
+edition = "2024"
+style_edition = "2024"
+max_width = 100
+use_field_init_shorthand = true
+reorder_imports = true
+tab_spaces = 4
+newline_style = "Auto"
