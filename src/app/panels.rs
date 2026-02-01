@@ -132,7 +132,7 @@ impl DecryptionApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             if current_page_indices.is_empty() {
-                Self::render_empty_state(ui, &filter_text);
+                Self::render_empty_state(ui, filter_text);
             } else {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     for &seg_idx in current_page_indices {
@@ -156,25 +156,30 @@ impl DecryptionApp {
                             match action {
                                 ui::UiAction::Changed => *any_changed = true,
                                 ui::UiAction::Filter(text) => {
-                                    new_filter = Some(text);
+                                    new_filter = Some(text.to_string());
                                 }
                                 ui::UiAction::ShowWordMenu(word, word_idx) => {
-                                    let cursor_pos = ctx.input(|i| i.pointer.interact_pos()).unwrap_or_default();
-                                    *popup_request =
-                                        Some(PopupRequest::WordMenu(word, seg_idx, word_idx, cursor_pos));
+                                    let cursor_pos =
+                                        ctx.input(|i| i.pointer.interact_pos()).unwrap_or_default();
+                                    *popup_request = Some(PopupRequest::WordMenu(
+                                        word.to_string(),
+                                        seg_idx,
+                                        word_idx,
+                                        cursor_pos,
+                                    ));
                                 }
                                 ui::UiAction::ShowSimilar(seg_num) => {
                                     *popup_request = Some(PopupRequest::Similar(seg_num - 1));
                                 }
                                 ui::UiAction::ShowDefinition(word) => {
                                     *popup_request = Some(PopupRequest::Dictionary(
-                                        word,
+                                        word.to_string(),
                                         ui::PopupMode::Definition,
                                     ));
                                 }
                                 ui::UiAction::ShowReference(word) => {
                                     *popup_request = Some(PopupRequest::Dictionary(
-                                        word,
+                                        word.to_string(),
                                         ui::PopupMode::Reference,
                                     ));
                                 }

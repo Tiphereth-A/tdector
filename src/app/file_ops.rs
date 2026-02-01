@@ -137,12 +137,12 @@ impl DecryptionApp {
     /// is immediately registered with the UI framework and the path is stored
     /// in the project for persistence.
     pub(super) fn load_font_file(&mut self, ctx: &egui::Context) {
-        if let Some(path) = io::pick_font_file() {
-            if let Some(path_str) = path.to_str() {
-                self.load_custom_font(ctx, path_str);
-                self.project.font_path = Some(path_str.to_string());
-                self.update_title(ctx);
-            }
+        if let Some(path) = io::pick_font_file()
+            && let Some(path_str) = path.to_str()
+        {
+            self.load_custom_font(ctx, path_str);
+            self.project.font_path = Some(path_str.to_string());
+            self.update_title(ctx);
         }
     }
 
@@ -199,11 +199,11 @@ impl DecryptionApp {
     pub(super) fn update_title(&self, ctx: &egui::Context) {
         let dirty_mark = if self.is_dirty { "*" } else { "" };
         let title = if self.project.project_name.is_empty() {
-            format!("Text Decryption Helper{}", dirty_mark)
+            format!("Text Decryption Helper{dirty_mark}")
         } else {
             format!(
-                "Text Decryption Helper - {}{}",
-                self.project.project_name, dirty_mark
+                "Text Decryption Helper - {}{dirty_mark}",
+                self.project.project_name
             )
         };
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));

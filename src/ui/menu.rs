@@ -47,14 +47,14 @@ pub fn render_menu_bar(
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui
-                    .add(egui::Button::new("Import Text...").shortcut_text(format!("{}+I", cmd)))
+                    .add(egui::Button::new("Import Text...").shortcut_text(format!("{cmd}+I")))
                     .clicked()
                 {
                     on_import();
                     ui.close();
                 }
                 if ui
-                    .add(egui::Button::new("Open Project...").shortcut_text(format!("{}+O", cmd)))
+                    .add(egui::Button::new("Open Project...").shortcut_text(format!("{cmd}+O")))
                     .clicked()
                 {
                     on_open();
@@ -68,7 +68,7 @@ pub fn render_menu_bar(
                     ui.close();
                 }
                 if ui
-                    .add(egui::Button::new("Save Project").shortcut_text(format!("{}+S", cmd)))
+                    .add(egui::Button::new("Save Project").shortcut_text(format!("{cmd}+S")))
                     .clicked()
                 {
                     on_save();
@@ -76,14 +76,14 @@ pub fn render_menu_bar(
                 }
                 ui.separator();
                 if ui
-                    .add(egui::Button::new("Export...").shortcut_text(format!("{}+E", cmd)))
+                    .add(egui::Button::new("Export...").shortcut_text(format!("{cmd}+E")))
                     .clicked()
                 {
                     on_export();
                     ui.close();
                 }
                 if ui
-                    .add(egui::Button::new("Quit").shortcut_text(format!("{}+Q", cmd)))
+                    .add(egui::Button::new("Quit").shortcut_text(format!("{cmd}+Q")))
                     .clicked()
                 {
                     on_quit();
@@ -92,7 +92,10 @@ pub fn render_menu_bar(
             });
             ui.menu_button("Edit", |ui| {
                 if ui
-                    .add_enabled(project_loaded, egui::Button::new("Add New Word Formation Rule"))
+                    .add_enabled(
+                        project_loaded,
+                        egui::Button::new("Add New Word Formation Rule"),
+                    )
                     .clicked()
                 {
                     on_add_word_formation_rule();

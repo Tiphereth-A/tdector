@@ -80,7 +80,7 @@ pub fn render_pagination(
                 ui.separator();
 
                 egui::ComboBox::from_id_salt("page_size_selector")
-                    .selected_text(format!("Show {} per page", page_size))
+                    .selected_text(format!("Show {page_size} per page"))
                     .show_ui(ui, |ui| {
                         ui.selectable_value(page_size, 10, "Show 10 per page");
                         ui.selectable_value(page_size, 20, "Show 20 per page");

@@ -43,11 +43,11 @@ fn detect_font_in_dir(dir: &Path, stem: &str) -> Option<String> {
     let font_extensions = ["ttf", "otf", "ttc"];
 
     for ext in font_extensions {
-        let font_file = dir.join(format!("{}.{}", stem, ext));
-        if font_file.exists() {
-            if let Some(path_str) = font_file.to_str() {
-                return Some(path_str.to_string());
-            }
+        let font_file = dir.join(format!("{stem}.{ext}"));
+        if font_file.exists()
+            && let Some(path_str) = font_file.to_str()
+        {
+            return Some(path_str.to_string());
         }
     }
 
@@ -75,7 +75,7 @@ fn detect_font_in_dir(dir: &Path, stem: &str) -> Option<String> {
 ///
 /// Returns an error message string if the file cannot be read.
 pub fn read_text_content(path: &Path) -> Result<(String, String, Option<String>), String> {
-    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
+    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?;
 
     let project_name = path
         .file_stem()
@@ -178,7 +178,7 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
 /// - Corrupted data (e.g., invalid vocabulary indices)
 /// - Unrecognized format
 pub fn load_project_file(path: &Path) -> Result<Project, String> {
-    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
+    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?;
 
     if let Ok(saved) = serde_json::from_str::<SavedProject>(&content) {
         if let Some(project) = convert_from_saved_project(path, saved) {
@@ -248,7 +248,7 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
 
     match serde_json::from_str::<serde_json::Value>(&content) {
         Ok(_) => Err("Unknown file format: Missing required fields ('vocabulary'/'sentences' or 'segments').".to_string()),
-        Err(e) => Err(format!("File is not valid JSON: {}", e)),
+        Err(e) => Err(format!("File is not valid JSON: {e}")),
     }
 }
 
@@ -360,9 +360,9 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
 pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
     let saved_project = convert_to_saved_project(project)?;
     let content = serde_json::to_string_pretty(&saved_project)
-        .map_err(|e| format!("Failed to serialize project: {}", e))?;
+        .map_err(|e| format!("Failed to serialize project: {e}"))?;
 
-    fs::write(path, &content).map_err(|e| format!("Failed to save file: {}", e))?;
+    fs::write(path, &content).map_err(|e| format!("Failed to save file: {e}"))?;
 
     Ok(())
 }
@@ -432,16 +432,13 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
                     // Use base_word if available (from formation rule), otherwise use original
                     let lookup_word = t.base_word.as_ref().unwrap_or(&t.original);
 
-                    let vocab_idx =
-                        word_to_idx
-                            .get(lookup_word.as_str())
-                            .copied()
-                            .ok_or_else(|| {
-                                format!(
-                                    "Token '{}' missing from vocabulary index during save",
-                                    lookup_word
-                                )
-                            })?;
+                    let vocab_idx = word_to_idx.get(lookup_word.as_str()).copied().ok_or_else(
+                        || {
+                            format!(
+                                "Token '{lookup_word}' missing from vocabulary index during save"
+                            )
+                        },
+                    )?;
 
                     let word_ref = if let Some(rule_idx) = t.formation_rule_idx {
                         crate::models::WordRef::WithRule(vec![vocab_idx, rule_idx])

@@ -27,8 +27,8 @@ use super::colors;
 ///
 /// # Performance
 ///
-/// The query is normalized to lowercase on each call. For repeated highlighting
-/// of the same query, consider pre-normalizing the query string.
+/// Uses optimized string searching with pre-normalized lowercase strings for O(n+m) performance.
+/// All matches are found in a single pass through the text.
 #[must_use]
 pub fn create_highlighted_layout(
     text: &str,
@@ -52,64 +52,57 @@ pub fn create_highlighted_layout(
         }
     };
 
-    let query_chars: Vec<char> = query.chars().flat_map(|c| c.to_lowercase()).collect();
+    let highlight_format = egui::TextFormat {
+        background: colors::HIGHLIGHT_BG,
+        color: colors::HIGHLIGHT_FG,
+        font_id: font_id.clone(),
+        ..Default::default()
+    };
+
+    // Pre-compute lowercase versions once
+    let text_lower = text.to_lowercase();
+    let query_lower = query.to_lowercase();
+    let query_len = query.len();
+
     let mut last_end = 0;
+    let mut search_start = 0;
 
-    let char_indices: Vec<(usize, char)> = text.char_indices().collect();
+    // Find all matches using efficient string search
+    while let Some(match_pos) = text_lower[search_start..].find(&query_lower) {
+        let match_start = search_start + match_pos;
 
-    let mut i = 0;
-    while i < char_indices.len() {
-        let (start_byte, _) = char_indices[i];
+        // Find the corresponding position in the original text
+        // We need to find where this byte position maps to in terms of character boundaries
+        let match_byte_start = match_start;
+        let match_byte_end = match_start + query_len;
 
-        let mut matched = true;
-        let mut match_char_count = 0;
-        let mut query_iter = query_chars.iter().peekable();
-        let mut text_iter = char_indices[i..].iter().peekable();
-
-        while let Some(&query_char) = query_iter.next() {
-            if let Some(&(_, text_char)) = text_iter.next() {
-                let text_lower: char = text_char.to_lowercase().next().unwrap_or(text_char);
-                if text_lower != query_char {
-                    matched = false;
-                    break;
-                }
-                match_char_count += 1;
-            } else {
-                matched = false;
-                break;
-            }
+        // Ensure we're at valid UTF-8 boundaries
+        if !text.is_char_boundary(match_byte_start)
+            || !text.is_char_boundary(match_byte_end.min(text.len()))
+        {
+            search_start = match_start + 1;
+            continue;
         }
 
-        if matched && match_char_count > 0 {
-            let end_idx = i + match_char_count;
-            let end_byte = if end_idx < char_indices.len() {
-                char_indices[end_idx].0
-            } else {
-                text.len()
-            };
+        let actual_match_end = match_byte_end.min(text.len());
 
-            if start_byte > last_end {
-                job.append(&text[last_end..start_byte], 0.0, base_format.clone());
-            }
-
-            job.append(
-                &text[start_byte..end_byte],
-                0.0,
-                egui::TextFormat {
-                    background: colors::HIGHLIGHT_BG,
-                    color: colors::HIGHLIGHT_FG,
-                    font_id: font_id.clone(),
-                    ..Default::default()
-                },
-            );
-
-            last_end = end_byte;
-            i = end_idx;
-        } else {
-            i += 1;
+        // Append non-highlighted text before match
+        if match_byte_start > last_end {
+            job.append(&text[last_end..match_byte_start], 0.0, base_format.clone());
         }
+
+        // Append highlighted match
+        job.append(
+            &text[match_byte_start..actual_match_end],
+            0.0,
+            highlight_format.clone(),
+        );
+
+        last_end = actual_match_end;
+        search_start = actual_match_end;
     }
 
+    // Append remaining non-highlighted text
     if last_end < text.len() {
         job.append(&text[last_end..], 0.0, base_format);
     }

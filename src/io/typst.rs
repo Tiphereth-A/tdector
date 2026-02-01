@@ -33,7 +33,7 @@ use crate::models::Project;
 /// Returns an error if the file cannot be written (permissions, disk space, etc.).
 pub fn save_typst_file(project: &Project, path: &Path) -> Result<(), String> {
     let content = generate_typst_content(project);
-    fs::write(path, &content).map_err(|e| format!("Failed to export file: {}", e))?;
+    fs::write(path, &content).map_err(|e| format!("Failed to export file: {e}"))?;
     Ok(())
 }
 
@@ -136,8 +136,7 @@ fn generate_typst_content(project: &Project) -> String {
             let original = escape_typst(&token.original);
 
             content.push_str(&format!(
-                r#"#box(stack(dir: ttb, align(center, text(size: 8pt)[{}]), v(0.5em), align(center)[{}])) #h(5pt) "#,
-                gloss, original
+                r#"#box(stack(dir: ttb, align(center, text(size: 8pt)[{gloss}]), v(0.5em), align(center)[{original}])) #h(5pt) "#
             ));
         }
         content.push_str("\n\n");
@@ -147,7 +146,7 @@ fn generate_typst_content(project: &Project) -> String {
         } else {
             escape_typst(&segment.translation)
         };
-        content.push_str(&format!("  *trans:* {}\n]\n#v(1em)\n", trans));
+        content.push_str(&format!("  *trans:* {trans}\n]\n#v(1em)\n"));
     }
 
     content

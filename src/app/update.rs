@@ -121,8 +121,7 @@ impl eframe::App for DecryptionApp {
             self.lookups_dirty = false;
         }
 
-        let headword_lookup = self.cached_headword_lookup.take();
-        let usage_lookup = self.cached_usage_lookup.take();
+        let (headword_lookup, usage_lookup) = self.lookup_cache.take();
 
         let mut any_changed = false;
         let mut popup_request = None;
@@ -148,8 +147,7 @@ impl eframe::App for DecryptionApp {
 
         self.render_pinned_popups(ctx, &headword_lookup, &usage_lookup, &mut popup_request);
 
-        self.cached_headword_lookup = headword_lookup;
-        self.cached_usage_lookup = usage_lookup;
+        self.lookup_cache.restore(headword_lookup, usage_lookup);
 
         if let Some(req) = popup_request {
             match req {
@@ -171,6 +169,7 @@ impl eframe::App for DecryptionApp {
             self.filter_dirty = true;
             self.lookups_dirty = true;
             self.tfidf_dirty = true;
+            self.tfidf_cache.invalidate();
             ctx.request_repaint();
         }
     }
@@ -229,7 +228,7 @@ impl DecryptionApp {
     /// The number of pages required, or 0 if there are no items.
     fn calculate_total_pages(&self, total_items: usize) -> usize {
         if total_items > 0 {
-            (total_items + self.page_size - 1) / self.page_size
+            total_items.div_ceil(self.page_size)
         } else {
             0
         }
@@ -295,8 +294,7 @@ impl DecryptionApp {
     /// words appear and how they're used in context.
     fn recalculate_lookup_maps(&mut self) {
         if self.project.segments.is_empty() {
-            self.cached_headword_lookup = None;
-            self.cached_usage_lookup = None;
+            self.lookup_cache.invalidate();
             return;
         }
 
@@ -319,7 +317,6 @@ impl DecryptionApp {
             }
         }
 
-        self.cached_headword_lookup = Some(headmap);
-        self.cached_usage_lookup = Some(usagemap);
+        self.lookup_cache.restore(Some(headmap), Some(usagemap));
     }
 }

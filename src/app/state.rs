@@ -3,15 +3,16 @@
 //! This module defines the main [`DecryptionApp`] struct which holds all application
 //! state including project data, UI state, caches, and dirty flags for invalidation.
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use eframe::egui;
-use ndarray::Array2;
 
 use crate::models::Project;
 
 use super::actions::{AppAction, PinnedPopup, SortMode};
+use super::commands::CommandQueue;
+use super::lookup_cache::LookupCache;
+use super::tfidf_cache::CachedTfidf;
 use crate::ui::PopupMode;
 
 /// Dialog state for creating a new word formation rule.
@@ -91,9 +92,10 @@ pub struct DecryptionApp {
     pub(super) next_popup_id: u64,
 
     pub(super) cached_filtered_indices: Vec<usize>,
-    pub(super) cached_headword_lookup: Option<HashMap<String, Vec<usize>>>,
-    pub(super) cached_usage_lookup: Option<HashMap<String, Vec<usize>>>,
-    pub(super) cached_tfidf_matrix: Option<Array2<f64>>,
+    pub(super) lookup_cache: LookupCache,
+    pub(super) tfidf_cache: CachedTfidf,
+    #[allow(dead_code)]
+    pub(super) command_queue: CommandQueue,
 
     pub(super) filter_dirty: bool,
     pub(super) lookups_dirty: bool,
@@ -122,9 +124,9 @@ impl Default for DecryptionApp {
             pinned_popups: Vec::new(),
             next_popup_id: 0,
             cached_filtered_indices: Vec::new(),
-            cached_headword_lookup: None,
-            cached_usage_lookup: None,
-            cached_tfidf_matrix: None,
+            lookup_cache: LookupCache::default(),
+            tfidf_cache: CachedTfidf::default(),
+            command_queue: CommandQueue::default(),
             filter_dirty: false,
             lookups_dirty: false,
             tfidf_dirty: false,

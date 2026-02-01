@@ -7,6 +7,7 @@ use eframe::egui;
 use crate::ui::{self, PopupMode, constants};
 
 use super::actions::PinnedPopup;
+use super::popup_utils::{create_pinned_title_string, create_popup_title};
 use super::state::{DecryptionApp, PopupRequest};
 
 impl DecryptionApp {
@@ -47,31 +48,7 @@ impl DecryptionApp {
 
         if let Some(word) = self.definition_popup.as_ref() {
             let mut open = true;
-            let title = if self.project.font_path.is_some() {
-                let mut job = egui::text::LayoutJob::default();
-                job.append(
-                    "Definition: ",
-                    0.0,
-                    egui::TextFormat {
-                        font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
-                        ..Default::default()
-                    },
-                );
-                job.append(
-                    word,
-                    0.0,
-                    egui::TextFormat {
-                        font_id: egui::FontId::new(
-                            14.0,
-                            egui::FontFamily::Name("SentenceFont".into()),
-                        ),
-                        ..Default::default()
-                    },
-                );
-                egui::WidgetText::LayoutJob(std::sync::Arc::new(job))
-            } else {
-                egui::WidgetText::from(format!("Definition: {}", word))
-            };
+            let title = create_popup_title("Definition: ", word, self.project.font_path.is_some());
             egui::Window::new(title)
                 .id(egui::Id::new("def_popup"))
                 .open(&mut open)
@@ -101,31 +78,11 @@ impl DecryptionApp {
             }
 
             if should_pin {
-                let title = if self.project.font_path.is_some() {
-                    let mut job = egui::text::LayoutJob::default();
-                    job.append(
-                        "📌 Definition: ",
-                        0.0,
-                        egui::TextFormat {
-                            font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
-                            ..Default::default()
-                        },
-                    );
-                    job.append(
-                        word,
-                        0.0,
-                        egui::TextFormat {
-                            font_id: egui::FontId::new(
-                                14.0,
-                                egui::FontFamily::Name("SentenceFont".into()),
-                            ),
-                            ..Default::default()
-                        },
-                    );
-                    job.text
-                } else {
-                    format!("📌 Definition: {}", word)
-                };
+                let title = create_pinned_title_string(
+                    "📌 Definition: ",
+                    word,
+                    self.project.font_path.is_some(),
+                );
                 self.pinned_popups.push(PinnedPopup::Dictionary(
                     word.clone(),
                     PopupMode::Definition,
@@ -153,31 +110,7 @@ impl DecryptionApp {
 
         if let Some(word) = self.reference_popup.as_ref() {
             let mut open = true;
-            let title = if self.project.font_path.is_some() {
-                let mut job = egui::text::LayoutJob::default();
-                job.append(
-                    "References: ",
-                    0.0,
-                    egui::TextFormat {
-                        font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
-                        ..Default::default()
-                    },
-                );
-                job.append(
-                    word,
-                    0.0,
-                    egui::TextFormat {
-                        font_id: egui::FontId::new(
-                            14.0,
-                            egui::FontFamily::Name("SentenceFont".into()),
-                        ),
-                        ..Default::default()
-                    },
-                );
-                egui::WidgetText::LayoutJob(std::sync::Arc::new(job))
-            } else {
-                egui::WidgetText::from(format!("References: {}", word))
-            };
+            let title = create_popup_title("References: ", word, self.project.font_path.is_some());
             egui::Window::new(title)
                 .id(egui::Id::new("ref_popup"))
                 .open(&mut open)
@@ -207,31 +140,11 @@ impl DecryptionApp {
             }
 
             if should_pin {
-                let title = if self.project.font_path.is_some() {
-                    let mut job = egui::text::LayoutJob::default();
-                    job.append(
-                        "📌 References: ",
-                        0.0,
-                        egui::TextFormat {
-                            font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
-                            ..Default::default()
-                        },
-                    );
-                    job.append(
-                        word,
-                        0.0,
-                        egui::TextFormat {
-                            font_id: egui::FontId::new(
-                                14.0,
-                                egui::FontFamily::Name("SentenceFont".into()),
-                            ),
-                            ..Default::default()
-                        },
-                    );
-                    job.text
-                } else {
-                    format!("📌 References: {}", word)
-                };
+                let title = create_pinned_title_string(
+                    "📌 References: ",
+                    word,
+                    self.project.font_path.is_some(),
+                );
                 self.pinned_popups.push(PinnedPopup::Dictionary(
                     word.clone(),
                     PopupMode::Reference,
@@ -258,7 +171,9 @@ impl DecryptionApp {
 
         if let Some((target_idx, scores)) = self.similar_popup.as_ref() {
             let mut open = true;
-            egui::Window::new(format!("Similar to [{}]", target_idx + 1))
+            let target_label = format!("[{}]", target_idx + 1);
+            let title = create_popup_title("Similar to ", &target_label, false);
+            egui::Window::new(title)
                 .id(egui::Id::new("similar_popup"))
                 .open(&mut open)
                 .default_width(constants::POPUP_WIDTH)
@@ -278,12 +193,13 @@ impl DecryptionApp {
             }
 
             if should_pin {
-                let title = format!("📌 Similar to [{}]", *target_idx + 1);
+                let pinned_title =
+                    create_pinned_title_string("📌 Similar to ", &target_label, false);
                 self.pinned_popups.push(PinnedPopup::Similar(
                     *target_idx,
                     scores.clone(),
                     self.next_popup_id,
-                    title,
+                    pinned_title,
                 ));
                 self.next_popup_id += 1;
                 should_close = true;
@@ -523,7 +439,9 @@ impl DecryptionApp {
         ctx: &egui::Context,
         popup_request: &mut Option<PopupRequest>,
     ) {
-        if let Some((word, sentence_idx, word_idx, cursor_pos)) = self.word_menu_popup.as_ref().cloned() {
+        if let Some((word, sentence_idx, word_idx, cursor_pos)) =
+            self.word_menu_popup.as_ref().cloned()
+        {
             let mut should_close = false;
 
             egui::Area::new(egui::Id::new("word_context_menu"))
@@ -533,7 +451,7 @@ impl DecryptionApp {
                 .show(ctx, |ui| {
                     egui::Frame::menu(ui.style()).show(ui, |ui| {
                         ui.set_min_width(180.0);
-                        
+
                         if ui
                             .add(egui::Button::new("Show Definition").frame(false))
                             .clicked()
@@ -544,7 +462,7 @@ impl DecryptionApp {
                             ));
                             should_close = true;
                         }
-                        
+
                         if ui
                             .add(egui::Button::new("Show References").frame(false))
                             .clicked()
@@ -553,7 +471,7 @@ impl DecryptionApp {
                                 Some(PopupRequest::Dictionary(word.clone(), PopupMode::Reference));
                             should_close = true;
                         }
-                        
+
                         if ui
                             .add(egui::Button::new("Set Word Formation Rule").frame(false))
                             .clicked()
@@ -582,31 +500,11 @@ impl DecryptionApp {
     fn render_word_formation_popup(&mut self, ctx: &egui::Context) {
         if let Some(mut dialog) = self.word_formation_popup.take() {
             let mut open = true;
-            let title = if self.project.font_path.is_some() {
-                let mut job = egui::text::LayoutJob::default();
-                job.append(
-                    "Set Formation Rule: ",
-                    0.0,
-                    egui::TextFormat {
-                        font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
-                        ..Default::default()
-                    },
-                );
-                job.append(
-                    &dialog.selected_word,
-                    0.0,
-                    egui::TextFormat {
-                        font_id: egui::FontId::new(
-                            14.0,
-                            egui::FontFamily::Name("SentenceFont".into()),
-                        ),
-                        ..Default::default()
-                    },
-                );
-                egui::WidgetText::LayoutJob(std::sync::Arc::new(job))
-            } else {
-                egui::WidgetText::from(format!("Set Formation Rule: {}", dialog.selected_word))
-            };
+            let title = create_popup_title(
+                "Set Formation Rule: ",
+                &dialog.selected_word,
+                self.project.font_path.is_some(),
+            );
 
             let mut should_keep = false;
             egui::Window::new(title)
@@ -617,7 +515,7 @@ impl DecryptionApp {
                     ui.label("Base word:");
                     let old_base_word = dialog.base_word.clone();
                     ui.text_edit_singleline(&mut dialog.base_word);
-                    
+
                     // Update related words if base word changed
                     if dialog.base_word != old_base_word {
                         dialog.related_words = self.find_related_words(&dialog.base_word);
@@ -697,34 +595,28 @@ impl DecryptionApp {
                             .clicked()
                         {
                             // Apply the rule to the sentence
-                            if let Some(rule_idx) = dialog.selected_rule {
-                                if dialog.sentence_idx < self.project.segments.len() {
-                                    if dialog.word_idx
-                                        < self.project.segments[dialog.sentence_idx].tokens.len()
-                                    {
-                                        let token = &mut self.project.segments[dialog.sentence_idx]
-                                            .tokens[dialog.word_idx];
-                                        // Find the vocabulary index of the base word
-                                        let base_word_for_lookup = dialog.base_word.clone();
-                                        if self
-                                            .project
-                                            .vocabulary
-                                            .contains_key(&base_word_for_lookup)
-                                        {
-                                            // Remove the original derived word from vocabulary
-                                            // since it's now represented as a formation of the base word
-                                            let original_word = dialog.selected_word.clone();
-                                            self.project.vocabulary.remove(&original_word);
-                                            self.project.vocabulary_comments.remove(&original_word);
+                            if let Some(rule_idx) = dialog.selected_rule
+                                && dialog.sentence_idx < self.project.segments.len()
+                                && dialog.word_idx
+                                    < self.project.segments[dialog.sentence_idx].tokens.len()
+                            {
+                                let token = &mut self.project.segments[dialog.sentence_idx].tokens
+                                    [dialog.word_idx];
+                                // Find the vocabulary index of the base word
+                                let base_word_for_lookup = dialog.base_word.clone();
+                                if self.project.vocabulary.contains_key(&base_word_for_lookup) {
+                                    // Remove the original derived word from vocabulary
+                                    // since it's now represented as a formation of the base word
+                                    let original_word = dialog.selected_word.clone();
+                                    self.project.vocabulary.remove(&original_word);
+                                    self.project.vocabulary_comments.remove(&original_word);
 
-                                            // Update token with formation rule info
-                                            token.base_word = Some(base_word_for_lookup);
-                                            token.formation_rule_idx = Some(rule_idx);
-                                            token.original = dialog.preview.clone();
-                                            // Mark as dirty
-                                            self.update_dirty_status(true, ctx);
-                                        }
-                                    }
+                                    // Update token with formation rule info
+                                    token.base_word = Some(base_word_for_lookup);
+                                    token.formation_rule_idx = Some(rule_idx);
+                                    token.original = dialog.preview.clone();
+                                    // Mark as dirty
+                                    self.update_dirty_status(true, ctx);
                                 }
                             }
                             should_keep = false;
@@ -854,11 +746,13 @@ impl DecryptionApp {
                         .clicked()
                     {
                         // Add the new rule to the project
-                        self.project.formation_rules.push(crate::models::FormationRule {
-                            description: dialog.description.clone(),
-                            rule_type: dialog.rule_type,
-                            command: dialog.command.clone(),
-                        });
+                        self.project
+                            .formation_rules
+                            .push(crate::models::FormationRule {
+                                description: dialog.description.clone(),
+                                rule_type: dialog.rule_type,
+                                command: dialog.command.clone(),
+                            });
                         self.update_dirty_status(true, ctx);
                         should_close = true;
                     }
@@ -873,14 +767,25 @@ impl DecryptionApp {
     fn handle_ui_action(&self, action: ui::UiAction, popup_request: &mut Option<PopupRequest>) {
         match action {
             ui::UiAction::ShowDefinition(word) => {
-                *popup_request = Some(PopupRequest::Dictionary(word, PopupMode::Definition));
+                *popup_request = Some(PopupRequest::Dictionary(
+                    word.to_string(),
+                    PopupMode::Definition,
+                ));
             }
             ui::UiAction::ShowReference(word) => {
-                *popup_request = Some(PopupRequest::Dictionary(word, PopupMode::Reference));
+                *popup_request = Some(PopupRequest::Dictionary(
+                    word.to_string(),
+                    PopupMode::Reference,
+                ));
             }
             ui::UiAction::ShowWordMenu(word, word_idx) => {
                 // Use default position for word menu in pinned popups
-                *popup_request = Some(PopupRequest::WordMenu(word, 0, word_idx, egui::Pos2::ZERO));
+                *popup_request = Some(PopupRequest::WordMenu(
+                    word.to_string(),
+                    0,
+                    word_idx,
+                    egui::Pos2::ZERO,
+                ));
             }
             _ => {}
         }

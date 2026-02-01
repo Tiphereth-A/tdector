@@ -33,12 +33,12 @@ impl DecryptionApp {
     ///
     /// [`compute_similar_segments`]: Self::compute_similar_segments
     pub(super) fn ensure_tfidf_cache(&mut self) {
-        if !self.tfidf_dirty && self.cached_tfidf_matrix.is_some() {
+        if !self.tfidf_dirty && !self.tfidf_cache.is_dirty() {
             return;
         }
 
         if self.project.segments.is_empty() {
-            self.cached_tfidf_matrix = None;
+            self.tfidf_cache = super::tfidf_cache::CachedTfidf::default();
             self.tfidf_dirty = false;
             return;
         }
@@ -63,10 +63,10 @@ impl DecryptionApp {
         let doc_refs: Vec<&str> = documents.iter().map(|s| s.as_str()).collect();
         match vectorizer.fit_transform(&doc_refs) {
             Ok(matrix) => {
-                self.cached_tfidf_matrix = Some(matrix);
+                self.tfidf_cache.set_matrix(matrix);
             }
             Err(_) => {
-                self.cached_tfidf_matrix = None;
+                self.tfidf_cache = super::tfidf_cache::CachedTfidf::default();
             }
         }
         self.tfidf_dirty = false;
@@ -98,7 +98,7 @@ impl DecryptionApp {
 
         self.ensure_tfidf_cache();
 
-        let matrix: &Array2<f64> = match self.cached_tfidf_matrix.as_ref() {
+        let matrix: &Array2<f64> = match self.tfidf_cache.get_matrix() {
             Some(m) => m,
             None => return,
         };

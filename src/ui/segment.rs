@@ -5,6 +5,7 @@
 //! with special support for custom fonts and dictionary-style interaction.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use eframe::egui;
 
@@ -58,7 +59,7 @@ pub fn render_clickable_tokens(
         ui.spacing_mut().item_spacing.x = constants::TOKEN_SPACING_X;
         ui.spacing_mut().item_spacing.y = constants::TOKEN_SPACING_Y;
         for token in tokens {
-            let is_highlighted = highlight_token.map_or(false, |h| h == token.original);
+            let is_highlighted = highlight_token.is_some_and(|h| h == token.original);
             let text = &token.original;
 
             let gloss = vocabulary.get(text).map(|s| s.as_str()).unwrap_or("");
@@ -100,9 +101,9 @@ pub fn render_clickable_tokens(
                 }
 
                 if resp.clicked() {
-                    clicked_action = Some(UiAction::ShowDefinition(text.clone()));
+                    clicked_action = Some(UiAction::ShowDefinition(Arc::from(text.as_str())));
                 } else if resp.secondary_clicked() {
-                    clicked_action = Some(UiAction::ShowReference(text.clone()));
+                    clicked_action = Some(UiAction::ShowReference(Arc::from(text.as_str())));
                 }
             });
         }
@@ -142,7 +143,7 @@ pub fn render_segment(
 ) -> UiAction {
     let mut action = UiAction::None;
     ui.group(|ui| {
-        let title = egui::RichText::new(format!("[{}]", seg_num)).weak();
+        let title = egui::RichText::new(format!("[{seg_num}]")).weak();
         let mut title_resp = ui.add(egui::Label::new(title).sense(egui::Sense::click()));
 
         if !segment.comment.is_empty() {
@@ -189,10 +190,8 @@ pub fn render_segment(
 
         ui.add_space(constants::SEGMENT_VERTICAL_SPACING);
 
-        if render_translation_box(ui, segment, highlight) {
-            if action == UiAction::None {
-                action = UiAction::Changed;
-            }
+        if render_translation_box(ui, segment, highlight) && action == UiAction::None {
+            action = UiAction::Changed;
         }
     });
 
@@ -232,7 +231,10 @@ fn render_token_column(
     // Construct gloss with formation rule description if applicable
     let (gloss, comment, has_rule) = if let Some(rule_idx) = token.formation_rule_idx {
         if let Some(rule) = formation_rules.get(rule_idx) {
-            let combined_gloss = format!("{} ({})", base_gloss, rule.description);
+            let combined_gloss = format!(
+                "{base_gloss} ({rule_description})",
+                rule_description = rule.description
+            );
             (combined_gloss, base_comment, true)
         } else {
             (base_gloss, base_comment, false)
@@ -314,9 +316,10 @@ fn render_token_column(
                     };
 
                     if label_resp.clicked() {
-                        action = UiAction::ShowDefinition(token.original.clone());
+                        action = UiAction::ShowDefinition(Arc::from(token.original.as_str()));
                     } else if label_resp.secondary_clicked() {
-                        action = UiAction::ShowWordMenu(token.original.clone(), word_idx);
+                        action =
+                            UiAction::ShowWordMenu(Arc::from(token.original.as_str()), word_idx);
                     }
                 });
 
@@ -330,9 +333,9 @@ fn render_token_column(
 
             // Left click: apply filter; Right click: show context menu
             if label_resp.clicked() {
-                action = UiAction::Filter(token.original.clone());
+                action = UiAction::Filter(Arc::from(token.original.as_str()));
             } else if label_resp.secondary_clicked() {
-                action = UiAction::ShowWordMenu(token.original.clone(), word_idx);
+                action = UiAction::ShowWordMenu(Arc::from(token.original.as_str()), word_idx);
             }
         },
     );

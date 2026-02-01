@@ -101,7 +101,7 @@ impl FormationRule {
         // Compile and run the user's transformation script
         let ast = engine
             .compile(&self.command)
-            .map_err(|e| format!("Rhai compilation error: {}", e))?;
+            .map_err(|e| format!("Rhai compilation error: {e}"))?;
 
         // Call the transform function with the word
         let result: String = engine
@@ -111,7 +111,7 @@ impl FormationRule {
                 "transform",
                 (word.to_string(),),
             )
-            .map_err(|e| format!("Transform function error: {}", e))?;
+            .map_err(|e| format!("Transform function error: {e}"))?;
 
         Ok(result)
     }
