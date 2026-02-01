@@ -35,6 +35,50 @@ pub enum FormationType {
     Nonmorphological,
 }
 
+/// Creates a configured Rhai engine with security constraints.
+///
+/// The engine is configured with:
+/// - Expression depth limits to prevent deeply nested code
+/// - Operation limits to prevent infinite loops
+/// - Disabled I/O, network, and system operations for security
+///
+/// # Returns
+///
+/// A configured Rhai engine ready for script execution
+pub fn get_engine() -> rhai::Engine {
+    let mut engine = rhai::Engine::new();
+
+    // Security constraints to prevent malicious scripts
+    engine.set_max_expr_depths(5000, 5000);
+    engine.set_max_operations(100000);
+
+    // Disable all I/O operations
+    engine.disable_symbol("eval");
+    engine.disable_symbol("load");
+    engine.disable_symbol("save");
+    engine.disable_symbol("read");
+    engine.disable_symbol("write");
+    engine.disable_symbol("append");
+    engine.disable_symbol("delete");
+    engine.disable_symbol("copy");
+
+    // Disable network operations
+    engine.disable_symbol("http");
+    engine.disable_symbol("request");
+    engine.disable_symbol("fetch");
+    engine.disable_symbol("socket");
+    engine.disable_symbol("tcp");
+    engine.disable_symbol("udp");
+
+    // Disable system/process operations
+    engine.disable_symbol("system");
+    engine.disable_symbol("exec");
+    engine.disable_symbol("spawn");
+    engine.disable_symbol("command");
+
+    engine
+}
+
 /// A word formation rule describing how to transform a word.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormationRule {
@@ -66,37 +110,7 @@ impl FormationRule {
     /// For a rule with command: `fn transform(word) { word + "s" }`
     /// Calling `rule.apply("apple")` would return `Ok("apples".to_string())`
     pub fn apply(&self, word: &str) -> Result<String, String> {
-        use rhai::Engine;
-
-        let mut engine = Engine::new();
-
-        // Security constraints to prevent malicious scripts
-        engine.set_max_expr_depths(10, 10); // Limit expression nesting depth
-        engine.set_max_operations(1000); // Prevent infinite loops
-
-        // Disable all I/O operations
-        engine.disable_symbol("eval"); // Prevent dynamic code execution
-        engine.disable_symbol("load");
-        engine.disable_symbol("save");
-        engine.disable_symbol("read");
-        engine.disable_symbol("write");
-        engine.disable_symbol("append");
-        engine.disable_symbol("delete");
-        engine.disable_symbol("copy");
-
-        // Disable all network operations (if present in Rhai)
-        engine.disable_symbol("http");
-        engine.disable_symbol("request");
-        engine.disable_symbol("fetch");
-        engine.disable_symbol("socket");
-        engine.disable_symbol("tcp");
-        engine.disable_symbol("udp");
-
-        // Disable system/process operations
-        engine.disable_symbol("system");
-        engine.disable_symbol("exec");
-        engine.disable_symbol("spawn");
-        engine.disable_symbol("command");
+        let engine = get_engine();
 
         // Compile and run the user's transformation script
         let ast = engine

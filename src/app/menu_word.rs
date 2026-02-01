@@ -12,10 +12,19 @@ impl DecryptionApp {
         ctx: &egui::Context,
         popup_request: &mut Option<PopupRequest>,
     ) {
-        if let Some((word, _sentence_idx, _word_idx, cursor_pos)) =
+        if let Some((word, sentence_idx, word_idx, cursor_pos)) =
             self.word_menu_popup.as_ref().cloned()
         {
             let mut should_close = false;
+
+            // Check if the word already has a formation rule applied
+            let has_formation_rule = self
+                .project
+                .segments
+                .get(sentence_idx)
+                .and_then(|seg| seg.tokens.get(word_idx))
+                .map(|token| token.formation_rule_idx.is_some())
+                .unwrap_or(false);
 
             egui::Area::new(egui::Id::new("word_context_menu"))
                 .order(egui::Order::Foreground)
@@ -46,7 +55,10 @@ impl DecryptionApp {
                         }
 
                         if ui
-                            .add(egui::Button::new("Set Word Formation Rule").frame(false))
+                            .add_enabled(
+                                !has_formation_rule,
+                                egui::Button::new("Set Word Formation Rule").frame(false),
+                            )
                             .clicked()
                         {
                             // Open word formation rule dialog

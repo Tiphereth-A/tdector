@@ -21,9 +21,22 @@ impl DecryptionApp {
                 .open(&mut open)
                 .default_width(400.0)
                 .show(ctx, |ui| {
+                    let custom_font_id = egui::FontId {
+                        size: egui::TextStyle::Body.resolve(ui.style()).size,
+                        family: egui::FontFamily::Name("SentenceFont".into()),
+                    };
+                    let has_custom_font = self.project.font_path.is_some();
+
                     ui.label("Base word:");
                     let old_base_word = dialog.base_word.clone();
-                    ui.text_edit_singleline(&mut dialog.base_word);
+                    if has_custom_font {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut dialog.base_word)
+                                .font(custom_font_id.clone()),
+                        );
+                    } else {
+                        ui.text_edit_singleline(&mut dialog.base_word);
+                    }
 
                     // Update related words and preview if base word changed
                     if dialog.base_word != old_base_word {
@@ -47,7 +60,12 @@ impl DecryptionApp {
                         ui.label("Related words:");
                         let related_words_clone = dialog.related_words.clone();
                         for word in related_words_clone {
-                            if ui.selectable_label(false, &word).clicked() {
+                            let word_label = if has_custom_font {
+                                egui::RichText::new(&word).font(custom_font_id.clone())
+                            } else {
+                                egui::RichText::new(&word)
+                            };
+                            if ui.selectable_label(false, word_label).clicked() {
                                 dialog.base_word = word;
                                 dialog.related_words.clear(); // Hide suggestions after selection
                                 // Update preview if a rule is already selected
@@ -141,7 +159,14 @@ impl DecryptionApp {
                     if !dialog.base_word.is_empty() && !dialog.preview.is_empty() {
                         ui.horizontal(|ui| {
                             ui.label("Preview:");
-                            ui.label(egui::RichText::new(&dialog.preview).strong());
+                            let preview_text = if has_custom_font {
+                                egui::RichText::new(&dialog.preview)
+                                    .font(custom_font_id.clone())
+                                    .strong()
+                            } else {
+                                egui::RichText::new(&dialog.preview).strong()
+                            };
+                            ui.label(preview_text);
                         });
 
                         // Check if preview matches the selected word
@@ -151,19 +176,46 @@ impl DecryptionApp {
                             self.project.vocabulary.contains_key(&dialog.base_word);
 
                         if !base_word_exists {
-                            ui.colored_label(
-                                egui::Color32::RED,
-                                format!("Base word '{}' not found in vocabulary", dialog.base_word),
-                            );
+                            ui.horizontal_wrapped(|ui| {
+                                ui.colored_label(egui::Color32::RED, "Base word ");
+                                let word_text = if has_custom_font {
+                                    egui::RichText::new(&format!("'{}'", dialog.base_word))
+                                        .font(custom_font_id.clone())
+                                        .color(egui::Color32::RED)
+                                } else {
+                                    egui::RichText::new(&format!("'{}'", dialog.base_word))
+                                        .color(egui::Color32::RED)
+                                };
+                                ui.label(word_text);
+                                ui.colored_label(egui::Color32::RED, " not found in vocabulary");
+                            });
                         }
                         if !matches {
-                            ui.colored_label(
-                                egui::Color32::RED,
-                                format!(
-                                    "Preview '{}' does not match selected word '{}'",
-                                    dialog.preview, dialog.selected_word
-                                ),
-                            );
+                            ui.horizontal_wrapped(|ui| {
+                                ui.colored_label(egui::Color32::RED, "Preview ");
+                                let preview_styled = if has_custom_font {
+                                    egui::RichText::new(&format!("'{}'", dialog.preview))
+                                        .font(custom_font_id.clone())
+                                        .color(egui::Color32::RED)
+                                } else {
+                                    egui::RichText::new(&format!("'{}'", dialog.preview))
+                                        .color(egui::Color32::RED)
+                                };
+                                ui.label(preview_styled);
+                                ui.colored_label(
+                                    egui::Color32::RED,
+                                    " does not match selected word ",
+                                );
+                                let word_styled = if has_custom_font {
+                                    egui::RichText::new(&format!("'{}'", dialog.selected_word))
+                                        .font(custom_font_id.clone())
+                                        .color(egui::Color32::RED)
+                                } else {
+                                    egui::RichText::new(&format!("'{}'", dialog.selected_word))
+                                        .color(egui::Color32::RED)
+                                };
+                                ui.label(word_styled);
+                            });
                         } else {
                             ui.colored_label(egui::Color32::GREEN, "Preview matches selected word");
                         }
@@ -232,6 +284,12 @@ impl DecryptionApp {
                 .open(&mut open)
                 .default_width(500.0)
                 .show(ctx, |ui| {
+                    let custom_font_id = egui::FontId {
+                        size: egui::TextStyle::Body.resolve(ui.style()).size,
+                        family: egui::FontFamily::Name("SentenceFont".into()),
+                    };
+                    let has_custom_font = self.project.font_path.is_some();
+
                     ui.label("Description:");
                     ui.text_edit_singleline(&mut dialog.description);
 
@@ -277,50 +335,37 @@ impl DecryptionApp {
 
                     ui.separator();
                     ui.label("Test Word:");
-                    ui.text_edit_singleline(&mut dialog.test_word);
+                    if has_custom_font {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut dialog.test_word)
+                                .font(custom_font_id.clone()),
+                        );
+                    } else {
+                        ui.text_edit_singleline(&mut dialog.test_word);
+                    }
 
                     // Test the command
                     if !dialog.test_word.is_empty() && !dialog.command.is_empty() {
-                        let mut engine = rhai::Engine::new();
-                        // Security constraints
-                        engine.set_max_expr_depths(10, 10);
-                        engine.set_max_operations(1000);
-
-                        // Disable all I/O operations
-                        engine.disable_symbol("eval");
-                        engine.disable_symbol("load");
-                        engine.disable_symbol("save");
-                        engine.disable_symbol("read");
-                        engine.disable_symbol("write");
-                        engine.disable_symbol("append");
-                        engine.disable_symbol("delete");
-                        engine.disable_symbol("copy");
-
-                        // Disable network operations
-                        engine.disable_symbol("http");
-                        engine.disable_symbol("request");
-                        engine.disable_symbol("fetch");
-                        engine.disable_symbol("socket");
-                        engine.disable_symbol("tcp");
-                        engine.disable_symbol("udp");
-
-                        // Disable system operations
-                        engine.disable_symbol("system");
-                        engine.disable_symbol("exec");
-                        engine.disable_symbol("spawn");
-                        engine.disable_symbol("command");
+                        let engine = crate::models::get_engine();
 
                         let result = engine.eval::<String>(&format!(
                             "{}\nlet result = transform(\"{}\");\nresult",
                             dialog.command, dialog.test_word
                         ));
-                        dialog.preview = result.unwrap_or_else(|_| "Error in script".to_string());
+                        dialog.preview = result.unwrap_or_else(|e| format!("Error: {}", e));
                     }
 
                     if !dialog.test_word.is_empty() && !dialog.preview.is_empty() {
                         ui.horizontal(|ui| {
                             ui.label("Preview:");
-                            ui.label(egui::RichText::new(&dialog.preview).strong());
+                            let preview_text = if has_custom_font {
+                                egui::RichText::new(&dialog.preview)
+                                    .font(custom_font_id.clone())
+                                    .strong()
+                            } else {
+                                egui::RichText::new(&dialog.preview).strong()
+                            };
+                            ui.label(preview_text);
                         });
                     }
 
