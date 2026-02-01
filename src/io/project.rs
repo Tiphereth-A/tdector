@@ -432,6 +432,26 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
         });
     }
 
+    // Sort formation rules by type (Derivation, Inflection, Nonmorphological) then by description
+    let mut sorted_formation_rules = project.formation_rules.clone();
+
+    // Create a mapping from old indices to new indices
+    let mut old_to_new_idx: HashMap<usize, usize> = HashMap::new();
+    let mut indexed_rules: Vec<(usize, _)> = project.formation_rules.iter().enumerate().collect();
+    indexed_rules.sort_by(|(_, a), (_, b)| match a.rule_type.cmp(&b.rule_type) {
+        std::cmp::Ordering::Equal => a.description.cmp(&b.description),
+        other => other,
+    });
+
+    for (new_idx, (old_idx, _)) in indexed_rules.iter().enumerate() {
+        old_to_new_idx.insert(*old_idx, new_idx);
+    }
+
+    sorted_formation_rules.sort_by(|a, b| match a.rule_type.cmp(&b.rule_type) {
+        std::cmp::Ordering::Equal => a.description.cmp(&b.description),
+        other => other,
+    });
+
     let sentences: Vec<SavedSentence> = project
         .segments
         .iter()
@@ -452,7 +472,15 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
                     )?;
 
                     let word_ref = if let Some(rule_idx) = t.formation_rule_idx {
-                        crate::models::WordRef::WithRule(vec![vocab_idx, rule_idx])
+                        // Map the old rule index to the new sorted index
+                        let new_rule_idx = old_to_new_idx.get(&rule_idx).copied().ok_or_else(
+                            || {
+                                format!(
+                                    "Formation rule index {rule_idx} not found in mapping during save"
+                                )
+                            },
+                        )?;
+                        crate::models::WordRef::WithRule(vec![vocab_idx, new_rule_idx])
                     } else {
                         crate::models::WordRef::Single(vocab_idx)
                     };
@@ -467,13 +495,6 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
             })
         })
         .collect::<Result<Vec<SavedSentence>, String>>()?;
-
-    // Sort formation rules by type (Derivation, Inflection, Nonmorphological) then by description
-    let mut sorted_formation_rules = project.formation_rules.clone();
-    sorted_formation_rules.sort_by(|a, b| match a.rule_type.cmp(&b.rule_type) {
-        std::cmp::Ordering::Equal => a.description.cmp(&b.description),
-        other => other,
-    });
 
     Ok(SavedProject {
         version: 1,
