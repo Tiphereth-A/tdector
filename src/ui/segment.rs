@@ -25,6 +25,7 @@ use crate::ui::highlight::create_highlighted_layout;
 /// * `ui` - The egui UI context
 /// * `tokens` - Slice of tokens to render
 /// * `vocabulary` - Vocabulary map for looking up glosses
+/// * `vocabulary_comments` - Comments map for looking up word comments
 /// * `highlight_token` - Optional token text to highlight
 /// * `use_custom_font` - Whether to use the custom "SentenceFont" family
 ///
@@ -35,6 +36,7 @@ pub fn render_clickable_tokens(
     ui: &mut egui::Ui,
     tokens: &[Token],
     vocabulary: &HashMap<String, String>,
+    vocabulary_comments: &HashMap<String, String>,
     highlight_token: Option<&str>,
     use_custom_font: bool,
 ) -> Option<UiAction> {
@@ -60,17 +62,25 @@ pub fn render_clickable_tokens(
             let text = &token.original;
 
             let gloss = vocabulary.get(text).map(|s| s.as_str()).unwrap_or("");
+            let comment = vocabulary_comments
+                .get(text)
+                .map(|s| s.as_str())
+                .unwrap_or("");
 
             ui.vertical(|ui| {
-                ui.add(
-                    egui::Label::new(
-                        egui::RichText::new(gloss)
-                            .family(egui::FontFamily::Proportional)
-                            .size(constants::GLOSS_FONT_SIZE)
-                            .color(text_color),
-                    )
-                    .extend(),
+                let gloss_richtext = egui::RichText::new(gloss)
+                    .family(egui::FontFamily::Proportional)
+                    .size(constants::GLOSS_FONT_SIZE)
+                    .color(text_color);
+
+                let gloss_resp = ui.add(
+                    egui::Label::new(gloss_richtext)
+                        .extend(),
                 );
+                
+                if !comment.is_empty() {
+                    gloss_resp.on_hover_text(comment);
+                }
 
                 let label = if is_highlighted {
                     egui::RichText::new(text)
@@ -86,7 +96,11 @@ pub fn render_clickable_tokens(
                         .color(text_color)
                 };
 
-                let resp = ui.add(egui::Label::new(label).extend().sense(egui::Sense::click()));
+                let mut resp = ui.add(egui::Label::new(label).extend().sense(egui::Sense::click()));
+
+                if !comment.is_empty() {
+                    resp = resp.on_hover_text(comment);
+                }
 
                 if resp.clicked() {
                     clicked_action = Some(UiAction::ShowDefinition(text.clone()));
@@ -111,6 +125,7 @@ pub fn render_clickable_tokens(
 /// * `ui` - The egui UI context
 /// * `segment` - The segment to render (mutable for editing)
 /// * `vocabulary` - Vocabulary map (mutable for gloss updates)
+/// * `vocabulary_comments` - Comments map for looking up word comments
 /// * `seg_num` - Display number for this segment (1-indexed)
 /// * `highlight` - Optional text to highlight in the segment
 /// * `dictionary_mode` - If true, clicking tokens shows dictionary popups instead of editing
@@ -123,6 +138,7 @@ pub fn render_segment(
     ui: &mut egui::Ui,
     segment: &mut Segment,
     vocabulary: &mut HashMap<String, String>,
+    vocabulary_comments: &HashMap<String, String>,
     seg_num: usize,
     highlight: Option<&str>,
     dictionary_mode: bool,
@@ -131,12 +147,15 @@ pub fn render_segment(
     let mut action = UiAction::None;
     ui.group(|ui| {
         let title = egui::RichText::new(format!("[{}]", seg_num)).weak();
-        let title_resp = ui.add(egui::Label::new(title).sense(egui::Sense::click()));
+        let mut title_resp = ui.add(egui::Label::new(title).sense(egui::Sense::click()));
 
-        if title_resp
-            .on_hover_text("Click to verify similar sentences")
-            .clicked()
-        {
+        if !segment.comment.is_empty() {
+            title_resp = title_resp.on_hover_text(&segment.comment);
+        }
+
+        title_resp = title_resp.on_hover_text("Click to verify similar sentences");
+
+        if title_resp.clicked() {
             action = UiAction::ShowSimilar(seg_num);
         }
 
@@ -150,6 +169,7 @@ pub fn render_segment(
                             ui,
                             token,
                             vocabulary,
+                            vocabulary_comments,
                             highlight,
                             dictionary_mode,
                             use_custom_font,
@@ -196,11 +216,16 @@ fn render_token_column(
     ui: &mut egui::Ui,
     token: &mut Token,
     vocabulary: &mut HashMap<String, String>,
+    vocabulary_comments: &HashMap<String, String>,
     highlight: Option<&str>,
     dictionary_mode: bool,
     use_custom_font: bool,
 ) -> UiAction {
     let gloss = vocabulary.get(&token.original).cloned().unwrap_or_default();
+    let comment = vocabulary_comments
+        .get(&token.original)
+        .cloned()
+        .unwrap_or_default();
 
     let default_font_id = egui::TextStyle::Body.resolve(ui.style());
     let token_font_id = if use_custom_font {
@@ -266,21 +291,33 @@ fn render_token_column(
                                 .sense(egui::Sense::click()),
                         );
 
+                        let label_resp = if !comment.is_empty() {
+                            label_resp.on_hover_text(&comment)
+                        } else {
+                            label_resp
+                        };
+
                         if label_resp.clicked() {
                             action = UiAction::ShowDefinition(token.original.clone());
                         } else if label_resp.secondary_clicked() {
                             action = UiAction::ShowReference(token.original.clone());
                         }
                     } else {
-                        if ui
+                        let gloss_edit_resp = ui
                             .add(
                                 egui::TextEdit::singleline(&mut gloss_edit)
                                     .desired_width(width)
                                     .frame(false)
                                     .text_color(text_color),
-                            )
-                            .changed()
-                        {
+                            );
+                        
+                        let gloss_edit_resp = if !comment.is_empty() {
+                            gloss_edit_resp.on_hover_text(&comment)
+                        } else {
+                            gloss_edit_resp
+                        };
+
+                        if gloss_edit_resp.changed() {
                             vocabulary.insert(token.original.clone(), gloss_edit.clone());
                             action = UiAction::Changed;
                         }
@@ -289,7 +326,11 @@ fn render_token_column(
 
             let layout_job =
                 create_highlighted_layout(&token.original, highlight, token_font_id, text_color);
-            let label_resp = ui.add(egui::Label::new(layout_job).sense(egui::Sense::click()));
+            let mut label_resp = ui.add(egui::Label::new(layout_job).sense(egui::Sense::click()));
+
+            if !comment.is_empty() {
+                label_resp = label_resp.on_hover_text(&comment);
+            }
 
             if dictionary_mode {
                 if label_resp.clicked() {

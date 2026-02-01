@@ -120,6 +120,7 @@ impl DecryptionApp {
         let use_custom_font = self.project.font_path.is_some();
         let filter_text = self.filter_text.as_str();
         let dictionary_mode = self.dictionary_mode;
+        let vocabulary_comments = self.project.vocabulary_comments.clone();
 
         let Project {
             segments,
@@ -145,6 +146,7 @@ impl DecryptionApp {
                                 ui,
                                 segment,
                                 vocabulary,
+                                &vocabulary_comments,
                                 seg_idx + 1,
                                 highlight,
                                 dictionary_mode,

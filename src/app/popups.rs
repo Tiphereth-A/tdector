@@ -304,7 +304,10 @@ impl DecryptionApp {
                 for &idx in indices {
                     if let Some(seg) = self.project.segments.get(idx) {
                         ui.horizontal(|ui| {
-                            ui.label(format!("[{}]", idx + 1));
+                            let label_resp = ui.label(format!("[{}]", idx + 1));
+                            if !seg.comment.is_empty() {
+                                label_resp.on_hover_text(&seg.comment);
+                            }
                             ui.vertical(|ui| {
                                 let scroll_id = match popup_id {
                                     Some(id) => egui::Id::new(id).with(idx),
@@ -321,6 +324,7 @@ impl DecryptionApp {
                                             ui,
                                             &seg.tokens,
                                             &self.project.vocabulary,
+                                            &self.project.vocabulary_comments,
                                             highlight,
                                             self.project.font_path.is_some(),
                                         ) {
@@ -363,7 +367,7 @@ impl DecryptionApp {
                     if let Some(seg) = self.project.segments.get(*idx) {
                         ui.group(|ui| {
                             ui.horizontal(|ui| {
-                                ui.label(
+                                let label_resp = ui.label(
                                     egui::RichText::new(format!(
                                         "[{}] (Score: {:.2})",
                                         idx + 1,
@@ -371,6 +375,9 @@ impl DecryptionApp {
                                     ))
                                     .strong(),
                                 );
+                                if !seg.comment.is_empty() {
+                                    label_resp.on_hover_text(&seg.comment);
+                                }
                             });
 
                             let scroll_id = match popup_id {
@@ -385,6 +392,7 @@ impl DecryptionApp {
                                         ui,
                                         &seg.tokens,
                                         &self.project.vocabulary,
+                                        &self.project.vocabulary_comments,
                                         None,
                                         self.project.font_path.is_some(),
                                     ) {

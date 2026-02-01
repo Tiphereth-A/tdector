@@ -29,6 +29,10 @@ use std::collections::HashMap;
 pub struct Token {
     /// The original text of this token.
     pub original: String,
+    /// Optional comment for this token (stored at runtime, not in JSON).
+    #[serde(skip)]
+    #[allow(dead_code)]
+    pub comment: String,
 }
 
 /// A text segment containing tokens and its translation.
@@ -43,6 +47,9 @@ pub struct Segment {
     pub tokens: Vec<Token>,
     /// The translation of this segment.
     pub translation: String,
+    /// Optional comment for this segment (stored at runtime, not in JSON).
+    #[serde(skip)]
+    pub comment: String,
 }
 
 /// The main project data structure used during runtime operations.
@@ -61,6 +68,8 @@ pub struct Project {
     pub font_path: Option<String>,
     /// Vocabulary map: maps each word to its gloss (meaning).
     pub vocabulary: HashMap<String, String>,
+    /// Comments map: maps each word to its comment.
+    pub vocabulary_comments: HashMap<String, String>,
     /// All text segments in the project.
     pub segments: Vec<Segment>,
 }
@@ -72,6 +81,9 @@ pub struct VocabEntry {
     pub word: String,
     /// The meaning (gloss) of the word.
     pub meaning: String,
+    /// Optional comment for the word.
+    #[serde(default)]
+    pub comment: String,
 }
 
 /// A sentence entry optimized for serialization.
@@ -84,6 +96,9 @@ pub struct SavedSentence {
     pub words: Vec<usize>,
     /// The translation for this sentence.
     pub meaning: String,
+    /// Optional comment for the sentence.
+    #[serde(default)]
+    pub comment: String,
 }
 
 /// Space-optimized project format for JSON serialization.

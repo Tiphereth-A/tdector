@@ -123,6 +123,7 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
                 line.split_whitespace()
                     .map(|s| Token {
                         original: s.to_string(),
+                        comment: String::new(),
                     })
                     .collect()
             } else {
@@ -130,6 +131,7 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
                     .filter(|c| !c.is_whitespace())
                     .map(|c| Token {
                         original: c.to_string(),
+                        comment: String::new(),
                     })
                     .collect()
             };
@@ -140,6 +142,7 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
                 Some(Segment {
                     tokens,
                     translation: String::new(),
+                    comment: String::new(),
                 })
             }
         })
@@ -215,12 +218,14 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
                         }
                         Token {
                             original: tok.original,
+                            comment: String::new(),
                         }
                     })
                     .collect();
                 Segment {
                     tokens,
                     translation: seg.translation,
+                    comment: String::new(),
                 }
             })
             .collect();
@@ -229,6 +234,7 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
             project_name: legacy.project_name,
             font_path: None,
             vocabulary,
+            vocabulary_comments: HashMap::new(),
             segments,
         });
     }
@@ -260,6 +266,12 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
         .map(|entry| (entry.word.clone(), entry.meaning.clone()))
         .collect();
 
+    let vocabulary_comments: HashMap<String, String> = saved
+        .vocabulary
+        .iter()
+        .map(|entry| (entry.word.clone(), entry.comment.clone()))
+        .collect();
+
     let segments: Option<Vec<Segment>> = saved
         .sentences
         .into_iter()
@@ -270,6 +282,7 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
                 .map(|&idx| {
                     saved.vocabulary.get(idx).map(|entry| Token {
                         original: entry.word.clone(),
+                        comment: entry.comment.clone(),
                     })
                 })
                 .collect();
@@ -277,6 +290,7 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
             tokens.map(|tokens| Segment {
                 tokens,
                 translation: sentence.meaning,
+                comment: sentence.comment,
             })
         })
         .collect();
@@ -289,6 +303,7 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
         project_name: saved.project_name,
         font_path,
         vocabulary: vocabulary_map,
+        vocabulary_comments,
         segments: segments?,
     })
 }
@@ -370,6 +385,7 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
         vocabulary.push(VocabEntry {
             word: word.clone(),
             meaning,
+            comment: String::new(),
         });
     }
 
@@ -395,6 +411,7 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
             Ok(SavedSentence {
                 words,
                 meaning: segment.translation.clone(),
+                comment: segment.comment.clone(),
             })
         })
         .collect::<Result<Vec<SavedSentence>, String>>()?;

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "project_name": "example_with_comments",
+  "vocabulary": [
+    {
+      "word": "hello",
+      "meaning": "greeting",
+      "comment": "Informal way to greet someone"
+    },
+    {
+      "word": "world",
+      "meaning": "earth",
+      "comment": "The planet we live on"
+    },
+    {
+      "word": "good",
+      "meaning": "positive quality",
+      "comment": "Opposite of bad"
+    },
+    {
+      "word": "morning",
+      "meaning": "early part of day",
+      "comment": "Time from sunrise to noon"
+    }
+  ],
+  "sentences": [
+    {
+      "words": [0, 1],
+      "meaning": "A greeting to the world",
+      "comment": "Classic programming example sentence"
+    },
+    {
+      "words": [3, 2],
+      "meaning": "Good morning",
+      "comment": "Traditional morning greeting"
+    }
+  ]
+}
