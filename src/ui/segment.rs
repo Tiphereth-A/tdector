@@ -100,10 +100,11 @@ pub fn render_clickable_tokens(
                     resp = resp.on_hover_text(comment);
                 }
 
+                // Left click: apply filter; Right click: show context menu
                 if resp.clicked() {
-                    clicked_action = Some(UiAction::ShowDefinition(Arc::from(text.as_str())));
+                    clicked_action = Some(UiAction::Filter(Arc::from(text.as_str())));
                 } else if resp.secondary_clicked() {
-                    clicked_action = Some(UiAction::ShowReference(Arc::from(text.as_str())));
+                    clicked_action = Some(UiAction::ShowWordMenu(Arc::from(text.as_str()), 0));
                 }
             });
         }
@@ -190,7 +191,9 @@ pub fn render_segment(
 
         ui.add_space(constants::SEGMENT_VERTICAL_SPACING);
 
-        if render_translation_box(ui, segment, highlight) && action == UiAction::None {
+        // Don't highlight editbox content when filter is enabled
+        let editbox_highlight = None;
+        if render_translation_box(ui, segment, editbox_highlight) && action == UiAction::None {
             action = UiAction::Changed;
         }
     });
@@ -305,21 +308,11 @@ fn render_token_column(
                     let label_resp = ui.add_sized(
                         egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
                         egui::Label::new(egui::RichText::new(&gloss).color(text_color))
-                            .truncate()
-                            .sense(egui::Sense::click()),
+                            .truncate(),
                     );
 
-                    let label_resp = if !comment.is_empty() {
-                        label_resp.on_hover_text(&comment)
-                    } else {
-                        label_resp
-                    };
-
-                    if label_resp.clicked() {
-                        action = UiAction::ShowDefinition(Arc::from(token.original.as_str()));
-                    } else if label_resp.secondary_clicked() {
-                        action =
-                            UiAction::ShowWordMenu(Arc::from(token.original.as_str()), word_idx);
+                    if !comment.is_empty() {
+                        label_resp.on_hover_text(&comment);
                     }
                 });
 

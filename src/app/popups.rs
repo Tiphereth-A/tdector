@@ -347,7 +347,7 @@ impl DecryptionApp {
                                             highlight,
                                             self.project.font_path.is_some(),
                                         ) {
-                                            self.handle_ui_action(action, popup_request);
+                                            self.handle_ui_action(ui, action, popup_request);
                                         }
                                     });
                                 ui.add_space(5.0);
@@ -415,7 +415,7 @@ impl DecryptionApp {
                                         None,
                                         self.project.font_path.is_some(),
                                     ) {
-                                        self.handle_ui_action(action, popup_request);
+                                        self.handle_ui_action(ui, action, popup_request);
                                     }
                                 });
                             ui.add_space(5.0);
@@ -764,7 +764,7 @@ impl DecryptionApp {
         }
     }
 
-    fn handle_ui_action(&self, action: ui::UiAction, popup_request: &mut Option<PopupRequest>) {
+    fn handle_ui_action(&self, ui: &egui::Ui, action: ui::UiAction, popup_request: &mut Option<PopupRequest>) {
         match action {
             ui::UiAction::ShowDefinition(word) => {
                 *popup_request = Some(PopupRequest::Dictionary(
@@ -779,13 +779,17 @@ impl DecryptionApp {
                 ));
             }
             ui::UiAction::ShowWordMenu(word, word_idx) => {
-                // Use default position for word menu in pinned popups
+                // Get actual cursor position for word menu in popup windows
+                let cursor_pos = ui.ctx().input(|i| i.pointer.interact_pos()).unwrap_or_default();
                 *popup_request = Some(PopupRequest::WordMenu(
                     word.to_string(),
                     0,
                     word_idx,
-                    egui::Pos2::ZERO,
+                    cursor_pos,
                 ));
+            }
+            ui::UiAction::Filter(text) => {
+                *popup_request = Some(PopupRequest::Filter(text.to_string()));
             }
             _ => {}
         }

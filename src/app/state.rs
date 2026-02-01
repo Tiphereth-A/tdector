@@ -57,6 +57,7 @@ pub enum PopupRequest {
     Dictionary(String, PopupMode),
     Similar(usize),
     WordMenu(String, usize, usize, egui::Pos2), // word, sentence_idx, word_idx, cursor_pos
+    Filter(String),
 }
 
 /// Main application state container.

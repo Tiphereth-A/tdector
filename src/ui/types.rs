@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 /// User interaction result from UI components.
 #[derive(Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum UiAction {
     None,
     Changed,
