@@ -140,6 +140,9 @@ impl eframe::App for DecryptionApp {
                 PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
                     self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));
                 }
+                PopupRequest::SentenceMenu(sentence_idx, cursor_pos) => {
+                    self.sentence_menu_popup = Some((sentence_idx, cursor_pos));
+                }
                 PopupRequest::Filter(text) => {
                     self.filter_text = text;
                     self.current_page = 0;
@@ -165,6 +168,9 @@ impl eframe::App for DecryptionApp {
                 }
                 PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
                     self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));
+                }
+                PopupRequest::SentenceMenu(sentence_idx, cursor_pos) => {
+                    self.sentence_menu_popup = Some((sentence_idx, cursor_pos));
                 }
                 PopupRequest::Filter(text) => {
                     self.filter_text = text;

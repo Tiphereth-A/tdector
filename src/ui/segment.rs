@@ -115,7 +115,7 @@ pub fn render_clickable_tokens(
 /// Renders a complete segment with tokens, glosses, and translation.
 ///
 /// Displays a segment as a group containing:
-/// - A clickable segment number/title that triggers similarity search
+/// - A segment number/title with right-click sentence menu
 /// - A horizontal scrollable area with all tokens and their editable glosses
 /// - An editable translation text box at the bottom
 ///
@@ -151,10 +151,8 @@ pub fn render_segment(
             title_resp = title_resp.on_hover_text(&segment.comment);
         }
 
-        title_resp = title_resp.on_hover_text("Click to verify similar sentences");
-
-        if title_resp.clicked() {
-            action = UiAction::ShowSimilar(seg_num);
+        if title_resp.secondary_clicked() {
+            action = UiAction::ShowSentenceMenu(seg_num - 1);
         }
 
         egui::ScrollArea::horizontal()
@@ -180,6 +178,7 @@ pub fn render_segment(
                             UiAction::ShowSimilar(_) => action = token_action,
                             UiAction::ShowDefinition(_) => action = token_action,
                             UiAction::ShowReference(_) => action = token_action,
+                            UiAction::ShowSentenceMenu(_) => action = token_action,
                             UiAction::ShowWordMenu(word, _) => {
                                 action = UiAction::ShowWordMenu(word, word_idx);
                             }

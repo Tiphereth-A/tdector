@@ -14,6 +14,8 @@ pub enum UiAction {
     ShowDefinition(Arc<str>),
     /// Show reference sentences containing a word.
     ShowReference(Arc<str>),
+    /// Show context menu for a sentence (right-click).
+    ShowSentenceMenu(usize), // segment index
     /// Show context menu for a word (right-click).
     ShowWordMenu(Arc<str>, usize), // word, word_idx_in_segment
 }

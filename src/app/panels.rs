@@ -168,6 +168,12 @@ impl DecryptionApp {
                                         cursor_pos,
                                     ));
                                 }
+                                ui::UiAction::ShowSentenceMenu(segment_idx) => {
+                                    let cursor_pos =
+                                        ctx.input(|i| i.pointer.interact_pos()).unwrap_or_default();
+                                    *popup_request =
+                                        Some(PopupRequest::SentenceMenu(segment_idx, cursor_pos));
+                                }
                                 ui::UiAction::ShowSimilar(seg_num) => {
                                     *popup_request = Some(PopupRequest::Similar(seg_num - 1));
                                 }

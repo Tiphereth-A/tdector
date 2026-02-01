@@ -51,6 +51,24 @@ pub struct WordFormationDialog {
     pub rule_search_text: String,
 }
 
+/// Dialog state for updating word comments.
+#[derive(Debug, Clone)]
+pub struct UpdateCommentDialog {
+    /// The word being commented on
+    pub word: String,
+    /// The comment text (editable by user)
+    pub comment: String,
+}
+
+/// Dialog state for updating sentence comments.
+#[derive(Debug, Clone)]
+pub struct UpdateSentenceCommentDialog {
+    /// Index of the sentence/segment being commented on
+    pub segment_idx: usize,
+    /// The comment text (editable by user)
+    pub comment: String,
+}
+
 /// Request to open a specific type of popup window.
 ///
 /// Used to decouple popup triggering from popup rendering, allowing the
@@ -59,6 +77,7 @@ pub enum PopupRequest {
     Dictionary(String, PopupMode),
     Similar(usize),
     WordMenu(String, usize, usize, egui::Pos2), // word, sentence_idx, word_idx, cursor_pos
+    SentenceMenu(usize, egui::Pos2),            // sentence_idx, cursor_pos
     Filter(String),
 }
 
@@ -89,8 +108,11 @@ pub struct DecryptionApp {
     pub(super) reference_popup: Option<String>,
     pub(super) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
     pub(super) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>, // word, sentence_idx, word_idx, cursor_pos
+    pub(super) sentence_menu_popup: Option<(usize, egui::Pos2)>, // sentence_idx, cursor_pos
     pub(super) word_formation_popup: Option<WordFormationDialog>,
     pub(super) new_formation_rule_popup: Option<NewFormationRuleDialog>,
+    pub(super) update_comment_popup: Option<UpdateCommentDialog>,
+    pub(super) update_sentence_comment_popup: Option<UpdateSentenceCommentDialog>,
     pub(super) pinned_popups: Vec<PinnedPopup>,
     pub(super) next_popup_id: u64,
 
@@ -122,8 +144,11 @@ impl Default for DecryptionApp {
             reference_popup: None,
             similar_popup: None,
             word_menu_popup: None,
+            sentence_menu_popup: None,
             word_formation_popup: None,
             new_formation_rule_popup: None,
+            update_comment_popup: None,
+            update_sentence_comment_popup: None,
             pinned_popups: Vec::new(),
             next_popup_id: 0,
             cached_filtered_indices: Vec::new(),

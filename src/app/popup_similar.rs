@@ -5,8 +5,8 @@ use eframe::egui;
 use crate::ui::{self, constants};
 
 use super::actions::PinnedPopup;
-use super::popup_utils::{create_pinned_title_string, create_popup_title};
 use super::state::{DecryptionApp, PopupRequest};
+use crate::ui::popup_utils::{create_pinned_title_string, create_popup_title};
 
 impl DecryptionApp {
     pub(super) fn render_similar_popup(

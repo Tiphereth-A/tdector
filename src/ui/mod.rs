@@ -5,6 +5,7 @@ pub mod constants;
 pub(crate) mod highlight;
 mod menu;
 mod pagination;
+pub mod popup_utils;
 mod segment;
 mod types;
 
