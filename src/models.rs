@@ -148,10 +148,10 @@ pub struct Token {
     /// Stored at runtime only, used for saving the correct WordRef.
     #[serde(skip)]
     pub base_word: Option<String>,
-    /// Index of formation rule applied to this token (if any), stored at runtime only.
-    /// This tracks that the token's text is the result of applying a formation rule.
+    /// Indices of formation rules applied to this token (if any), stored at runtime only.
+    /// This tracks that the token's text is the result of applying one or more formation rules.
     #[serde(skip)]
-    pub formation_rule_idx: Option<usize>,
+    pub formation_rule_indices: Vec<usize>,
 }
 
 /// A text segment containing tokens and its translation.
@@ -211,14 +211,14 @@ pub struct VocabEntry {
 ///
 /// This allows sentences to reference either:
 /// - A single vocabulary entry (simple case): `4`
-/// - A vocabulary entry with a formation rule applied: `[vocab_idx, rule_idx]`
-///   where vocab_idx references the base word and rule_idx is the formation rule to apply
+/// - A vocabulary entry with formation rules applied: `[vocab_idx, rule_idx, ...]`
+///   where vocab_idx references the base word and following indices are formation rules to apply in order
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum WordRef {
     /// Single vocabulary index
     Single(usize),
-    /// Word with applied formation rule: [vocabulary_index, rule_index]
+    /// Word with applied formation rules: [vocabulary_index, rule_index, ...]
     WithRule(Vec<usize>),
 }
 
@@ -231,11 +231,11 @@ impl WordRef {
         }
     }
 
-    /// Get the rule index if this word has a formation rule applied
-    pub fn rule_index(&self) -> Option<usize> {
+    /// Get the rule indices if this word has formation rules applied
+    pub fn rule_indices(&self) -> Vec<usize> {
         match self {
-            WordRef::Single(_) => None,
-            WordRef::WithRule(indices) => indices.get(1).copied(),
+            WordRef::Single(_) => Vec::new(),
+            WordRef::WithRule(indices) => indices.iter().skip(1).copied().collect(),
         }
     }
 }

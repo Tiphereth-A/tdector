@@ -186,9 +186,19 @@ impl DecryptionApp {
                 for &idx in indices {
                     if let Some(seg) = self.project.segments.get(idx) {
                         ui.horizontal(|ui| {
-                            let label_resp = ui.label(format!("[{}]", idx + 1));
+                            let mut label_resp = ui.add(
+                                egui::Label::new(format!("[{}]", idx + 1))
+                                    .sense(egui::Sense::click()),
+                            );
                             if !seg.comment.is_empty() {
-                                label_resp.on_hover_text(&seg.comment);
+                                label_resp = label_resp.on_hover_text(&seg.comment);
+                            }
+                            if label_resp.secondary_clicked() {
+                                let cursor_pos = ui
+                                    .ctx()
+                                    .input(|i| i.pointer.interact_pos())
+                                    .unwrap_or_default();
+                                *popup_request = Some(PopupRequest::SentenceMenu(idx, cursor_pos));
                             }
                             ui.vertical(|ui| {
                                 let scroll_id = match popup_id {
@@ -209,6 +219,7 @@ impl DecryptionApp {
                                             &self.project.vocabulary_comments,
                                             highlight,
                                             self.project.font_path.is_some(),
+                                            &self.project.formation_rules,
                                         ) {
                                             self.handle_ui_action(ui, action, popup_request);
                                         }

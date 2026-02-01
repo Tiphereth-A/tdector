@@ -125,7 +125,7 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
                         original: s.to_string(),
                         comment: String::new(),
                         base_word: None,
-                        formation_rule_idx: None,
+                        formation_rule_indices: Vec::new(),
                     })
                     .collect()
             } else {
@@ -135,7 +135,7 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
                         original: c.to_string(),
                         comment: String::new(),
                         base_word: None,
-                        formation_rule_idx: None,
+                        formation_rule_indices: Vec::new(),
                     })
                     .collect()
             };
@@ -224,7 +224,7 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
                             original: tok.original,
                             comment: String::new(),
                             base_word: None,
-                            formation_rule_idx: None,
+                            formation_rule_indices: Vec::new(),
                         }
                     })
                     .collect();
@@ -289,28 +289,26 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
                 .map(|word_ref| {
                     let vocab_idx = word_ref.vocab_index()?;
                     let base_word = saved.vocabulary.get(vocab_idx)?;
-                    let formation_rule_idx = word_ref.rule_index();
+                    let formation_rule_indices = word_ref.rule_indices();
 
-                    let original = match formation_rule_idx {
-                        Some(rule_idx) => {
-                            // Apply the formation rule to transform the word
-                            match saved.formation.get(rule_idx) {
-                                Some(rule) => {
-                                    // Try to apply the rule; if it fails, use the original word
-                                    rule.apply(&base_word.word)
-                                        .unwrap_or_else(|_| base_word.word.clone())
-                                }
-                                None => base_word.word.clone(),
+                    let original = if formation_rule_indices.is_empty() {
+                        base_word.word.clone()
+                    } else {
+                        // Apply formation rules in order; if any fails, keep the last successful word
+                        let mut current = base_word.word.clone();
+                        for rule_idx in &formation_rule_indices {
+                            if let Some(rule) = saved.formation.get(*rule_idx) {
+                                current = rule.apply(&current).unwrap_or(current);
                             }
                         }
-                        None => base_word.word.clone(),
+                        current
                     };
 
                     Some(Token {
                         original,
                         comment: base_word.comment.clone(),
                         base_word: Some(base_word.word.clone()),
-                        formation_rule_idx,
+                        formation_rule_indices,
                     })
                 })
                 .collect();
@@ -406,7 +404,7 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
     for segment in &project.segments {
         for token in &segment.tokens {
             // Only add words to vocabulary if they're not derived from a formation rule
-            if token.formation_rule_idx.is_none() {
+            if token.formation_rule_indices.is_empty() {
                 all_words.insert(&token.original);
             }
         }
@@ -471,16 +469,22 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
                         },
                     )?;
 
-                    let word_ref = if let Some(rule_idx) = t.formation_rule_idx {
-                        // Map the old rule index to the new sorted index
-                        let new_rule_idx = old_to_new_idx.get(&rule_idx).copied().ok_or_else(
-                            || {
-                                format!(
-                                    "Formation rule index {rule_idx} not found in mapping during save"
-                                )
-                            },
-                        )?;
-                        crate::models::WordRef::WithRule(vec![vocab_idx, new_rule_idx])
+                    let word_ref = if !t.formation_rule_indices.is_empty() {
+                        let mut indices = Vec::with_capacity(1 + t.formation_rule_indices.len());
+                        indices.push(vocab_idx);
+
+                        for rule_idx in &t.formation_rule_indices {
+                            let new_rule_idx = old_to_new_idx.get(rule_idx).copied().ok_or_else(
+                                || {
+                                    format!(
+                                        "Formation rule index {rule_idx} not found in mapping during save"
+                                    )
+                                },
+                            )?;
+                            indices.push(new_rule_idx);
+                        }
+
+                        crate::models::WordRef::WithRule(indices)
                     } else {
                         crate::models::WordRef::Single(vocab_idx)
                     };

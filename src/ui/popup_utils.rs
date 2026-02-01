@@ -37,7 +37,7 @@ pub fn create_popup_title(prefix: &str, word: &str, use_custom_font: bool) -> eg
         );
         egui::WidgetText::LayoutJob(std::sync::Arc::new(job))
     } else {
-        egui::WidgetText::from(format!("{}{}", prefix, word))
+        egui::WidgetText::from(format!("{prefix}{word}"))
     }
 }
 
@@ -66,6 +66,6 @@ pub fn create_pinned_title_string(prefix: &str, word: &str, use_custom_font: boo
         );
         job.text
     } else {
-        format!("{}{}", prefix, word)
+        format!("{prefix}{word}")
     }
 }

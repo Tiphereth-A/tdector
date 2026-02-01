@@ -27,6 +27,16 @@ impl DecryptionApp {
                     };
                     let has_custom_font = self.project.font_path.is_some();
 
+                    if dialog.preview.is_empty()
+                        && let (Some(rule_idx), false) =
+                            (dialog.selected_rule, dialog.base_word.is_empty())
+                        && let Some(rule) = self.project.formation_rules.get(rule_idx)
+                    {
+                        dialog.preview = rule
+                            .apply(&dialog.base_word)
+                            .unwrap_or_else(|_| dialog.base_word.clone());
+                    }
+
                     ui.label("Base word:");
                     let old_base_word = dialog.base_word.clone();
                     if has_custom_font {
@@ -42,15 +52,15 @@ impl DecryptionApp {
                     if dialog.base_word != old_base_word {
                         dialog.related_words = self.find_related_words(&dialog.base_word);
                         // Update preview if a rule is already selected
-                        if let Some(rule_idx) = dialog.selected_rule {
-                            if let Some(rule) = self.project.formation_rules.get(rule_idx) {
-                                if !dialog.base_word.is_empty() {
-                                    dialog.preview = rule
-                                        .apply(&dialog.base_word)
-                                        .unwrap_or_else(|_| dialog.base_word.clone());
-                                } else {
-                                    dialog.preview.clear();
-                                }
+                        if let Some(rule_idx) = dialog.selected_rule
+                            && let Some(rule) = self.project.formation_rules.get(rule_idx)
+                        {
+                            if !dialog.base_word.is_empty() {
+                                dialog.preview = rule
+                                    .apply(&dialog.base_word)
+                                    .unwrap_or_else(|_| dialog.base_word.clone());
+                            } else {
+                                dialog.preview.clear();
                             }
                         }
                     }
@@ -69,12 +79,12 @@ impl DecryptionApp {
                                 dialog.base_word = word;
                                 dialog.related_words.clear(); // Hide suggestions after selection
                                 // Update preview if a rule is already selected
-                                if let Some(rule_idx) = dialog.selected_rule {
-                                    if let Some(rule) = self.project.formation_rules.get(rule_idx) {
-                                        dialog.preview = rule
-                                            .apply(&dialog.base_word)
-                                            .unwrap_or_else(|_| dialog.base_word.clone());
-                                    }
+                                if let Some(rule_idx) = dialog.selected_rule
+                                    && let Some(rule) = self.project.formation_rules.get(rule_idx)
+                                {
+                                    dialog.preview = rule
+                                        .apply(&dialog.base_word)
+                                        .unwrap_or_else(|_| dialog.base_word.clone());
                                 }
                             }
                         }
@@ -171,34 +181,47 @@ impl DecryptionApp {
 
                         // Check if preview matches the selected word
                         let matches = dialog.preview == dialog.selected_word;
-                        // Check if base word exists in vocabulary
-                        let base_word_exists =
+                        // Check if base word exists in vocabulary or as an existing derived word
+                        let base_word_in_vocab =
                             self.project.vocabulary.contains_key(&dialog.base_word);
+                        let base_word_in_derived = self
+                            .project
+                            .segments
+                            .iter()
+                            .flat_map(|seg| seg.tokens.iter())
+                            .any(|token| {
+                                token.original == dialog.base_word
+                                    && !token.formation_rule_indices.is_empty()
+                            });
+                        let base_word_exists = base_word_in_vocab || base_word_in_derived;
 
                         if !base_word_exists {
                             ui.horizontal_wrapped(|ui| {
                                 ui.colored_label(egui::Color32::RED, "Base word ");
                                 let word_text = if has_custom_font {
-                                    egui::RichText::new(&format!("'{}'", dialog.base_word))
+                                    egui::RichText::new(format!("'{}'", dialog.base_word))
                                         .font(custom_font_id.clone())
                                         .color(egui::Color32::RED)
                                 } else {
-                                    egui::RichText::new(&format!("'{}'", dialog.base_word))
+                                    egui::RichText::new(format!("'{}'", dialog.base_word))
                                         .color(egui::Color32::RED)
                                 };
                                 ui.label(word_text);
-                                ui.colored_label(egui::Color32::RED, " not found in vocabulary");
+                                ui.colored_label(
+                                    egui::Color32::RED,
+                                    " not found in vocabulary or derived words",
+                                );
                             });
                         }
                         if !matches {
                             ui.horizontal_wrapped(|ui| {
                                 ui.colored_label(egui::Color32::RED, "Preview ");
                                 let preview_styled = if has_custom_font {
-                                    egui::RichText::new(&format!("'{}'", dialog.preview))
+                                    egui::RichText::new(format!("'{}'", dialog.preview))
                                         .font(custom_font_id.clone())
                                         .color(egui::Color32::RED)
                                 } else {
-                                    egui::RichText::new(&format!("'{}'", dialog.preview))
+                                    egui::RichText::new(format!("'{}'", dialog.preview))
                                         .color(egui::Color32::RED)
                                 };
                                 ui.label(preview_styled);
@@ -207,11 +230,11 @@ impl DecryptionApp {
                                     " does not match selected word ",
                                 );
                                 let word_styled = if has_custom_font {
-                                    egui::RichText::new(&format!("'{}'", dialog.selected_word))
+                                    egui::RichText::new(format!("'{}'", dialog.selected_word))
                                         .font(custom_font_id.clone())
                                         .color(egui::Color32::RED)
                                 } else {
-                                    egui::RichText::new(&format!("'{}'", dialog.selected_word))
+                                    egui::RichText::new(format!("'{}'", dialog.selected_word))
                                         .color(egui::Color32::RED)
                                 };
                                 ui.label(word_styled);
@@ -231,8 +254,36 @@ impl DecryptionApp {
                         {
                             // Apply the rule to all matching tokens across sentences
                             if let Some(rule_idx) = dialog.selected_rule {
-                                let base_word_for_lookup = dialog.base_word.clone();
-                                if self.project.vocabulary.contains_key(&base_word_for_lookup) {
+                                let mut base_word_for_lookup = dialog.base_word.clone();
+                                let mut base_rule_chain: Vec<usize> = Vec::new();
+
+                                if !base_word_in_vocab
+                                    && let Some((resolved_base, chain)) = self
+                                        .project
+                                        .segments
+                                        .iter()
+                                        .flat_map(|seg| seg.tokens.iter())
+                                        .find(|token| {
+                                            token.original == dialog.base_word
+                                                && !token.formation_rule_indices.is_empty()
+                                        })
+                                        .map(|token| {
+                                            (
+                                                token
+                                                    .base_word
+                                                    .clone()
+                                                    .unwrap_or_else(|| token.original.clone()),
+                                                token.formation_rule_indices.clone(),
+                                            )
+                                        })
+                                {
+                                    base_word_for_lookup = resolved_base;
+                                    base_rule_chain = chain;
+                                }
+
+                                if base_word_exists
+                                    && self.project.vocabulary.contains_key(&base_word_for_lookup)
+                                {
                                     // Remove the original derived word from vocabulary
                                     // since it's now represented as a formation of the base word
                                     let original_word = dialog.selected_word.clone();
@@ -245,7 +296,9 @@ impl DecryptionApp {
                                                 // Update token with formation rule info
                                                 token.base_word =
                                                     Some(base_word_for_lookup.clone());
-                                                token.formation_rule_idx = Some(rule_idx);
+                                                let mut new_chain = base_rule_chain.clone();
+                                                new_chain.push(rule_idx);
+                                                token.formation_rule_indices = new_chain;
                                                 token.original = dialog.preview.clone();
                                             }
                                         }
@@ -352,7 +405,7 @@ impl DecryptionApp {
                             "{}\nlet result = transform(\"{}\");\nresult",
                             dialog.command, dialog.test_word
                         ));
-                        dialog.preview = result.unwrap_or_else(|e| format!("Error: {}", e));
+                        dialog.preview = result.unwrap_or_else(|e| format!("Error: {e}"));
                     }
 
                     if !dialog.test_word.is_empty() && !dialog.preview.is_empty() {

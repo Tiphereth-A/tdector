@@ -17,14 +17,18 @@ impl DecryptionApp {
         {
             let mut should_close = false;
 
-            // Check if the word already has a formation rule applied
-            let has_formation_rule = self
+            let (existing_base_word, existing_rule_idx) = self
                 .project
                 .segments
                 .get(sentence_idx)
                 .and_then(|seg| seg.tokens.get(word_idx))
-                .map(|token| token.formation_rule_idx.is_some())
-                .unwrap_or(false);
+                .map(|token| {
+                    (
+                        token.base_word.clone(),
+                        token.formation_rule_indices.last().copied(),
+                    )
+                })
+                .unwrap_or((None, None));
 
             egui::Area::new(egui::Id::new("word_context_menu"))
                 .order(egui::Order::Foreground)
@@ -55,18 +59,15 @@ impl DecryptionApp {
                         }
 
                         if ui
-                            .add_enabled(
-                                !has_formation_rule,
-                                egui::Button::new("Set Word Formation Rule").frame(false),
-                            )
+                            .add(egui::Button::new("Set Word Formation Rule").frame(false))
                             .clicked()
                         {
                             // Open word formation rule dialog
                             self.word_formation_popup = Some(WordFormationDialog {
                                 selected_word: word.clone(),
-                                base_word: String::new(),
+                                base_word: existing_base_word.unwrap_or_default(),
                                 preview: String::new(),
-                                selected_rule: None,
+                                selected_rule: existing_rule_idx,
                                 related_words: Vec::new(),
                                 rule_search_text: String::new(),
                             });

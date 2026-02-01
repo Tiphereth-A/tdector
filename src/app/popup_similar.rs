@@ -73,16 +73,27 @@ impl DecryptionApp {
                     if let Some(seg) = self.project.segments.get(*idx) {
                         ui.group(|ui| {
                             ui.horizontal(|ui| {
-                                let label_resp = ui.label(
-                                    egui::RichText::new(format!(
-                                        "[{}] (Score: {:.2})",
-                                        idx + 1,
-                                        score
-                                    ))
-                                    .strong(),
+                                let mut label_resp = ui.add(
+                                    egui::Label::new(
+                                        egui::RichText::new(format!(
+                                            "[{}] (Score: {:.2})",
+                                            idx + 1,
+                                            score
+                                        ))
+                                        .strong(),
+                                    )
+                                    .sense(egui::Sense::click()),
                                 );
                                 if !seg.comment.is_empty() {
-                                    label_resp.on_hover_text(&seg.comment);
+                                    label_resp = label_resp.on_hover_text(&seg.comment);
+                                }
+                                if label_resp.secondary_clicked() {
+                                    let cursor_pos = ui
+                                        .ctx()
+                                        .input(|i| i.pointer.interact_pos())
+                                        .unwrap_or_default();
+                                    *popup_request =
+                                        Some(PopupRequest::SentenceMenu(*idx, cursor_pos));
                                 }
                             });
 
@@ -101,6 +112,7 @@ impl DecryptionApp {
                                         &self.project.vocabulary_comments,
                                         None,
                                         self.project.font_path.is_some(),
+                                        &self.project.formation_rules,
                                     ) {
                                         self.handle_ui_action(ui, action, popup_request);
                                     }

@@ -40,6 +40,7 @@ pub fn render_clickable_tokens(
     vocabulary_comments: &HashMap<String, String>,
     highlight_token: Option<&str>,
     use_custom_font: bool,
+    formation_rules: &[crate::models::FormationRule],
 ) -> Option<UiAction> {
     let mut clicked_action = None;
 
@@ -62,14 +63,32 @@ pub fn render_clickable_tokens(
             let is_highlighted = highlight_token.is_some_and(|h| h == token.original);
             let text = &token.original;
 
-            let gloss = vocabulary.get(text).map(|s| s.as_str()).unwrap_or("");
+            let base_word = token.base_word.as_ref().unwrap_or(text);
+            let base_gloss = vocabulary.get(base_word).map(|s| s.as_str()).unwrap_or("");
             let comment = vocabulary_comments
-                .get(text)
+                .get(base_word)
                 .map(|s| s.as_str())
                 .unwrap_or("");
 
+            let gloss_owned = if !token.formation_rule_indices.is_empty() {
+                let descriptions: Vec<String> = token
+                    .formation_rule_indices
+                    .iter()
+                    .filter_map(|idx| formation_rules.get(*idx))
+                    .map(|rule| rule.description.clone())
+                    .collect();
+
+                if descriptions.is_empty() {
+                    base_gloss.to_string()
+                } else {
+                    format!("{base_gloss} ({})", descriptions.join(" + "))
+                }
+            } else {
+                base_gloss.to_string()
+            };
+
             ui.vertical(|ui| {
-                let gloss_richtext = egui::RichText::new(gloss)
+                let gloss_richtext = egui::RichText::new(gloss_owned)
                     .family(egui::FontFamily::Proportional)
                     .size(constants::GLOSS_FONT_SIZE)
                     .color(text_color);
@@ -231,15 +250,19 @@ fn render_token_column(
         .unwrap_or_default();
 
     // Construct gloss with formation rule description if applicable
-    let (gloss, comment, has_rule) = if let Some(rule_idx) = token.formation_rule_idx {
-        if let Some(rule) = formation_rules.get(rule_idx) {
-            let combined_gloss = format!(
-                "{base_gloss} ({rule_description})",
-                rule_description = rule.description
-            );
-            (combined_gloss, base_comment, true)
-        } else {
+    let (gloss, comment, has_rule) = if !token.formation_rule_indices.is_empty() {
+        let descriptions: Vec<String> = token
+            .formation_rule_indices
+            .iter()
+            .filter_map(|idx| formation_rules.get(*idx))
+            .map(|rule| rule.description.clone())
+            .collect();
+
+        if descriptions.is_empty() {
             (base_gloss, base_comment, false)
+        } else {
+            let combined_gloss = format!("{base_gloss} ({})", descriptions.join("; "));
+            (combined_gloss, base_comment, true)
         }
     } else {
         (base_gloss, base_comment, false)
