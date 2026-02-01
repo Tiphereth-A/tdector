@@ -2,8 +2,8 @@
 
 use eframe::egui;
 
-use crate::ui::popup_utils::create_popup_title;
 use super::state::DecryptionApp;
+use crate::ui::popup_utils::create_popup_title;
 
 impl DecryptionApp {
     pub(super) fn render_word_formation_popup(&mut self, ctx: &egui::Context) {
@@ -177,15 +177,8 @@ impl DecryptionApp {
                             )
                             .clicked()
                         {
-                            // Apply the rule to the sentence
-                            if let Some(rule_idx) = dialog.selected_rule
-                                && dialog.sentence_idx < self.project.segments.len()
-                                && dialog.word_idx
-                                    < self.project.segments[dialog.sentence_idx].tokens.len()
-                            {
-                                let token = &mut self.project.segments[dialog.sentence_idx].tokens
-                                    [dialog.word_idx];
-                                // Find the vocabulary index of the base word
+                            // Apply the rule to all matching tokens across sentences
+                            if let Some(rule_idx) = dialog.selected_rule {
                                 let base_word_for_lookup = dialog.base_word.clone();
                                 if self.project.vocabulary.contains_key(&base_word_for_lookup) {
                                     // Remove the original derived word from vocabulary
@@ -194,12 +187,24 @@ impl DecryptionApp {
                                     self.project.vocabulary.remove(&original_word);
                                     self.project.vocabulary_comments.remove(&original_word);
 
-                                    // Update token with formation rule info
-                                    token.base_word = Some(base_word_for_lookup);
-                                    token.formation_rule_idx = Some(rule_idx);
-                                    token.original = dialog.preview.clone();
-                                    // Mark as dirty
+                                    for segment in &mut self.project.segments {
+                                        for token in &mut segment.tokens {
+                                            if token.original == original_word {
+                                                // Update token with formation rule info
+                                                token.base_word =
+                                                    Some(base_word_for_lookup.clone());
+                                                token.formation_rule_idx = Some(rule_idx);
+                                                token.original = dialog.preview.clone();
+                                            }
+                                        }
+                                    }
+
+                                    // Mark as dirty and refresh caches
                                     self.update_dirty_status(true, ctx);
+                                    self.filter_dirty = true;
+                                    self.lookups_dirty = true;
+                                    self.tfidf_dirty = true;
+                                    self.tfidf_cache.invalidate();
                                 }
                             }
                             should_keep = false;

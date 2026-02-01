@@ -12,7 +12,7 @@ impl DecryptionApp {
         ctx: &egui::Context,
         popup_request: &mut Option<PopupRequest>,
     ) {
-        if let Some((word, sentence_idx, word_idx, cursor_pos)) =
+        if let Some((word, _sentence_idx, _word_idx, cursor_pos)) =
             self.word_menu_popup.as_ref().cloned()
         {
             let mut should_close = false;
@@ -51,8 +51,6 @@ impl DecryptionApp {
                         {
                             // Open word formation rule dialog
                             self.word_formation_popup = Some(WordFormationDialog {
-                                sentence_idx,
-                                word_idx,
                                 selected_word: word.clone(),
                                 base_word: String::new(),
                                 preview: String::new(),

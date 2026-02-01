@@ -33,10 +33,6 @@ pub struct NewFormationRuleDialog {
 /// Dialog state for applying word formation rules.
 #[derive(Debug, Clone)]
 pub struct WordFormationDialog {
-    /// Index of the sentence containing the word
-    pub sentence_idx: usize,
-    /// Index of the word in the sentence
-    pub word_idx: usize,
     /// The selected word to apply rule to
     pub selected_word: String,
     /// Base word to transform (editable by user)
