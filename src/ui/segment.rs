@@ -307,8 +307,7 @@ fn render_token_column(
                     // In dictionary mode (always enabled), glosses are now read-only
                     let label_resp = ui.add_sized(
                         egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
-                        egui::Label::new(egui::RichText::new(&gloss).color(text_color))
-                            .truncate(),
+                        egui::Label::new(egui::RichText::new(&gloss).color(text_color)).truncate(),
                     );
 
                     if !comment.is_empty() {

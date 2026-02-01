@@ -2,615 +2,354 @@
   "version": 1,
   "project_name": "epigraph",
   "formation": [],
-  "vocabulary": [
-    {
-      "word": "󰀇󰀖󰀳󰀬",
-      "meaning": "Bakuzhati",
-      "comment": ""
-    },
-    {
-      "word": "󰀉󰀔",
-      "meaning": "gift",
-      "comment": ""
-    },
-    {
-      "word": "󰀉󰀞",
-      "meaning": "child",
-      "comment": ""
-    },
-    {
-      "word": "󰀉󰀡",
-      "meaning": "not",
-      "comment": ""
-    },
-    {
-      "word": "󰀊󰀕",
-      "meaning": "god",
-      "comment": ""
-    },
-    {
-      "word": "󰀍󰀐󰀚",
-      "meaning": "contact",
-      "comment": ""
-    },
-    {
-      "word": "󰀎󰀗",
-      "meaning": "prepare",
-      "comment": ""
-    },
-    {
-      "word": "󰀎󰀩",
-      "meaning": "home",
-      "comment": ""
-    },
-    {
-      "word": "󰀑󰀲",
-      "meaning": "new",
-      "comment": ""
-    },
-    {
-      "word": "󰀑󰀳",
-      "meaning": "village",
-      "comment": ""
-    },
-    {
-      "word": "󰀒󰀊󰀐",
-      "meaning": "of",
-      "comment": ""
-    },
-    {
-      "word": "󰀒󰀥",
-      "meaning": "for",
-      "comment": ""
-    },
-    {
-      "word": "󰀓󰀥",
-      "meaning": "tribe",
-      "comment": ""
-    },
-    {
-      "word": "󰀔󰀖",
-      "meaning": "must",
-      "comment": ""
-    },
-    {
-      "word": "󰀔󰀨󰀴",
-      "meaning": "diamond",
-      "comment": ""
-    },
-    {
-      "word": "󰀖󰀙",
-      "meaning": "hide",
-      "comment": ""
-    },
-    {
-      "word": "󰀖󰀲󰀝",
-      "meaning": "planet",
-      "comment": ""
-    },
-    {
-      "word": "󰀗󰀖󰀍󰀲",
-      "meaning": "Makudovu",
-      "comment": ""
-    },
-    {
-      "word": "󰀘󰀛",
-      "meaning": "next",
-      "comment": ""
-    },
-    {
-      "word": "󰀙󰀕󰀉",
-      "meaning": "work",
-      "comment": ""
-    },
-    {
-      "word": "󰀚󰀢󰀶",
-      "meaning": "temple",
-      "comment": ""
-    },
-    {
-      "word": "󰀛󰀤",
-      "meaning": "Nari",
-      "comment": ""
-    },
-    {
-      "word": "󰀞󰀛",
-      "meaning": "language",
-      "comment": ""
-    },
-    {
-      "word": "󰀞󰀝",
-      "meaning": "other",
-      "comment": ""
-    },
-    {
-      "word": "󰀟󰀑󰀗󰀦",
-      "meaning": "Pagomaru",
-      "comment": ""
-    },
-    {
-      "word": "󰀟󰀯󰀲",
-      "meaning": "create",
-      "comment": ""
-    },
-    {
-      "word": "󰀠󰀈󰀳",
-      "meaning": "king",
-      "comment": ""
-    },
-    {
-      "word": "󰀡󰀦",
-      "meaning": "above",
-      "comment": ""
-    },
-    {
-      "word": "󰀢󰀖",
-      "meaning": "great",
-      "comment": ""
-    },
-    {
-      "word": "󰀢󰀚󰀊",
-      "meaning": "speak",
-      "comment": ""
-    },
-    {
-      "word": "󰀢󰀯",
-      "meaning": "power",
-      "comment": ""
-    },
-    {
-      "word": "󰀣󰀱󰀕",
-      "meaning": "stop",
-      "comment": ""
-    },
-    {
-      "word": "󰀥󰀜",
-      "meaning": "this",
-      "comment": ""
-    },
-    {
-      "word": "󰀦󰀢",
-      "meaning": "fear",
-      "comment": ""
-    },
-    {
-      "word": "󰀨󰀓",
-      "meaning": "wise",
-      "comment": ""
-    },
-    {
-      "word": "󰀩󰀓󰀝",
-      "meaning": "commence",
-      "comment": ""
-    },
-    {
-      "word": "󰀩󰀤",
-      "meaning": "Shori",
-      "comment": ""
-    },
-    {
-      "word": "󰀩󰀥󰀩",
-      "meaning": "teach",
-      "comment": ""
-    },
-    {
-      "word": "󰀪󰀉󰀝",
-      "meaning": "we",
-      "comment": ""
-    },
-    {
-      "word": "󰀪󰀣󰀈",
-      "meaning": "Shurabi",
-      "comment": ""
-    },
-    {
-      "word": "󰀪󰀫",
-      "meaning": "old",
-      "comment": ""
-    },
-    {
-      "word": "󰀪󰀶",
-      "meaning": "from",
-      "comment": ""
-    },
-    {
-      "word": "󰀮󰀔",
-      "meaning": "all",
-      "comment": ""
-    },
-    {
-      "word": "󰀯󰀉",
-      "meaning": "conque",
-      "comment": ""
-    },
-    {
-      "word": "󰀱",
-      "meaning": "and",
-      "comment": ""
-    },
-    {
-      "word": "󰀲󰀊",
-      "meaning": "man",
-      "comment": ""
-    },
-    {
-      "word": "󰀲󰀯󰀟",
-      "meaning": "create",
-      "comment": ""
-    },
-    {
-      "word": "󰀲󰀴",
-      "meaning": "fight",
-      "comment": ""
-    },
-    {
-      "word": "󰀳󰀔",
-      "meaning": "with",
-      "comment": ""
-    },
-    {
-      "word": "󰀳󰀫",
-      "meaning": "by",
-      "comment": ""
-    },
-    {
-      "word": "󰀵󰀩",
-      "meaning": "our",
-      "comment": ""
-    },
-    {
-      "word": "󰀶󰀓󰀬",
-      "meaning": "offering",
-      "comment": ""
-    },
-    {
-      "word": "󰀶󰀰",
-      "meaning": "is",
-      "comment": ""
-    },
-    {
-      "word": "󰀶󰀲",
-      "meaning": "stone",
-      "comment": ""
-    },
-    {
-      "word": "󰀸󰀗",
-      "meaning": "first",
-      "comment": ""
-    },
-    {
-      "word": "󰀸󰀹",
-      "meaning": "12",
-      "comment": ""
-    },
-    {
-      "word": "󰀸󰀻󰀷󰀻",
-      "meaning": "1404",
-      "comment": ""
-    },
-    {
-      "word": "󰀸󰁀󰀿",
-      "meaning": "198",
-      "comment": ""
-    },
-    {
-      "word": "󰀹󰀽󰀼󰀾",
-      "meaning": "2657",
-      "comment": ""
-    },
-    {
-      "word": "󰀹󰀽󰀾",
-      "meaning": "267",
-      "comment": ""
-    },
-    {
-      "word": "󰀺󰀸󰀼󰀻",
-      "meaning": "3154",
-      "comment": ""
-    },
-    {
-      "word": "󰀻",
-      "meaning": "4",
-      "comment": ""
-    },
-    {
-      "word": "󰀼󰀿󰀸󰀸",
-      "meaning": "5811",
-      "comment": ""
-    },
-    {
-      "word": "󰀼󰁀󰀾",
-      "meaning": "597",
-      "comment": ""
-    },
-    {
-      "word": "󰀾",
-      "meaning": "7",
-      "comment": ""
-    },
-    {
-      "word": "󰀿󰀷󰀾",
-      "meaning": "807",
-      "comment": ""
-    }
-  ],
-  "sentences": [
-    {
-      "words": [
-        55,
-        4,
-        42,
-        27,
-        64,
-        16,
-        46,
-        44,
-        45,
-        42,
-        48,
-        61,
-        12
-      ],
-      "meaning": "12 Gods All Above Created 7 Planets And Occupied All With Four Tribes.",
-      "comment": ""
-    },
-    {
-      "words": [
-        4,
-        45,
-        37,
-        1,
-        28,
-        22
-      ],
-      "meaning": "Gods Taught Men The Gift Of Great Language.",
-      "comment": ""
-    },
-    {
-      "words": [
-        54,
-        4,
-        51,
-        33,
-        1,
-        45,
-        30,
-        30,
-        46,
-        41,
-        42,
-        12,
-        37,
-        23,
-        22
-      ],
-      "meaning": "The First God Feared The Offering. The Gift Creates Men Very Powerful From All The Other Languages The Tribes Taught.",
-      "comment": ""
-    },
-    {
-      "words": [
-        12,
-        3,
-        48,
-        4,
-        29,
-        44,
-        42,
-        23,
-        12,
-        47
-      ],
-      "meaning": "Tribes Not Speak With Gods And All Other Tribes Fight",
-      "comment": ""
-    },
-    {
-      "words": [
-        21,
-        50,
-        19,
-        49,
-        23,
-        13,
-        35,
-        38,
-        33,
-        38,
-        52,
-        43,
-        49,
-        23,
-        12,
-        32,
-        13,
-        3,
-        28,
-        19,
-        31,
-        40,
-        22,
-        29,
-        44,
-        4,
-        5
-      ],
-      "meaning": "Nari: By Others Our Work Must Continue. We Fear We Will Conquered By Other Tribe. This Must Not Stop Great Work. Speak Old Language And Contact Gods.",
-      "comment": ""
-    },
-    {
-      "words": [
-        28,
-        26,
-        0,
-        2,
-        10,
-        17
-      ],
-      "meaning": "Great King Bakuzhati Child Of Makudovu",
-      "comment": ""
-    },
-    {
-      "words": [
-        18,
-        10,
-        21
-      ],
-      "meaning": "Next Of Nari",
-      "comment": ""
-    },
-    {
-      "words": [
-        45,
-        4,
-        29
-      ],
-      "meaning": "Man Speak Gods (Speaker To The Gods)",
-      "comment": ""
-    },
-    {
-      "words": [
-        26,
-        10,
-        26
-      ],
-      "meaning": "King Of Kings",
-      "comment": ""
-    },
-    {
-      "words": [
-        34,
-        45,
-        26,
-        37,
-        42,
-        12,
-        22
-      ],
-      "meaning": "Wise Men Taught King All Tribes Languages",
-      "comment": ""
-    },
-    {
-      "words": [
-        22,
-        10,
-        4,
-        46,
-        8
-      ],
-      "meaning": "Created New Language of Gods",
-      "comment": ""
-    },
-    {
-      "words": [
-        28,
-        20,
-        10,
-        24,
-        46,
-        11,
-        4,
-        29
-      ],
-      "meaning": "Created Great Temple Of Pagomaru For Speaking To Gods",
-      "comment": ""
-    },
-    {
-      "words": [
-        23,
-        12,
-        36,
-        6,
-        47,
-        28,
-        14,
-        15
-      ],
-      "meaning": "Other Tribe Shori Prepared To Fight. Hide The Great Diamond",
-      "comment": ""
-    },
-    {
-      "words": [
-        60,
-        32,
-        58,
-        44,
-        62,
-        25
-      ],
-      "meaning": "3154 + 2657 = 5811",
-      "comment": ""
-    },
-    {
-      "words": [
-        63,
-        32,
-        65,
-        44,
-        56,
-        25
-      ],
-      "meaning": "597 + 807 = 1404",
-      "comment": ""
-    },
-    {
-      "words": [
-        39,
-        11,
-        32,
-        53,
-        29
-      ],
-      "meaning": "Shurabi Spoke For This Stone",
-      "comment": ""
-    },
-    {
-      "words": [
-        8,
-        21,
-        40,
-        21,
-        16,
-        45,
-        2,
-        7,
-        9,
-        14
-      ],
-      "meaning": "",
-      "comment": ""
-    },
-    {
-      "words": [
-        4,
-        7
-      ],
-      "meaning": "",
-      "comment": ""
-    },
-    {
-      "words": [
-        40,
-        40,
-        4
-      ],
-      "meaning": "",
-      "comment": ""
-    },
-    {
-      "words": [
-        59,
-        57
-      ],
-      "meaning": "",
-      "comment": ""
-    },
-    {
-      "words": [
-        18,
-        34,
-        45
-      ],
-      "meaning": "",
-      "comment": ""
-    }
-  ]
+  "vocabulary": [{
+    "word": "󰀇󰀖󰀳󰀬",
+    "meaning": "Bakuzhati",
+    "comment": ""
+  }, {
+    "word": "󰀉󰀔",
+    "meaning": "gift",
+    "comment": ""
+  }, {
+    "word": "󰀉󰀞",
+    "meaning": "child",
+    "comment": ""
+  }, {
+    "word": "󰀉󰀡",
+    "meaning": "not",
+    "comment": ""
+  }, {
+    "word": "󰀊󰀕",
+    "meaning": "god",
+    "comment": ""
+  }, {
+    "word": "󰀍󰀐󰀚",
+    "meaning": "contact",
+    "comment": ""
+  }, {
+    "word": "󰀎󰀗",
+    "meaning": "prepare",
+    "comment": ""
+  }, {
+    "word": "󰀎󰀩",
+    "meaning": "home",
+    "comment": ""
+  }, {
+    "word": "󰀑󰀲",
+    "meaning": "new",
+    "comment": ""
+  }, {
+    "word": "󰀑󰀳",
+    "meaning": "village",
+    "comment": ""
+  }, {
+    "word": "󰀒󰀊󰀐",
+    "meaning": "of",
+    "comment": ""
+  }, {
+    "word": "󰀒󰀥",
+    "meaning": "for",
+    "comment": ""
+  }, {
+    "word": "󰀓󰀥",
+    "meaning": "tribe",
+    "comment": ""
+  }, {
+    "word": "󰀔󰀖",
+    "meaning": "must",
+    "comment": ""
+  }, {
+    "word": "󰀔󰀨󰀴",
+    "meaning": "diamond",
+    "comment": ""
+  }, {
+    "word": "󰀖󰀙",
+    "meaning": "hide",
+    "comment": ""
+  }, {
+    "word": "󰀖󰀲󰀝",
+    "meaning": "planet",
+    "comment": ""
+  }, {
+    "word": "󰀗󰀖󰀍󰀲",
+    "meaning": "Makudovu",
+    "comment": ""
+  }, {
+    "word": "󰀘󰀛",
+    "meaning": "next",
+    "comment": ""
+  }, {
+    "word": "󰀙󰀕󰀉",
+    "meaning": "work",
+    "comment": ""
+  }, {
+    "word": "󰀚󰀢󰀶",
+    "meaning": "temple",
+    "comment": ""
+  }, {
+    "word": "󰀛󰀤",
+    "meaning": "Nari",
+    "comment": ""
+  }, {
+    "word": "󰀞󰀛",
+    "meaning": "language",
+    "comment": ""
+  }, {
+    "word": "󰀞󰀝",
+    "meaning": "other",
+    "comment": ""
+  }, {
+    "word": "󰀟󰀑󰀗󰀦",
+    "meaning": "Pagomaru",
+    "comment": ""
+  }, {
+    "word": "󰀟󰀯󰀲",
+    "meaning": "create",
+    "comment": ""
+  }, {
+    "word": "󰀠󰀈󰀳",
+    "meaning": "king",
+    "comment": ""
+  }, {
+    "word": "󰀡󰀦",
+    "meaning": "above",
+    "comment": ""
+  }, {
+    "word": "󰀢󰀖",
+    "meaning": "great",
+    "comment": ""
+  }, {
+    "word": "󰀢󰀚󰀊",
+    "meaning": "speak",
+    "comment": ""
+  }, {
+    "word": "󰀢󰀯",
+    "meaning": "power",
+    "comment": ""
+  }, {
+    "word": "󰀣󰀱󰀕",
+    "meaning": "stop",
+    "comment": ""
+  }, {
+    "word": "󰀥󰀜",
+    "meaning": "this",
+    "comment": ""
+  }, {
+    "word": "󰀦󰀢",
+    "meaning": "fear",
+    "comment": ""
+  }, {
+    "word": "󰀨󰀓",
+    "meaning": "wise",
+    "comment": ""
+  }, {
+    "word": "󰀩󰀓󰀝",
+    "meaning": "commence",
+    "comment": ""
+  }, {
+    "word": "󰀩󰀤",
+    "meaning": "Shori",
+    "comment": ""
+  }, {
+    "word": "󰀩󰀥󰀩",
+    "meaning": "teach",
+    "comment": ""
+  }, {
+    "word": "󰀪󰀉󰀝",
+    "meaning": "we",
+    "comment": ""
+  }, {
+    "word": "󰀪󰀣󰀈",
+    "meaning": "Shurabi",
+    "comment": ""
+  }, {
+    "word": "󰀪󰀫",
+    "meaning": "old",
+    "comment": ""
+  }, {
+    "word": "󰀪󰀶",
+    "meaning": "from",
+    "comment": ""
+  }, {
+    "word": "󰀮󰀔",
+    "meaning": "all",
+    "comment": ""
+  }, {
+    "word": "󰀯󰀉",
+    "meaning": "conque",
+    "comment": ""
+  }, {
+    "word": "󰀱",
+    "meaning": "and",
+    "comment": ""
+  }, {
+    "word": "󰀲󰀊",
+    "meaning": "man",
+    "comment": ""
+  }, {
+    "word": "󰀲󰀯󰀟",
+    "meaning": "create",
+    "comment": ""
+  }, {
+    "word": "󰀲󰀴",
+    "meaning": "fight",
+    "comment": ""
+  }, {
+    "word": "󰀳󰀔",
+    "meaning": "with",
+    "comment": ""
+  }, {
+    "word": "󰀳󰀫",
+    "meaning": "by",
+    "comment": ""
+  }, {
+    "word": "󰀵󰀩",
+    "meaning": "our",
+    "comment": ""
+  }, {
+    "word": "󰀶󰀓󰀬",
+    "meaning": "offering",
+    "comment": ""
+  }, {
+    "word": "󰀶󰀰",
+    "meaning": "is",
+    "comment": ""
+  }, {
+    "word": "󰀶󰀲",
+    "meaning": "stone",
+    "comment": ""
+  }, {
+    "word": "󰀸󰀗",
+    "meaning": "first",
+    "comment": ""
+  }, {
+    "word": "󰀸󰀹",
+    "meaning": "12",
+    "comment": ""
+  }, {
+    "word": "󰀸󰀻󰀷󰀻",
+    "meaning": "1404",
+    "comment": ""
+  }, {
+    "word": "󰀸󰁀󰀿",
+    "meaning": "198",
+    "comment": ""
+  }, {
+    "word": "󰀹󰀽󰀼󰀾",
+    "meaning": "2657",
+    "comment": ""
+  }, {
+    "word": "󰀹󰀽󰀾",
+    "meaning": "267",
+    "comment": ""
+  }, {
+    "word": "󰀺󰀸󰀼󰀻",
+    "meaning": "3154",
+    "comment": ""
+  }, {
+    "word": "󰀻",
+    "meaning": "4",
+    "comment": ""
+  }, {
+    "word": "󰀼󰀿󰀸󰀸",
+    "meaning": "5811",
+    "comment": ""
+  }, {
+    "word": "󰀼󰁀󰀾",
+    "meaning": "597",
+    "comment": ""
+  }, {
+    "word": "󰀾",
+    "meaning": "7",
+    "comment": ""
+  }, {
+    "word": "󰀿󰀷󰀾",
+    "meaning": "807",
+    "comment": ""
+  }],
+  "sentences": [{
+    "words": [55, 4, 42, 27, 64, 16, 46, 44, 45, 42, 48, 61, 12],
+    "meaning": "12 Gods All Above Created 7 Planets And Occupied All With Four Tribes.",
+    "comment": ""
+  }, {
+    "words": [4, 45, 37, 1, 28, 22],
+    "meaning": "Gods Taught Men The Gift Of Great Language.",
+    "comment": ""
+  }, {
+    "words": [54, 4, 51, 33, 1, 45, 30, 30, 46, 41, 42, 12, 37, 23, 22],
+    "meaning": "The First God Feared The Offering. The Gift Creates Men Very Powerful From All The Other Languages The Tribes Taught.",
+    "comment": ""
+  }, {
+    "words": [12, 3, 48, 4, 29, 44, 42, 23, 12, 47],
+    "meaning": "Tribes Not Speak With Gods And All Other Tribes Fight",
+    "comment": ""
+  }, {
+    "words": [21, 50, 19, 49, 23, 13, 35, 38, 33, 38, 52, 43, 49, 23, 12, 32, 13, 3, 28, 19, 31, 40, 22, 29, 44, 4, 5],
+    "meaning": "Nari: By Others Our Work Must Continue. We Fear We Will Conquered By Other Tribe. This Must Not Stop Great Work. Speak Old Language And Contact Gods.",
+    "comment": ""
+  }, {
+    "words": [28, 26, 0, 2, 10, 17],
+    "meaning": "Great King Bakuzhati Child Of Makudovu",
+    "comment": ""
+  }, {
+    "words": [18, 10, 21],
+    "meaning": "Next Of Nari",
+    "comment": ""
+  }, {
+    "words": [45, 4, 29],
+    "meaning": "Man Speak Gods (Speaker To The Gods)",
+    "comment": ""
+  }, {
+    "words": [26, 10, 26],
+    "meaning": "King Of Kings",
+    "comment": ""
+  }, {
+    "words": [34, 45, 26, 37, 42, 12, 22],
+    "meaning": "Wise Men Taught King All Tribes Languages",
+    "comment": ""
+  }, {
+    "words": [22, 10, 4, 46, 8],
+    "meaning": "Created New Language of Gods",
+    "comment": ""
+  }, {
+    "words": [28, 20, 10, 24, 46, 11, 4, 29],
+    "meaning": "Created Great Temple Of Pagomaru For Speaking To Gods",
+    "comment": ""
+  }, {
+    "words": [23, 12, 36, 6, 47, 28, 14, 15],
+    "meaning": "Other Tribe Shori Prepared To Fight. Hide The Great Diamond",
+    "comment": ""
+  }, {
+    "words": [60, 32, 58, 44, 62, 25],
+    "meaning": "3154 + 2657 = 5811",
+    "comment": ""
+  }, {
+    "words": [63, 32, 65, 44, 56, 25],
+    "meaning": "597 + 807 = 1404",
+    "comment": ""
+  }, {
+    "words": [39, 11, 32, 53, 29],
+    "meaning": "Shurabi Spoke For This Stone",
+    "comment": ""
+  }, {
+    "words": [8, 21, 40, 21, 16, 45, 2, 7, 9, 14],
+    "meaning": "",
+    "comment": ""
+  }, {
+    "words": [4, 7],
+    "meaning": "",
+    "comment": ""
+  }, {
+    "words": [40, 40, 4],
+    "meaning": "",
+    "comment": ""
+  }, {
+    "words": [59, 57],
+    "meaning": "",
+    "comment": ""
+  }, {
+    "words": [18, 34, 45],
+    "meaning": "",
+    "comment": ""
+  }]
 }

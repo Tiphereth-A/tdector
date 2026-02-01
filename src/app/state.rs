@@ -47,6 +47,8 @@ pub struct WordFormationDialog {
     pub selected_rule: Option<usize>,
     /// Top 5 related words from vocabulary for suggestions
     pub related_words: Vec<String>,
+    /// Search text for filtering formation rules
+    pub rule_search_text: String,
 }
 
 /// Request to open a specific type of popup window.

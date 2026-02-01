@@ -485,6 +485,7 @@ impl DecryptionApp {
                                 preview: String::new(),
                                 selected_rule: None,
                                 related_words: Vec::new(),
+                                rule_search_text: String::new(),
                             });
                             should_close = true;
                         }
@@ -536,22 +537,76 @@ impl DecryptionApp {
                     ui.separator();
                     ui.label("Formation rules:");
 
-                    for (rule_idx, rule) in self.project.formation_rules.iter().enumerate() {
-                        let is_selected = dialog.selected_rule == Some(rule_idx);
+                    // Get the currently selected rule description
+                    let selected_text = dialog
+                        .selected_rule
+                        .and_then(|idx| self.project.formation_rules.get(idx))
+                        .map(|rule| {
+                            let type_prefix = match rule.rule_type {
+                                crate::models::FormationType::Derivation => "[D]",
+                                crate::models::FormationType::Inflection => "[I]",
+                                crate::models::FormationType::Nonmorphological => "[N]",
+                            };
+                            format!("{} {}", type_prefix, rule.description)
+                        })
+                        .unwrap_or_default();
 
-                        if ui
-                            .selectable_label(is_selected, &rule.description)
-                            .clicked()
-                        {
-                            dialog.selected_rule = Some(rule_idx);
-                            // Update preview
-                            if !dialog.base_word.is_empty() {
-                                dialog.preview = rule
-                                    .apply(&dialog.base_word)
-                                    .unwrap_or_else(|_| dialog.base_word.clone());
+                    let combo_id = egui::Id::new("formation_rule_combo");
+                    egui::ComboBox::from_id_salt(combo_id)
+                        .selected_text(selected_text)
+                        .show_ui(ui, |ui| {
+                            // Show search text edit at the top with focus request
+                            let text_edit_id = ui.id().with("search");
+                            let text_edit_response = ui.add(
+                                egui::TextEdit::singleline(&mut dialog.rule_search_text)
+                                    .id(text_edit_id),
+                            );
+
+                            // Auto-focus the text edit when combo opens
+                            if !text_edit_response.has_focus() {
+                                ui.memory_mut(|mem| mem.request_focus(text_edit_id));
                             }
-                        }
-                    }
+
+                            ui.separator();
+
+                            let search_lower = dialog.rule_search_text.to_lowercase();
+                            let mut any_visible = false;
+
+                            for (rule_idx, rule) in self.project.formation_rules.iter().enumerate()
+                            {
+                                // Filter rules based on search text
+                                if search_lower.is_empty()
+                                    || rule.description.to_lowercase().contains(&search_lower)
+                                {
+                                    any_visible = true;
+                                    let is_selected = dialog.selected_rule == Some(rule_idx);
+
+                                    let type_prefix = match rule.rule_type {
+                                        crate::models::FormationType::Derivation => "[D]",
+                                        crate::models::FormationType::Inflection => "[I]",
+                                        crate::models::FormationType::Nonmorphological => "[N]",
+                                    };
+                                    let display_text =
+                                        format!("{} {}", type_prefix, rule.description);
+
+                                    if ui.selectable_label(is_selected, display_text).clicked() {
+                                        dialog.selected_rule = Some(rule_idx);
+                                        // Update preview
+                                        if !dialog.base_word.is_empty() {
+                                            dialog.preview = rule
+                                                .apply(&dialog.base_word)
+                                                .unwrap_or_else(|_| dialog.base_word.clone());
+                                        }
+                                        // Clear search after selection
+                                        dialog.rule_search_text.clear();
+                                    }
+                                }
+                            }
+
+                            if !any_visible && !dialog.rule_search_text.is_empty() {
+                                ui.label(egui::RichText::new("No matching rules").weak());
+                            }
+                        });
 
                     ui.separator();
 
@@ -764,7 +819,12 @@ impl DecryptionApp {
         }
     }
 
-    fn handle_ui_action(&self, ui: &egui::Ui, action: ui::UiAction, popup_request: &mut Option<PopupRequest>) {
+    fn handle_ui_action(
+        &self,
+        ui: &egui::Ui,
+        action: ui::UiAction,
+        popup_request: &mut Option<PopupRequest>,
+    ) {
         match action {
             ui::UiAction::ShowDefinition(word) => {
                 *popup_request = Some(PopupRequest::Dictionary(
@@ -780,7 +840,10 @@ impl DecryptionApp {
             }
             ui::UiAction::ShowWordMenu(word, word_idx) => {
                 // Get actual cursor position for word menu in popup windows
-                let cursor_pos = ui.ctx().input(|i| i.pointer.interact_pos()).unwrap_or_default();
+                let cursor_pos = ui
+                    .ctx()
+                    .input(|i| i.pointer.interact_pos())
+                    .unwrap_or_default();
                 *popup_request = Some(PopupRequest::WordMenu(
                     word.to_string(),
                     0,

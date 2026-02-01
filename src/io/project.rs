@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::models::{Project, SavedProject, SavedSentence, Segment, Token, VocabEntry};
 
@@ -359,10 +359,16 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
 /// - Disk space issues
 pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
     let saved_project = convert_to_saved_project(project)?;
-    let content = serde_json::to_string_pretty(&saved_project)
+
+    // Use custom formatter
+    let formatter = super::json_formatter::Formatter::new();
+    let mut buf = Vec::new();
+    let mut serializer = serde_json::Serializer::with_formatter(&mut buf, formatter);
+    saved_project
+        .serialize(&mut serializer)
         .map_err(|e| format!("Failed to serialize project: {e}"))?;
 
-    fs::write(path, &content).map_err(|e| format!("Failed to save file: {e}"))?;
+    fs::write(path, &buf).map_err(|e| format!("Failed to save file: {e}"))?;
 
     Ok(())
 }
@@ -414,10 +420,15 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
         word_to_idx.insert(word.as_str(), idx);
 
         let meaning = project.vocabulary.get(word).cloned().unwrap_or_default();
+        let comment = project
+            .vocabulary_comments
+            .get(word)
+            .cloned()
+            .unwrap_or_default();
         vocabulary.push(VocabEntry {
             word: word.clone(),
             meaning,
-            comment: String::new(),
+            comment,
         });
     }
 
@@ -457,10 +468,17 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
         })
         .collect::<Result<Vec<SavedSentence>, String>>()?;
 
+    // Sort formation rules by type (Derivation, Inflection, Nonmorphological) then by description
+    let mut sorted_formation_rules = project.formation_rules.clone();
+    sorted_formation_rules.sort_by(|a, b| match a.rule_type.cmp(&b.rule_type) {
+        std::cmp::Ordering::Equal => a.description.cmp(&b.description),
+        other => other,
+    });
+
     Ok(SavedProject {
         version: 1,
         project_name: project.project_name.clone(),
-        formation: project.formation_rules.clone(),
+        formation: sorted_formation_rules,
         vocabulary,
         sentences,
     })

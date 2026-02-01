@@ -1,6 +1,7 @@
 //! File I/O: dialogs, project persistence, and export.
 
 mod dialogs;
+mod json_formatter;
 mod project;
 mod typst;
 
