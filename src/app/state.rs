@@ -72,8 +72,8 @@ pub struct UpdateSentenceCommentDialog {
 pub enum PopupRequest {
     Dictionary(String, PopupMode),
     Similar(usize),
-    WordMenu(String, usize, usize, egui::Pos2), // word, sentence_idx, word_idx, cursor_pos
-    SentenceMenu(usize, egui::Pos2),            // sentence_idx, cursor_pos
+    WordMenu(String, usize, usize, egui::Pos2),
+    SentenceMenu(usize, egui::Pos2),
     Filter(String),
 }
 
@@ -103,8 +103,8 @@ pub struct DecryptionApp {
     pub(super) definition_popup: Option<String>,
     pub(super) reference_popup: Option<String>,
     pub(super) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
-    pub(super) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>, // word, sentence_idx, word_idx, cursor_pos
-    pub(super) sentence_menu_popup: Option<(usize, egui::Pos2)>, // sentence_idx, cursor_pos
+    pub(super) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>,
+    pub(super) sentence_menu_popup: Option<(usize, egui::Pos2)>,
     pub(super) word_formation_popup: Option<WordFormationDialog>,
     pub(super) new_formation_rule_popup: Option<NewFormationRuleDialog>,
     pub(super) update_comment_popup: Option<UpdateCommentDialog>,

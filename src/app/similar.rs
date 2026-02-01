@@ -43,18 +43,19 @@ impl DecryptionApp {
             return;
         }
 
-        let documents: Vec<String> = self
-            .project
-            .segments
-            .iter()
-            .map(|seg| {
-                seg.tokens
-                    .iter()
-                    .map(|t| t.original.as_str())
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            })
-            .collect();
+        let mut documents: Vec<String> = Vec::with_capacity(self.project.segments.len());
+        for seg in &self.project.segments {
+            let estimated_len = seg.tokens.iter().map(|t| t.original.len()).sum::<usize>()
+                + seg.tokens.len().saturating_sub(1);
+            let mut doc = String::with_capacity(estimated_len);
+            for (idx, token) in seg.tokens.iter().enumerate() {
+                if idx > 0 {
+                    doc.push(' ');
+                }
+                doc.push_str(&token.original);
+            }
+            documents.push(doc);
+        }
 
         let tokenizer = Box::new(WhitespaceTokenizer::new());
         let mut vectorizer =
@@ -103,16 +104,17 @@ impl DecryptionApp {
             None => return,
         };
 
-        let target_vector = matrix.row(target_idx).into_owned();
+        let target_vector = matrix.row(target_idx);
 
-        let mut scores: Vec<(usize, f64)> = Vec::new();
+        let mut scores: Vec<(usize, f64)> =
+            Vec::with_capacity(self.project.segments.len().saturating_sub(1));
         for idx in 0..self.project.segments.len() {
             if idx == target_idx {
                 continue;
             }
 
             let doc_vector = matrix.row(idx);
-            match cosine_similarity(target_vector.view(), doc_vector) {
+            match cosine_similarity(target_vector, doc_vector) {
                 Ok(sim) => {
                     if sim > 0.0 {
                         scores.push((idx, sim));
@@ -122,8 +124,14 @@ impl DecryptionApp {
             }
         }
 
+        if scores.len() > 5 {
+            let nth = 5;
+            scores.select_nth_unstable_by(nth, |a, b| {
+                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+            });
+            scores.truncate(5);
+        }
         scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-        scores.truncate(5);
 
         self.similar_popup = Some((target_idx, scores));
     }

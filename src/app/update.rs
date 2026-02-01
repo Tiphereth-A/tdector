@@ -289,7 +289,6 @@ impl DecryptionApp {
             self.trigger_action(AppAction::Quit, ctx);
         }
         if do_add_word_formation_rule {
-            // Open dialog to create new word formation rule
             self.new_formation_rule_popup = Some(super::state::NewFormationRuleDialog {
                 description: String::new(),
                 rule_type: crate::models::FormationType::Derivation,

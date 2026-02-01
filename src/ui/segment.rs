@@ -119,7 +119,6 @@ pub fn render_clickable_tokens(
                     resp = resp.on_hover_text(comment);
                 }
 
-                // Left click: apply filter; Right click: show context menu
                 if resp.clicked() {
                     clicked_action = Some(UiAction::Filter(Arc::from(text.as_str())));
                 } else if resp.secondary_clicked() {
@@ -209,7 +208,6 @@ pub fn render_segment(
 
         ui.add_space(constants::SEGMENT_VERTICAL_SPACING);
 
-        // Don't highlight editbox content when filter is enabled
         let editbox_highlight = None;
         if render_translation_box(ui, segment, editbox_highlight) && action == UiAction::None {
             action = UiAction::Changed;
@@ -241,7 +239,6 @@ fn render_token_column(
     word_idx: usize,
     formation_rules: &[crate::models::FormationRule],
 ) -> UiAction {
-    // Get base word's gloss and comment
     let base_word = token.base_word.as_ref().unwrap_or(&token.original);
     let base_gloss = vocabulary.get(base_word).cloned().unwrap_or_default();
     let base_comment = vocabulary_comments
@@ -249,7 +246,6 @@ fn render_token_column(
         .cloned()
         .unwrap_or_default();
 
-    // Construct gloss with formation rule description if applicable
     let (gloss, comment, has_rule) = if !token.formation_rule_indices.is_empty() {
         let descriptions: Vec<String> = token
             .formation_rule_indices
@@ -326,14 +322,40 @@ fn render_token_column(
                 .inner_margin(constants::GLOSS_BOX_INNER_MARGIN)
                 .corner_radius(constants::GLOSS_BOX_ROUNDING)
                 .show(ui, |ui| {
-                    // In dictionary mode (always enabled), glosses are now read-only
-                    let label_resp = ui.add_sized(
-                        egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
-                        egui::Label::new(egui::RichText::new(&gloss).color(text_color)).truncate(),
-                    );
+                    if has_rule {
+                        // Tokens with formation rules show read-only combined gloss
+                        let label_resp = ui.add_sized(
+                            egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
+                            egui::Label::new(egui::RichText::new(&gloss).color(text_color))
+                                .truncate(),
+                        );
 
-                    if !comment.is_empty() {
-                        label_resp.on_hover_text(&comment);
+                        if !comment.is_empty() {
+                            label_resp.on_hover_text(&comment);
+                        }
+                    } else {
+                        // Regular tokens have editable gloss
+                        let lookup_word = base_word.clone();
+                        let mut current_gloss = vocabulary
+                            .get(&lookup_word)
+                            .cloned()
+                            .unwrap_or_default();
+
+                        let edit_resp = ui.add_sized(
+                            egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
+                            egui::TextEdit::singleline(&mut current_gloss)
+                                .text_color(text_color)
+                                .frame(false),
+                        );
+
+                        if edit_resp.changed() {
+                            vocabulary.insert(lookup_word, current_gloss);
+                            action = UiAction::Changed;
+                        }
+
+                        if !comment.is_empty() {
+                            edit_resp.on_hover_text(&comment);
+                        }
                     }
                 });
 
@@ -345,7 +367,6 @@ fn render_token_column(
                 label_resp = label_resp.on_hover_text(&comment);
             }
 
-            // Left click: apply filter; Right click: show context menu
             if label_resp.clicked() {
                 action = UiAction::Filter(Arc::from(token.original.as_str()));
             } else if label_resp.secondary_clicked() {

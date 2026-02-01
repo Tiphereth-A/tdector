@@ -16,7 +16,6 @@ impl DecryptionApp {
             .add(egui::Button::new("Update Comment").frame(false))
             .clicked()
         {
-            // Get current comment if it exists
             let current_comment = self
                 .project
                 .vocabulary_comments
@@ -54,7 +53,6 @@ impl DecryptionApp {
 
                     ui.horizontal(|ui| {
                         if ui.button("Save").clicked() {
-                            // Update or insert the comment
                             if dialog.comment.is_empty() {
                                 self.project.vocabulary_comments.remove(&dialog.word);
                             } else {
@@ -66,7 +64,6 @@ impl DecryptionApp {
                             should_close = true;
                         }
                         if ui.button("Cancel").clicked() {
-                            // Just close without saving
                             should_close = true;
                         }
                     });

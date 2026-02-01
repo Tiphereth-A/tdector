@@ -63,11 +63,10 @@ impl TfidfUpdateTracker {
             return false;
         }
 
-        // If more than 20% of segments changed, full rebuild is faster
         let total_changes =
             self.dirty_segments.len() + self.new_segments.len() + self.removed_segments.len();
 
-        total_changes < 50 && !self.removed_segments.is_empty()
+        total_changes < 50 && self.removed_segments.is_empty()
     }
 
     /// Returns the set of segments that need recomputation.

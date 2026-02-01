@@ -48,10 +48,8 @@ impl DecryptionApp {
                         ui.text_edit_singleline(&mut dialog.base_word);
                     }
 
-                    // Update related words and preview if base word changed
                     if dialog.base_word != old_base_word {
                         dialog.related_words = self.find_related_words(&dialog.base_word);
-                        // Update preview if a rule is already selected
                         if let Some(rule_idx) = dialog.selected_rule
                             && let Some(rule) = self.project.formation_rules.get(rule_idx)
                         {
@@ -65,7 +63,6 @@ impl DecryptionApp {
                         }
                     }
 
-                    // Show top 5 related words
                     if !dialog.base_word.is_empty() && !dialog.related_words.is_empty() {
                         ui.label("Related words:");
                         let related_words_clone = dialog.related_words.clone();
@@ -77,8 +74,7 @@ impl DecryptionApp {
                             };
                             if ui.selectable_label(false, word_label).clicked() {
                                 dialog.base_word = word;
-                                dialog.related_words.clear(); // Hide suggestions after selection
-                                // Update preview if a rule is already selected
+                                dialog.related_words.clear();
                                 if let Some(rule_idx) = dialog.selected_rule
                                     && let Some(rule) = self.project.formation_rules.get(rule_idx)
                                 {
@@ -93,7 +89,6 @@ impl DecryptionApp {
                     ui.separator();
                     ui.label("Formation rules:");
 
-                    // Get the currently selected rule description
                     let selected_text = dialog
                         .selected_rule
                         .and_then(|idx| self.project.formation_rules.get(idx))
@@ -111,14 +106,12 @@ impl DecryptionApp {
                     egui::ComboBox::from_id_salt(combo_id)
                         .selected_text(selected_text)
                         .show_ui(ui, |ui| {
-                            // Show search text edit at the top with focus request
                             let text_edit_id = ui.id().with("search");
                             let text_edit_response = ui.add(
                                 egui::TextEdit::singleline(&mut dialog.rule_search_text)
                                     .id(text_edit_id),
                             );
 
-                            // Auto-focus the text edit when combo opens
                             if !text_edit_response.has_focus() {
                                 ui.memory_mut(|mem| mem.request_focus(text_edit_id));
                             }
@@ -130,7 +123,6 @@ impl DecryptionApp {
 
                             for (rule_idx, rule) in self.project.formation_rules.iter().enumerate()
                             {
-                                // Filter rules based on search text
                                 if search_lower.is_empty()
                                     || rule.description.to_lowercase().contains(&search_lower)
                                 {
@@ -147,13 +139,11 @@ impl DecryptionApp {
 
                                     if ui.selectable_label(is_selected, display_text).clicked() {
                                         dialog.selected_rule = Some(rule_idx);
-                                        // Update preview
                                         if !dialog.base_word.is_empty() {
                                             dialog.preview = rule
                                                 .apply(&dialog.base_word)
                                                 .unwrap_or_else(|_| dialog.base_word.clone());
                                         }
-                                        // Clear search after selection
                                         dialog.rule_search_text.clear();
                                     }
                                 }
@@ -179,9 +169,7 @@ impl DecryptionApp {
                             ui.label(preview_text);
                         });
 
-                        // Check if preview matches the selected word
                         let matches = dialog.preview == dialog.selected_word;
-                        // Check if base word exists in vocabulary or as an existing derived word
                         let base_word_in_vocab =
                             self.project.vocabulary.contains_key(&dialog.base_word);
                         let base_word_in_derived = self
@@ -252,7 +240,6 @@ impl DecryptionApp {
                             )
                             .clicked()
                         {
-                            // Apply the rule to all matching tokens across sentences
                             if let Some(rule_idx) = dialog.selected_rule {
                                 let mut base_word_for_lookup = dialog.base_word.clone();
                                 let mut base_rule_chain: Vec<usize> = Vec::new();
@@ -284,8 +271,6 @@ impl DecryptionApp {
                                 if base_word_exists
                                     && self.project.vocabulary.contains_key(&base_word_for_lookup)
                                 {
-                                    // Remove the original derived word from vocabulary
-                                    // since it's now represented as a formation of the base word
                                     let original_word = dialog.selected_word.clone();
                                     self.project.vocabulary.remove(&original_word);
                                     self.project.vocabulary_comments.remove(&original_word);
@@ -293,7 +278,6 @@ impl DecryptionApp {
                                     for segment in &mut self.project.segments {
                                         for token in &mut segment.tokens {
                                             if token.original == original_word {
-                                                // Update token with formation rule info
                                                 token.base_word =
                                                     Some(base_word_for_lookup.clone());
                                                 let mut new_chain = base_rule_chain.clone();
@@ -304,7 +288,6 @@ impl DecryptionApp {
                                         }
                                     }
 
-                                    // Mark as dirty and refresh caches
                                     self.update_dirty_status(true, ctx);
                                     self.filter_dirty = true;
                                     self.lookups_dirty = true;
@@ -397,14 +380,13 @@ impl DecryptionApp {
                         ui.text_edit_singleline(&mut dialog.test_word);
                     }
 
-                    // Test the command
                     if !dialog.test_word.is_empty() && !dialog.command.is_empty() {
-                        let engine = crate::models::get_engine();
-
-                        let result = engine.eval::<String>(&format!(
-                            "{}\nlet result = transform(\"{}\");\nresult",
-                            dialog.command, dialog.test_word
-                        ));
+                        let result = crate::models::with_engine(|engine| {
+                            engine.eval::<String>(&format!(
+                                "{}\nlet result = transform(\"{}\");\nresult",
+                                dialog.command, dialog.test_word
+                            ))
+                        });
                         dialog.preview = result.unwrap_or_else(|e| format!("Error: {e}"));
                     }
 
@@ -431,13 +413,13 @@ impl DecryptionApp {
                         )
                         .clicked()
                     {
-                        // Add the new rule to the project
                         self.project
                             .formation_rules
                             .push(crate::models::FormationRule {
                                 description: dialog.description.clone(),
                                 rule_type: dialog.rule_type,
                                 command: dialog.command.clone(),
+                                cached_ast: crate::models::default_cached_ast(),
                             });
                         self.update_dirty_status(true, ctx);
                         should_close = true;

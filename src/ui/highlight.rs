@@ -59,7 +59,6 @@ pub fn create_highlighted_layout(
         ..Default::default()
     };
 
-    // Pre-compute lowercase versions once
     let text_lower = text.to_lowercase();
     let query_lower = query.to_lowercase();
     let query_len = query.len();
@@ -67,16 +66,12 @@ pub fn create_highlighted_layout(
     let mut last_end = 0;
     let mut search_start = 0;
 
-    // Find all matches using efficient string search
     while let Some(match_pos) = text_lower[search_start..].find(&query_lower) {
         let match_start = search_start + match_pos;
 
-        // Find the corresponding position in the original text
-        // We need to find where this byte position maps to in terms of character boundaries
         let match_byte_start = match_start;
         let match_byte_end = match_start + query_len;
 
-        // Ensure we're at valid UTF-8 boundaries
         if !text.is_char_boundary(match_byte_start)
             || !text.is_char_boundary(match_byte_end.min(text.len()))
         {
@@ -86,12 +81,10 @@ pub fn create_highlighted_layout(
 
         let actual_match_end = match_byte_end.min(text.len());
 
-        // Append non-highlighted text before match
         if match_byte_start > last_end {
             job.append(&text[last_end..match_byte_start], 0.0, base_format.clone());
         }
 
-        // Append highlighted match
         job.append(
             &text[match_byte_start..actual_match_end],
             0.0,
@@ -102,7 +95,6 @@ pub fn create_highlighted_layout(
         search_start = actual_match_end;
     }
 
-    // Append remaining non-highlighted text
     if last_end < text.len() {
         job.append(&text[last_end..], 0.0, base_format);
     }

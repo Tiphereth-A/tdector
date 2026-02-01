@@ -62,7 +62,6 @@ impl DecryptionApp {
                             .add(egui::Button::new("Set Word Formation Rule").frame(false))
                             .clicked()
                         {
-                            // Open word formation rule dialog
                             self.word_formation_popup = Some(WordFormationDialog {
                                 selected_word: word.clone(),
                                 base_word: existing_base_word.unwrap_or_default(),

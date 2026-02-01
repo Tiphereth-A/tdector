@@ -4,6 +4,8 @@
 //! interactions from their execution, improving testability and
 //! enabling features like undo/redo in the future.
 
+use std::collections::VecDeque;
+
 use crate::ui::PopupMode;
 
 /// Commands that can be queued and executed on the application state.
@@ -14,20 +16,17 @@ use crate::ui::PopupMode;
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum Command {
-    // File operations
     ImportTextFile,
     OpenProject,
     SaveProject,
     ExportTypst,
     LoadFont,
 
-    // UI state changes
     SetFilterText(String),
     SetPage(usize),
     SetPageSize(usize),
     SetSortMode(super::actions::SortMode),
 
-    // Popup commands
     OpenDefinitionPopup(String),
     OpenReferencePopup(String),
     OpenSimilarPopup(usize),
@@ -35,18 +34,15 @@ pub enum Command {
     PinPopup(PinnedPopupData),
     CloseAllPopups,
 
-    // Data modifications
     UpdateSegmentTranslation(usize, String),
     UpdateVocabulary(String, String),
     UpdateVocabularyComment(String, String),
 
-    // Cache invalidation
     InvalidateFilterCache,
     InvalidateLookupsCache,
     InvalidateTfidfCache,
     InvalidateAllCaches,
 
-    // Application lifecycle
     MarkDirty,
     MarkClean,
     RequestQuit,
@@ -64,23 +60,22 @@ pub enum PinnedPopupData {
 ///
 /// Provides a simple queue-based execution model that can be extended
 /// with priority ordering, validation, or undo/redo capabilities.
-#[allow(dead_code)]
 pub struct CommandQueue {
-    commands: Vec<Command>,
+    commands: VecDeque<Command>,
 }
 
 impl CommandQueue {
     /// Creates a new empty command queue.
     pub fn new() -> Self {
         Self {
-            commands: Vec::new(),
+            commands: VecDeque::new(),
         }
     }
 
     /// Adds a command to the end of the queue.
     #[allow(dead_code)]
     pub fn push(&mut self, command: Command) {
-        self.commands.push(command);
+        self.commands.push_back(command);
     }
 
     /// Adds multiple commands to the queue.
@@ -92,11 +87,7 @@ impl CommandQueue {
     /// Removes and returns the next command, or None if empty.
     #[allow(dead_code)]
     pub fn pop(&mut self) -> Option<Command> {
-        if self.commands.is_empty() {
-            None
-        } else {
-            Some(self.commands.remove(0))
-        }
+        self.commands.pop_front()
     }
 
     /// Returns the number of pending commands.

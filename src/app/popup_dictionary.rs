@@ -266,7 +266,6 @@ impl DecryptionApp {
                 ));
             }
             ui::UiAction::ShowWordMenu(word, word_idx) => {
-                // Get actual cursor position for word menu in popup windows
                 let cursor_pos = ui
                     .ctx()
                     .input(|i| i.pointer.interact_pos())

@@ -238,7 +238,7 @@ impl DecryptionApp {
             AppAction::Open => self.load_project(ctx),
             AppAction::Export => self.export_typst(),
             AppAction::Quit => {
-                self.is_dirty = false; // Prevent further checks
+                self.is_dirty = false;
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
         }
@@ -263,7 +263,6 @@ impl DecryptionApp {
             .cloned()
             .collect();
 
-        // Sort by relevance: words that start with prefix first, then by exact match
         matches.sort_by(|a, b| {
             let a_lower = a.to_lowercase();
             let b_lower = b.to_lowercase();

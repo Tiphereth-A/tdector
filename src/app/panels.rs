@@ -119,12 +119,12 @@ impl DecryptionApp {
 
         let use_custom_font = self.project.font_path.is_some();
         let filter_text = self.filter_text.as_str();
-        let vocabulary_comments = self.project.vocabulary_comments.clone();
-        let formation_rules = self.project.formation_rules.clone();
 
         let Project {
             segments,
             vocabulary,
+            vocabulary_comments,
+            formation_rules,
             ..
         } = &mut self.project;
 
@@ -146,11 +146,11 @@ impl DecryptionApp {
                                 ui,
                                 segment,
                                 vocabulary,
-                                &vocabulary_comments,
+                                vocabulary_comments,
                                 seg_idx + 1,
                                 highlight,
                                 use_custom_font,
-                                &formation_rules,
+                                formation_rules,
                             );
 
                             match action {

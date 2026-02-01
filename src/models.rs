@@ -19,7 +19,9 @@
 //! significantly reducing file size for projects with extensive repeated vocabulary.
 
 use serde::{Deserialize, Serialize};
+use std::cell::{OnceCell, RefCell};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// The type of word formation rule.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -35,6 +37,10 @@ pub enum FormationType {
     Nonmorphological,
 }
 
+thread_local! {
+    static ENGINE: RefCell<rhai::Engine> = RefCell::new(build_engine());
+}
+
 /// Creates a configured Rhai engine with security constraints.
 ///
 /// The engine is configured with:
@@ -45,14 +51,12 @@ pub enum FormationType {
 /// # Returns
 ///
 /// A configured Rhai engine ready for script execution
-pub fn get_engine() -> rhai::Engine {
+fn build_engine() -> rhai::Engine {
     let mut engine = rhai::Engine::new();
 
-    // Security constraints to prevent malicious scripts
     engine.set_max_expr_depths(5000, 5000);
     engine.set_max_operations(100000);
 
-    // Disable all I/O operations
     engine.disable_symbol("eval");
     engine.disable_symbol("load");
     engine.disable_symbol("save");
@@ -62,7 +66,6 @@ pub fn get_engine() -> rhai::Engine {
     engine.disable_symbol("delete");
     engine.disable_symbol("copy");
 
-    // Disable network operations
     engine.disable_symbol("http");
     engine.disable_symbol("request");
     engine.disable_symbol("fetch");
@@ -70,13 +73,20 @@ pub fn get_engine() -> rhai::Engine {
     engine.disable_symbol("tcp");
     engine.disable_symbol("udp");
 
-    // Disable system/process operations
     engine.disable_symbol("system");
     engine.disable_symbol("exec");
     engine.disable_symbol("spawn");
     engine.disable_symbol("command");
 
     engine
+}
+
+pub fn with_engine<R>(f: impl FnOnce(&rhai::Engine) -> R) -> R {
+    ENGINE.with(|engine| f(&engine.borrow()))
+}
+
+pub(crate) fn default_cached_ast() -> Arc<OnceCell<rhai::AST>> {
+    Arc::new(OnceCell::new())
 }
 
 /// A word formation rule describing how to transform a word.
@@ -89,6 +99,9 @@ pub struct FormationRule {
     pub rule_type: FormationType,
     /// Rhai script command to apply the transformation
     pub command: String,
+    /// Cached AST for the compiled Rhai script
+    #[serde(skip, default = "default_cached_ast")]
+    pub cached_ast: Arc<OnceCell<rhai::AST>>,
 }
 
 impl FormationRule {
@@ -110,24 +123,30 @@ impl FormationRule {
     /// For a rule with command: `fn transform(word) { word + "s" }`
     /// Calling `rule.apply("apple")` would return `Ok("apples".to_string())`
     pub fn apply(&self, word: &str) -> Result<String, String> {
-        let engine = get_engine();
+        with_engine(|engine| {
+            if self.cached_ast.get().is_none() {
+                let ast = engine
+                    .compile(&self.command)
+                    .map_err(|e| format!("Rhai compilation error: {e}"))?;
+                let _ = self.cached_ast.set(ast);
+            }
 
-        // Compile and run the user's transformation script
-        let ast = engine
-            .compile(&self.command)
-            .map_err(|e| format!("Rhai compilation error: {e}"))?;
+            let ast = self
+                .cached_ast
+                .get()
+                .ok_or_else(|| "Failed to cache Rhai AST".to_string())?;
 
-        // Call the transform function with the word
-        let result: String = engine
-            .call_fn(
-                &mut rhai::Scope::new(),
-                &ast,
-                "transform",
-                (word.to_string(),),
-            )
-            .map_err(|e| format!("Transform function error: {e}"))?;
+            let result: String = engine
+                .call_fn(
+                    &mut rhai::Scope::new(),
+                    ast,
+                    "transform",
+                    (word.to_string(),),
+                )
+                .map_err(|e| format!("Transform function error: {e}"))?;
 
-        Ok(result)
+            Ok(result)
+        })
     }
 }
 

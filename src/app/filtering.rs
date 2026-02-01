@@ -7,38 +7,22 @@
 use super::actions::SortMode;
 use super::state::DecryptionApp;
 
-/// Performs case-insensitive substring matching without allocations.
-///
-/// Uses character-by-character comparison with Unicode normalization to find
-/// the needle within the haystack. This approach avoids allocating temporary
-/// lowercase strings, making it suitable for frequent filtering operations.
+/// Performs case-insensitive substring matching with a pre-lowercased needle.
 ///
 /// # Performance
 ///
-/// O(n*m) worst case where n is haystack length and m is needle length.
-/// Early returns on empty needle or length mismatch.
+/// Avoids repeated lowercasing of the needle across many calls. The haystack is
+/// lowercased once per call and searched with `contains`.
 #[inline]
-fn contains_ignore_case(haystack: &str, needle: &str) -> bool {
-    if needle.is_empty() {
+fn contains_ignore_case(haystack: &str, needle_lower: &str) -> bool {
+    if needle_lower.is_empty() {
         return true;
     }
-    if needle.len() > haystack.len() {
+    if needle_lower.len() > haystack.len() {
         return false;
     }
-    haystack
-        .char_indices()
-        .filter(|(_, c)| {
-            c.to_lowercase().next() == needle.chars().next().and_then(|n| n.to_lowercase().next())
-        })
-        .any(|(i, _)| {
-            haystack[i..]
-                .chars()
-                .flat_map(|c| c.to_lowercase())
-                .zip(needle.chars().flat_map(|c| c.to_lowercase()))
-                .all(|(h, n)| h == n)
-                && haystack[i..].chars().flat_map(|c| c.to_lowercase()).count()
-                    >= needle.chars().flat_map(|c| c.to_lowercase()).count()
-        })
+
+    haystack.to_lowercase().contains(needle_lower)
 }
 
 impl DecryptionApp {
@@ -46,7 +30,8 @@ impl DecryptionApp {
         let mut indices: Vec<usize> = if self.filter_text.is_empty() {
             (0..self.project.segments.len()).collect()
         } else {
-            let query = &self.filter_text;
+            let query_lower = self.filter_text.to_lowercase();
+            let query = query_lower.as_str();
             self.project
                 .segments
                 .iter()
@@ -68,7 +53,6 @@ impl DecryptionApp {
                     indices.reverse();
                 }
                 SortMode::OriginalAsc | SortMode::OriginalDesc => {
-                    // Pre-compute sort keys to avoid creating iterators on every comparison
                     let mut indexed: Vec<_> = indices
                         .into_iter()
                         .map(|idx| {
@@ -93,18 +77,22 @@ impl DecryptionApp {
                     indices = indexed.into_iter().map(|(idx, _)| idx).collect();
                 }
                 SortMode::LengthAsc | SortMode::LengthDesc => {
-                    indices.sort_by(|&a, &b| {
-                        let len_a = self.project.segments[a].tokens.len();
-                        let len_b = self.project.segments[b].tokens.len();
+                    let mut indexed: Vec<_> = indices
+                        .into_iter()
+                        .map(|idx| (idx, self.project.segments[idx].tokens.len()))
+                        .collect();
+
+                    indexed.sort_by(|a, b| {
                         if self.sort_mode == SortMode::LengthAsc {
-                            len_a.cmp(&len_b)
+                            a.1.cmp(&b.1)
                         } else {
-                            len_b.cmp(&len_a)
+                            b.1.cmp(&a.1)
                         }
                     });
+
+                    indices = indexed.into_iter().map(|(idx, _)| idx).collect();
                 }
                 SortMode::TranslatedRatioAsc | SortMode::TranslatedRatioDesc => {
-                    // Pre-calculate ratios to avoid repeated lookups during sorting
                     let mut indexed: Vec<_> = indices
                         .into_iter()
                         .map(|idx| {

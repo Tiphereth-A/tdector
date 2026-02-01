@@ -266,7 +266,11 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
 ///
 /// `Some(Project)` if all vocabulary indices are valid, `None` if any
 /// index references a non-existent vocabulary entry (corrupted data).
-fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Project> {
+fn convert_from_saved_project(path: &Path, mut saved: SavedProject) -> Option<Project> {
+    for rule in &mut saved.formation {
+        rule.cached_ast = crate::models::default_cached_ast();
+    }
+
     let vocabulary_map: HashMap<String, String> = saved
         .vocabulary
         .iter()
@@ -294,7 +298,6 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
                     let original = if formation_rule_indices.is_empty() {
                         base_word.word.clone()
                     } else {
-                        // Apply formation rules in order; if any fails, keep the last successful word
                         let mut current = base_word.word.clone();
                         for rule_idx in &formation_rule_indices {
                             if let Some(rule) = saved.formation.get(*rule_idx) {
@@ -358,7 +361,6 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
 pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
     let saved_project = convert_to_saved_project(project)?;
 
-    // Use custom formatter
     let formatter = super::json_formatter::Formatter::new();
     let mut buf = Vec::new();
     let mut serializer = serde_json::Serializer::with_formatter(&mut buf, formatter);
@@ -403,7 +405,6 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
 
     for segment in &project.segments {
         for token in &segment.tokens {
-            // Only add words to vocabulary if they're not derived from a formation rule
             if token.formation_rule_indices.is_empty() {
                 all_words.insert(&token.original);
             }
@@ -430,10 +431,8 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
         });
     }
 
-    // Sort formation rules by type (Derivation, Inflection, Nonmorphological) then by description
     let mut sorted_formation_rules = project.formation_rules.clone();
 
-    // Create a mapping from old indices to new indices
     let mut old_to_new_idx: HashMap<usize, usize> = HashMap::new();
     let mut indexed_rules: Vec<(usize, _)> = project.formation_rules.iter().enumerate().collect();
     indexed_rules.sort_by(|(_, a), (_, b)| match a.rule_type.cmp(&b.rule_type) {
@@ -458,7 +457,6 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
                 .tokens
                 .iter()
                 .map(|t| {
-                    // Use base_word if available (from formation rule), otherwise use original
                     let lookup_word = t.base_word.as_ref().unwrap_or(&t.original);
 
                     let vocab_idx = word_to_idx.get(lookup_word.as_str()).copied().ok_or_else(
