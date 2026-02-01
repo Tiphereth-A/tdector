@@ -57,13 +57,12 @@ impl DecryptionApp {
                 }
                 self.project = project;
                 self.current_path = Some(path);
-                self.is_dirty = false;
                 self.filter_dirty = true;
                 self.lookups_dirty = true;
                 self.tfidf_dirty = true;
                 self.filter_text.clear();
                 self.clear_popups();
-                self.update_title(ctx);
+                self.update_dirty_status(false, ctx);
             }
             Err(e) => self.error_message = Some(e),
         }
@@ -125,8 +124,7 @@ impl DecryptionApp {
             match io::save_project_file(&self.project, &path) {
                 Ok(()) => {
                     self.current_path = Some(path);
-                    self.is_dirty = false;
-                    self.update_title(ctx);
+                    self.update_dirty_status(false, ctx);
                 }
                 Err(e) => self.error_message = Some(e),
             }
@@ -211,6 +209,14 @@ impl DecryptionApp {
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));
     }
 
+    /// Reset dirty mark and updates the window title.
+    pub(super) fn update_dirty_status(&mut self, new_flag: bool, ctx: &egui::Context) {
+        if self.is_dirty != new_flag {
+            self.is_dirty = new_flag;
+            self.update_title(ctx);
+        }
+    }
+
     /// Triggers an action, prompting for confirmation if there are unsaved changes.
     pub(super) fn trigger_action(&mut self, action: AppAction, ctx: &egui::Context) {
         if self.is_dirty {
@@ -236,5 +242,41 @@ impl DecryptionApp {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
         }
+    }
+
+    /// Find top 5 words from vocabulary that start with or contain the given prefix.
+    pub(super) fn find_related_words(&self, prefix: &str) -> Vec<String> {
+        if prefix.is_empty() {
+            return Vec::new();
+        }
+
+        let prefix_lower = prefix.to_lowercase();
+        let mut matches: Vec<String> = self
+            .project
+            .vocabulary
+            .keys()
+            .filter(|word| {
+                let word_lower = word.to_lowercase();
+                word_lower.starts_with(&prefix_lower) || word_lower.contains(&prefix_lower)
+            })
+            .take(5)
+            .cloned()
+            .collect();
+
+        // Sort by relevance: words that start with prefix first, then by exact match
+        matches.sort_by(|a, b| {
+            let a_lower = a.to_lowercase();
+            let b_lower = b.to_lowercase();
+            let a_starts = a_lower.starts_with(&prefix_lower);
+            let b_starts = b_lower.starts_with(&prefix_lower);
+
+            match (a_starts, b_starts) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => a_lower.cmp(&b_lower),
+            }
+        });
+
+        matches
     }
 }

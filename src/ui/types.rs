@@ -11,6 +11,8 @@ pub enum UiAction {
     ShowDefinition(String),
     /// Show reference sentences containing a word.
     ShowReference(String),
+    /// Show context menu for a word (right-click).
+    ShowWordMenu(String, usize), // word, word_idx_in_segment
 }
 
 /// Dictionary popup display mode.

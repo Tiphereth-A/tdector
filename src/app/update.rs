@@ -43,6 +43,7 @@ impl eframe::App for DecryptionApp {
         let mut do_export = false;
         let mut do_quit = false;
         let mut do_load_font = false;
+        let mut do_add_word_formation_rule = false;
 
         self.handle_keyboard_shortcuts(
             ctx,
@@ -55,7 +56,6 @@ impl eframe::App for DecryptionApp {
 
         ui::render_menu_bar(
             ctx,
-            &mut self.dictionary_mode,
             !self.project.segments.is_empty(),
             || do_import = true,
             || do_open = true,
@@ -63,6 +63,7 @@ impl eframe::App for DecryptionApp {
             || do_export = true,
             || do_quit = true,
             || do_load_font = true,
+            || do_add_word_formation_rule = true,
         );
 
         if !self.project.segments.is_empty() {
@@ -97,6 +98,7 @@ impl eframe::App for DecryptionApp {
             do_export,
             do_quit,
             do_load_font,
+            do_add_word_formation_rule,
         );
 
         if ctx.input(|i| i.viewport().close_requested()) && self.is_dirty {
@@ -136,6 +138,9 @@ impl eframe::App for DecryptionApp {
                 PopupRequest::Similar(idx) => {
                     self.compute_similar_segments(idx);
                 }
+                PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
+                    self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));
+                }
             }
         }
 
@@ -155,14 +160,14 @@ impl eframe::App for DecryptionApp {
                 PopupRequest::Similar(idx) => {
                     self.compute_similar_segments(idx);
                 }
+                PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
+                    self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));
+                }
             }
         }
 
         if any_changed {
-            if !self.is_dirty {
-                self.is_dirty = true;
-                self.update_title(ctx);
-            }
+            self.update_dirty_status(true, ctx);
             self.filter_dirty = true;
             self.lookups_dirty = true;
             self.tfidf_dirty = true;
@@ -248,6 +253,7 @@ impl DecryptionApp {
         do_export: bool,
         do_quit: bool,
         do_load_font: bool,
+        do_add_word_formation_rule: bool,
     ) {
         if do_import {
             self.trigger_action(AppAction::Import, ctx);
@@ -266,6 +272,16 @@ impl DecryptionApp {
         }
         if do_quit {
             self.trigger_action(AppAction::Quit, ctx);
+        }
+        if do_add_word_formation_rule {
+            // Open dialog to create new word formation rule
+            self.new_formation_rule_popup = Some(super::state::NewFormationRuleDialog {
+                description: String::new(),
+                rule_type: crate::models::FormationType::Derivation,
+                command: "fn transform(word) { word }".to_string(),
+                test_word: String::new(),
+                preview: String::new(),
+            });
         }
     }
 

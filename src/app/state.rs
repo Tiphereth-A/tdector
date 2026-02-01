@@ -6,12 +6,47 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use eframe::egui;
 use ndarray::Array2;
 
 use crate::models::Project;
 
 use super::actions::{AppAction, PinnedPopup, SortMode};
 use crate::ui::PopupMode;
+
+/// Dialog state for creating a new word formation rule.
+#[derive(Debug, Clone)]
+pub struct NewFormationRuleDialog {
+    /// Human-readable description of the rule
+    pub description: String,
+    /// Type of formation rule
+    pub rule_type: crate::models::FormationType,
+    /// Rhai script command to apply the transformation
+    pub command: String,
+    /// Test word for previewing the transformation
+    pub test_word: String,
+    /// Preview of the transformation result
+    pub preview: String,
+}
+
+/// Dialog state for applying word formation rules.
+#[derive(Debug, Clone)]
+pub struct WordFormationDialog {
+    /// Index of the sentence containing the word
+    pub sentence_idx: usize,
+    /// Index of the word in the sentence
+    pub word_idx: usize,
+    /// The selected word to apply rule to
+    pub selected_word: String,
+    /// Base word to transform (editable by user)
+    pub base_word: String,
+    /// Currently previewed transformation result
+    pub preview: String,
+    /// Index of selected formation rule
+    pub selected_rule: Option<usize>,
+    /// Top 5 related words from vocabulary for suggestions
+    pub related_words: Vec<String>,
+}
 
 /// Request to open a specific type of popup window.
 ///
@@ -20,6 +55,7 @@ use crate::ui::PopupMode;
 pub enum PopupRequest {
     Dictionary(String, PopupMode),
     Similar(usize),
+    WordMenu(String, usize, usize, egui::Pos2), // word, sentence_idx, word_idx, cursor_pos
 }
 
 /// Main application state container.
@@ -31,8 +67,8 @@ pub enum PopupRequest {
 /// - Dirty flags for cache invalidation
 /// - Dialog and popup state
 ///
-/// The structure uses dirty flags to minimize recomputation: when data changes,
-/// the relevant dirty flag is set, and caches are regenerated lazily on next access.
+/// Dictionary mode is always enabled - right-clicking words shows dictionary options,
+/// while left-clicking applies filters.
 pub struct DecryptionApp {
     pub(super) project: Project,
     pub(super) current_path: Option<PathBuf>,
@@ -44,11 +80,13 @@ pub struct DecryptionApp {
     pub(super) sort_mode: SortMode,
     pub(super) error_message: Option<String>,
     pub(super) confirmation: Option<(String, AppAction)>,
-    pub(super) dictionary_mode: bool,
 
     pub(super) definition_popup: Option<String>,
     pub(super) reference_popup: Option<String>,
     pub(super) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
+    pub(super) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>, // word, sentence_idx, word_idx, cursor_pos
+    pub(super) word_formation_popup: Option<WordFormationDialog>,
+    pub(super) new_formation_rule_popup: Option<NewFormationRuleDialog>,
     pub(super) pinned_popups: Vec<PinnedPopup>,
     pub(super) next_popup_id: u64,
 
@@ -75,10 +113,12 @@ impl Default for DecryptionApp {
             sort_mode: SortMode::IndexAsc,
             error_message: None,
             confirmation: None,
-            dictionary_mode: false,
             definition_popup: None,
             reference_popup: None,
             similar_popup: None,
+            word_menu_popup: None,
+            word_formation_popup: None,
+            new_formation_rule_popup: None,
             pinned_popups: Vec::new(),
             next_popup_id: 0,
             cached_filtered_indices: Vec::new(),

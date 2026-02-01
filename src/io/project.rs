@@ -124,6 +124,8 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
                     .map(|s| Token {
                         original: s.to_string(),
                         comment: String::new(),
+                        base_word: None,
+                        formation_rule_idx: None,
                     })
                     .collect()
             } else {
@@ -132,6 +134,8 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
                     .map(|c| Token {
                         original: c.to_string(),
                         comment: String::new(),
+                        base_word: None,
+                        formation_rule_idx: None,
                     })
                     .collect()
             };
@@ -219,6 +223,8 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
                         Token {
                             original: tok.original,
                             comment: String::new(),
+                            base_word: None,
+                            formation_rule_idx: None,
                         }
                     })
                     .collect();
@@ -236,6 +242,7 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
             vocabulary,
             vocabulary_comments: HashMap::new(),
             segments,
+            formation_rules: Vec::new(),
         });
     }
 
@@ -279,10 +286,31 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
             let tokens: Option<Vec<Token>> = sentence
                 .words
                 .iter()
-                .map(|&idx| {
-                    saved.vocabulary.get(idx).map(|entry| Token {
-                        original: entry.word.clone(),
-                        comment: entry.comment.clone(),
+                .map(|word_ref| {
+                    let vocab_idx = word_ref.vocab_index()?;
+                    let base_word = saved.vocabulary.get(vocab_idx)?;
+                    let formation_rule_idx = word_ref.rule_index();
+
+                    let original = match formation_rule_idx {
+                        Some(rule_idx) => {
+                            // Apply the formation rule to transform the word
+                            match saved.formation.get(rule_idx) {
+                                Some(rule) => {
+                                    // Try to apply the rule; if it fails, use the original word
+                                    rule.apply(&base_word.word)
+                                        .unwrap_or_else(|_| base_word.word.clone())
+                                }
+                                None => base_word.word.clone(),
+                            }
+                        }
+                        None => base_word.word.clone(),
+                    };
+
+                    Some(Token {
+                        original,
+                        comment: base_word.comment.clone(),
+                        base_word: Some(base_word.word.clone()),
+                        formation_rule_idx,
                     })
                 })
                 .collect();
@@ -305,6 +333,7 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
         vocabulary: vocabulary_map,
         vocabulary_comments,
         segments: segments?,
+        formation_rules: saved.formation,
     })
 }
 
@@ -370,7 +399,10 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
 
     for segment in &project.segments {
         for token in &segment.tokens {
-            all_words.insert(&token.original);
+            // Only add words to vocabulary if they're not derived from a formation rule
+            if token.formation_rule_idx.is_none() {
+                all_words.insert(&token.original);
+            }
         }
     }
 
@@ -393,21 +425,33 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
         .segments
         .iter()
         .map(|segment| {
-            let words: Vec<usize> = segment
+            let words: Vec<crate::models::WordRef> = segment
                 .tokens
                 .iter()
                 .map(|t| {
-                    word_to_idx
-                        .get(t.original.as_str())
-                        .copied()
-                        .ok_or_else(|| {
-                            format!(
-                                "Token '{}' missing from vocabulary index during save",
-                                t.original
-                            )
-                        })
+                    // Use base_word if available (from formation rule), otherwise use original
+                    let lookup_word = t.base_word.as_ref().unwrap_or(&t.original);
+
+                    let vocab_idx =
+                        word_to_idx
+                            .get(lookup_word.as_str())
+                            .copied()
+                            .ok_or_else(|| {
+                                format!(
+                                    "Token '{}' missing from vocabulary index during save",
+                                    lookup_word
+                                )
+                            })?;
+
+                    let word_ref = if let Some(rule_idx) = t.formation_rule_idx {
+                        crate::models::WordRef::WithRule(vec![vocab_idx, rule_idx])
+                    } else {
+                        crate::models::WordRef::Single(vocab_idx)
+                    };
+
+                    Ok(word_ref)
                 })
-                .collect::<Result<Vec<usize>, String>>()?;
+                .collect::<Result<Vec<crate::models::WordRef>, String>>()?;
             Ok(SavedSentence {
                 words,
                 meaning: segment.translation.clone(),
@@ -419,6 +463,7 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
     Ok(SavedProject {
         version: 1,
         project_name: project.project_name.clone(),
+        formation: project.formation_rules.clone(),
         vocabulary,
         sentences,
     })

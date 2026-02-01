@@ -119,8 +119,8 @@ impl DecryptionApp {
 
         let use_custom_font = self.project.font_path.is_some();
         let filter_text = self.filter_text.as_str();
-        let dictionary_mode = self.dictionary_mode;
         let vocabulary_comments = self.project.vocabulary_comments.clone();
+        let formation_rules = self.project.formation_rules.clone();
 
         let Project {
             segments,
@@ -149,14 +149,19 @@ impl DecryptionApp {
                                 &vocabulary_comments,
                                 seg_idx + 1,
                                 highlight,
-                                dictionary_mode,
                                 use_custom_font,
+                                &formation_rules,
                             );
 
                             match action {
                                 ui::UiAction::Changed => *any_changed = true,
                                 ui::UiAction::Filter(text) => {
                                     new_filter = Some(text);
+                                }
+                                ui::UiAction::ShowWordMenu(word, word_idx) => {
+                                    let cursor_pos = ctx.input(|i| i.pointer.interact_pos()).unwrap_or_default();
+                                    *popup_request =
+                                        Some(PopupRequest::WordMenu(word, seg_idx, word_idx, cursor_pos));
                                 }
                                 ui::UiAction::ShowSimilar(seg_num) => {
                                     *popup_request = Some(PopupRequest::Similar(seg_num - 1));

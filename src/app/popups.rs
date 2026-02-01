@@ -15,6 +15,8 @@ impl DecryptionApp {
         self.definition_popup = None;
         self.reference_popup = None;
         self.similar_popup = None;
+        self.word_menu_popup = None;
+        self.word_formation_popup = None;
         self.pinned_popups.clear();
     }
 
@@ -29,6 +31,9 @@ impl DecryptionApp {
         self.render_definition_popup(ctx, headword_lookup, popup_request);
         self.render_reference_popup(ctx, usage_lookup, popup_request);
         self.render_similar_popup(ctx, popup_request);
+        self.render_word_menu_popup(ctx, popup_request);
+        self.render_word_formation_popup(ctx);
+        self.render_new_formation_rule_popup(ctx);
     }
 
     fn render_definition_popup(
@@ -513,13 +518,369 @@ impl DecryptionApp {
             });
     }
 
+    fn render_word_menu_popup(
+        &mut self,
+        ctx: &egui::Context,
+        popup_request: &mut Option<PopupRequest>,
+    ) {
+        if let Some((word, sentence_idx, word_idx, cursor_pos)) = self.word_menu_popup.as_ref().cloned() {
+            let mut should_close = false;
+
+            egui::Area::new(egui::Id::new("word_context_menu"))
+                .order(egui::Order::Foreground)
+                .movable(false)
+                .fixed_pos(cursor_pos)
+                .show(ctx, |ui| {
+                    egui::Frame::menu(ui.style()).show(ui, |ui| {
+                        ui.set_min_width(180.0);
+                        
+                        if ui
+                            .add(egui::Button::new("Show Definition").frame(false))
+                            .clicked()
+                        {
+                            *popup_request = Some(PopupRequest::Dictionary(
+                                word.clone(),
+                                PopupMode::Definition,
+                            ));
+                            should_close = true;
+                        }
+                        
+                        if ui
+                            .add(egui::Button::new("Show References").frame(false))
+                            .clicked()
+                        {
+                            *popup_request =
+                                Some(PopupRequest::Dictionary(word.clone(), PopupMode::Reference));
+                            should_close = true;
+                        }
+                        
+                        if ui
+                            .add(egui::Button::new("Set Word Formation Rule").frame(false))
+                            .clicked()
+                        {
+                            // Open word formation rule dialog
+                            self.word_formation_popup = Some(super::state::WordFormationDialog {
+                                sentence_idx,
+                                word_idx,
+                                selected_word: word.clone(),
+                                base_word: String::new(),
+                                preview: String::new(),
+                                selected_rule: None,
+                                related_words: Vec::new(),
+                            });
+                            should_close = true;
+                        }
+                    });
+                });
+
+            if should_close {
+                self.word_menu_popup = None;
+            }
+        }
+    }
+
+    fn render_word_formation_popup(&mut self, ctx: &egui::Context) {
+        if let Some(mut dialog) = self.word_formation_popup.take() {
+            let mut open = true;
+            let title = if self.project.font_path.is_some() {
+                let mut job = egui::text::LayoutJob::default();
+                job.append(
+                    "Set Formation Rule: ",
+                    0.0,
+                    egui::TextFormat {
+                        font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
+                        ..Default::default()
+                    },
+                );
+                job.append(
+                    &dialog.selected_word,
+                    0.0,
+                    egui::TextFormat {
+                        font_id: egui::FontId::new(
+                            14.0,
+                            egui::FontFamily::Name("SentenceFont".into()),
+                        ),
+                        ..Default::default()
+                    },
+                );
+                egui::WidgetText::LayoutJob(std::sync::Arc::new(job))
+            } else {
+                egui::WidgetText::from(format!("Set Formation Rule: {}", dialog.selected_word))
+            };
+
+            let mut should_keep = false;
+            egui::Window::new(title)
+                .id(egui::Id::new("word_formation_popup"))
+                .open(&mut open)
+                .default_width(400.0)
+                .show(ctx, |ui| {
+                    ui.label("Base word:");
+                    let old_base_word = dialog.base_word.clone();
+                    ui.text_edit_singleline(&mut dialog.base_word);
+                    
+                    // Update related words if base word changed
+                    if dialog.base_word != old_base_word {
+                        dialog.related_words = self.find_related_words(&dialog.base_word);
+                    }
+
+                    // Show top 5 related words
+                    if !dialog.base_word.is_empty() && !dialog.related_words.is_empty() {
+                        ui.label("Related words:");
+                        let related_words_clone = dialog.related_words.clone();
+                        for word in related_words_clone {
+                            if ui.selectable_label(false, &word).clicked() {
+                                dialog.base_word = word;
+                                dialog.related_words.clear(); // Hide suggestions after selection
+                            }
+                        }
+                    }
+
+                    ui.separator();
+                    ui.label("Formation rules:");
+
+                    for (rule_idx, rule) in self.project.formation_rules.iter().enumerate() {
+                        let is_selected = dialog.selected_rule == Some(rule_idx);
+
+                        if ui
+                            .selectable_label(is_selected, &rule.description)
+                            .clicked()
+                        {
+                            dialog.selected_rule = Some(rule_idx);
+                            // Update preview
+                            if !dialog.base_word.is_empty() {
+                                dialog.preview = rule
+                                    .apply(&dialog.base_word)
+                                    .unwrap_or_else(|_| dialog.base_word.clone());
+                            }
+                        }
+                    }
+
+                    ui.separator();
+
+                    if !dialog.base_word.is_empty() && !dialog.preview.is_empty() {
+                        ui.horizontal(|ui| {
+                            ui.label("Preview:");
+                            ui.label(egui::RichText::new(&dialog.preview).strong());
+                        });
+
+                        // Check if preview matches the selected word
+                        let matches = dialog.preview == dialog.selected_word;
+                        // Check if base word exists in vocabulary
+                        let base_word_exists =
+                            self.project.vocabulary.contains_key(&dialog.base_word);
+
+                        if !base_word_exists {
+                            ui.colored_label(
+                                egui::Color32::RED,
+                                format!("Base word '{}' not found in vocabulary", dialog.base_word),
+                            );
+                        }
+                        if !matches {
+                            ui.colored_label(
+                                egui::Color32::RED,
+                                format!(
+                                    "Preview '{}' does not match selected word '{}'",
+                                    dialog.preview, dialog.selected_word
+                                ),
+                            );
+                        } else {
+                            ui.colored_label(egui::Color32::GREEN, "Preview matches selected word");
+                        }
+
+                        ui.separator();
+
+                        if ui
+                            .add_enabled(
+                                matches && base_word_exists,
+                                egui::Button::new("Apply Rule"),
+                            )
+                            .clicked()
+                        {
+                            // Apply the rule to the sentence
+                            if let Some(rule_idx) = dialog.selected_rule {
+                                if dialog.sentence_idx < self.project.segments.len() {
+                                    if dialog.word_idx
+                                        < self.project.segments[dialog.sentence_idx].tokens.len()
+                                    {
+                                        let token = &mut self.project.segments[dialog.sentence_idx]
+                                            .tokens[dialog.word_idx];
+                                        // Find the vocabulary index of the base word
+                                        let base_word_for_lookup = dialog.base_word.clone();
+                                        if self
+                                            .project
+                                            .vocabulary
+                                            .contains_key(&base_word_for_lookup)
+                                        {
+                                            // Remove the original derived word from vocabulary
+                                            // since it's now represented as a formation of the base word
+                                            let original_word = dialog.selected_word.clone();
+                                            self.project.vocabulary.remove(&original_word);
+                                            self.project.vocabulary_comments.remove(&original_word);
+
+                                            // Update token with formation rule info
+                                            token.base_word = Some(base_word_for_lookup);
+                                            token.formation_rule_idx = Some(rule_idx);
+                                            token.original = dialog.preview.clone();
+                                            // Mark as dirty
+                                            self.update_dirty_status(true, ctx);
+                                        }
+                                    }
+                                }
+                            }
+                            should_keep = false;
+                        } else {
+                            should_keep = true;
+                        }
+                    } else {
+                        should_keep = true;
+                    }
+                });
+
+            if open && should_keep {
+                self.word_formation_popup = Some(dialog);
+            }
+        }
+    }
+
+    fn render_new_formation_rule_popup(&mut self, ctx: &egui::Context) {
+        if let Some(mut dialog) = self.new_formation_rule_popup.take() {
+            let mut open = true;
+            let mut should_close = false;
+
+            egui::Window::new("Create New Word Formation Rule")
+                .id(egui::Id::new("new_formation_rule_popup"))
+                .open(&mut open)
+                .default_width(500.0)
+                .show(ctx, |ui| {
+                    ui.label("Description:");
+                    ui.text_edit_singleline(&mut dialog.description);
+
+                    ui.separator();
+                    ui.label("Rule Type:");
+                    let current_type = dialog.rule_type;
+                    if ui
+                        .selectable_label(
+                            current_type == crate::models::FormationType::Derivation,
+                            "Derivation",
+                        )
+                        .clicked()
+                    {
+                        dialog.rule_type = crate::models::FormationType::Derivation;
+                    }
+                    if ui
+                        .selectable_label(
+                            current_type == crate::models::FormationType::Inflection,
+                            "Inflection",
+                        )
+                        .clicked()
+                    {
+                        dialog.rule_type = crate::models::FormationType::Inflection;
+                    }
+                    if ui
+                        .selectable_label(
+                            current_type == crate::models::FormationType::Nonmorphological,
+                            "Nonmorphological",
+                        )
+                        .clicked()
+                    {
+                        dialog.rule_type = crate::models::FormationType::Nonmorphological;
+                    }
+
+                    ui.separator();
+                    ui.label("Rhai Script Command (fn transform(word: String) -> String):");
+                    ui.add(
+                        egui::TextEdit::multiline(&mut dialog.command)
+                            .code_editor()
+                            .desired_rows(10)
+                            .desired_width(f32::INFINITY),
+                    );
+
+                    ui.separator();
+                    ui.label("Test Word:");
+                    ui.text_edit_singleline(&mut dialog.test_word);
+
+                    // Test the command
+                    if !dialog.test_word.is_empty() && !dialog.command.is_empty() {
+                        let mut engine = rhai::Engine::new();
+                        // Security constraints
+                        engine.set_max_expr_depths(10, 10);
+                        engine.set_max_operations(1000);
+
+                        // Disable all I/O operations
+                        engine.disable_symbol("eval");
+                        engine.disable_symbol("load");
+                        engine.disable_symbol("save");
+                        engine.disable_symbol("read");
+                        engine.disable_symbol("write");
+                        engine.disable_symbol("append");
+                        engine.disable_symbol("delete");
+                        engine.disable_symbol("copy");
+
+                        // Disable network operations
+                        engine.disable_symbol("http");
+                        engine.disable_symbol("request");
+                        engine.disable_symbol("fetch");
+                        engine.disable_symbol("socket");
+                        engine.disable_symbol("tcp");
+                        engine.disable_symbol("udp");
+
+                        // Disable system operations
+                        engine.disable_symbol("system");
+                        engine.disable_symbol("exec");
+                        engine.disable_symbol("spawn");
+                        engine.disable_symbol("command");
+
+                        let result = engine.eval::<String>(&format!(
+                            "{}\nlet result = transform(\"{}\");\nresult",
+                            dialog.command, dialog.test_word
+                        ));
+                        dialog.preview = result.unwrap_or_else(|_| "Error in script".to_string());
+                    }
+
+                    if !dialog.test_word.is_empty() && !dialog.preview.is_empty() {
+                        ui.horizontal(|ui| {
+                            ui.label("Preview:");
+                            ui.label(egui::RichText::new(&dialog.preview).strong());
+                        });
+                    }
+
+                    ui.separator();
+
+                    if ui
+                        .add_enabled(
+                            !dialog.description.is_empty() && !dialog.command.is_empty(),
+                            egui::Button::new("Create Rule"),
+                        )
+                        .clicked()
+                    {
+                        // Add the new rule to the project
+                        self.project.formation_rules.push(crate::models::FormationRule {
+                            description: dialog.description.clone(),
+                            rule_type: dialog.rule_type,
+                            command: dialog.command.clone(),
+                        });
+                        self.update_dirty_status(true, ctx);
+                        should_close = true;
+                    }
+                });
+
+            if open && !should_close {
+                self.new_formation_rule_popup = Some(dialog);
+            }
+        }
+    }
+
     fn handle_ui_action(&self, action: ui::UiAction, popup_request: &mut Option<PopupRequest>) {
         match action {
-            ui::UiAction::ShowDefinition(word) if self.dictionary_mode => {
+            ui::UiAction::ShowDefinition(word) => {
                 *popup_request = Some(PopupRequest::Dictionary(word, PopupMode::Definition));
             }
             ui::UiAction::ShowReference(word) => {
                 *popup_request = Some(PopupRequest::Dictionary(word, PopupMode::Reference));
+            }
+            ui::UiAction::ShowWordMenu(word, word_idx) => {
+                // Use default position for word menu in pinned popups
+                *popup_request = Some(PopupRequest::WordMenu(word, 0, word_idx, egui::Pos2::ZERO));
             }
             _ => {}
         }

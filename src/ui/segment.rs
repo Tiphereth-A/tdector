@@ -125,7 +125,6 @@ pub fn render_clickable_tokens(
 /// * `vocabulary_comments` - Comments map for looking up word comments
 /// * `seg_num` - Display number for this segment (1-indexed)
 /// * `highlight` - Optional text to highlight in the segment
-/// * `dictionary_mode` - If true, clicking tokens shows dictionary popups instead of editing
 /// * `use_custom_font` - Whether to use custom font for original text
 ///
 /// # Returns
@@ -138,8 +137,8 @@ pub fn render_segment(
     vocabulary_comments: &HashMap<String, String>,
     seg_num: usize,
     highlight: Option<&str>,
-    dictionary_mode: bool,
     use_custom_font: bool,
+    formation_rules: &[crate::models::FormationRule],
 ) -> UiAction {
     let mut action = UiAction::None;
     ui.group(|ui| {
@@ -161,15 +160,16 @@ pub fn render_segment(
             .show(ui, |ui| {
                 ui.horizontal_top(|ui| {
                     ui.spacing_mut().item_spacing.x = constants::SEGMENT_SPACING_X;
-                    for token in &mut segment.tokens {
+                    for (word_idx, token) in segment.tokens.iter_mut().enumerate() {
                         let token_action = render_token_column(
                             ui,
                             token,
                             vocabulary,
                             vocabulary_comments,
                             highlight,
-                            dictionary_mode,
                             use_custom_font,
+                            word_idx,
+                            formation_rules,
                         );
 
                         match token_action {
@@ -178,6 +178,9 @@ pub fn render_segment(
                             UiAction::ShowSimilar(_) => action = token_action,
                             UiAction::ShowDefinition(_) => action = token_action,
                             UiAction::ShowReference(_) => action = token_action,
+                            UiAction::ShowWordMenu(word, _) => {
+                                action = UiAction::ShowWordMenu(word, word_idx);
+                            }
                             UiAction::None => {}
                         }
                     }
@@ -197,13 +200,12 @@ pub fn render_segment(
 }
 
 /// Renders a single token as a vertical column with gloss and original text.
-///
 /// The token is displayed with:
 /// - A bordered box containing the editable gloss (top)
 /// - The original token text with optional highlighting (bottom)
 ///
-/// In dictionary mode, clicking either part shows dictionary popups.
-/// In edit mode, the gloss is editable and clicking the original sets a filter.
+/// In dictionary mode (always enabled), clicking parts shows dictionary popups
+/// or applies filters. Right-clicking shows a context menu.
 ///
 /// # Layout
 ///
@@ -215,14 +217,29 @@ fn render_token_column(
     vocabulary: &mut HashMap<String, String>,
     vocabulary_comments: &HashMap<String, String>,
     highlight: Option<&str>,
-    dictionary_mode: bool,
     use_custom_font: bool,
+    word_idx: usize,
+    formation_rules: &[crate::models::FormationRule],
 ) -> UiAction {
-    let gloss = vocabulary.get(&token.original).cloned().unwrap_or_default();
-    let comment = vocabulary_comments
-        .get(&token.original)
+    // Get base word's gloss and comment
+    let base_word = token.base_word.as_ref().unwrap_or(&token.original);
+    let base_gloss = vocabulary.get(base_word).cloned().unwrap_or_default();
+    let base_comment = vocabulary_comments
+        .get(base_word)
         .cloned()
         .unwrap_or_default();
+
+    // Construct gloss with formation rule description if applicable
+    let (gloss, comment, has_rule) = if let Some(rule_idx) = token.formation_rule_idx {
+        if let Some(rule) = formation_rules.get(rule_idx) {
+            let combined_gloss = format!("{} ({})", base_gloss, rule.description);
+            (combined_gloss, base_comment, true)
+        } else {
+            (base_gloss, base_comment, false)
+        }
+    } else {
+        (base_gloss, base_comment, false)
+    };
 
     let default_font_id = egui::TextStyle::Body.resolve(ui.style());
     let token_font_id = if use_custom_font {
@@ -266,57 +283,40 @@ fn render_token_column(
     };
 
     let mut action = UiAction::None;
-    let mut gloss_edit = gloss;
 
     ui.allocate_ui_with_layout(
         egui::vec2(width + constants::GLOSS_BOX_LAYOUT_EXTRA, 0.0),
         egui::Layout::top_down(egui::Align::LEFT),
         |ui| {
+            let box_color = if has_rule {
+                colors::GLOSSBOX_BYFORMATION
+            } else {
+                colors::GLOSSBOX
+            };
+
             egui::Frame::NONE
-                .stroke(egui::Stroke::new(
-                    constants::BOX_STROKE_WIDTH,
-                    colors::GLOSSBOX,
-                ))
+                .stroke(egui::Stroke::new(constants::BOX_STROKE_WIDTH, box_color))
                 .inner_margin(constants::GLOSS_BOX_INNER_MARGIN)
                 .corner_radius(constants::GLOSS_BOX_ROUNDING)
                 .show(ui, |ui| {
-                    if dictionary_mode {
-                        let label_resp = ui.add_sized(
-                            egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
-                            egui::Label::new(egui::RichText::new(&gloss_edit).color(text_color))
-                                .truncate()
-                                .sense(egui::Sense::click()),
-                        );
+                    // In dictionary mode (always enabled), glosses are now read-only
+                    let label_resp = ui.add_sized(
+                        egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
+                        egui::Label::new(egui::RichText::new(&gloss).color(text_color))
+                            .truncate()
+                            .sense(egui::Sense::click()),
+                    );
 
-                        let label_resp = if !comment.is_empty() {
-                            label_resp.on_hover_text(&comment)
-                        } else {
-                            label_resp
-                        };
-
-                        if label_resp.clicked() {
-                            action = UiAction::ShowDefinition(token.original.clone());
-                        } else if label_resp.secondary_clicked() {
-                            action = UiAction::ShowReference(token.original.clone());
-                        }
+                    let label_resp = if !comment.is_empty() {
+                        label_resp.on_hover_text(&comment)
                     } else {
-                        let gloss_edit_resp = ui.add(
-                            egui::TextEdit::singleline(&mut gloss_edit)
-                                .desired_width(width)
-                                .frame(false)
-                                .text_color(text_color),
-                        );
+                        label_resp
+                    };
 
-                        let gloss_edit_resp = if !comment.is_empty() {
-                            gloss_edit_resp.on_hover_text(&comment)
-                        } else {
-                            gloss_edit_resp
-                        };
-
-                        if gloss_edit_resp.changed() {
-                            vocabulary.insert(token.original.clone(), gloss_edit.clone());
-                            action = UiAction::Changed;
-                        }
+                    if label_resp.clicked() {
+                        action = UiAction::ShowDefinition(token.original.clone());
+                    } else if label_resp.secondary_clicked() {
+                        action = UiAction::ShowWordMenu(token.original.clone(), word_idx);
                     }
                 });
 
@@ -328,18 +328,11 @@ fn render_token_column(
                 label_resp = label_resp.on_hover_text(&comment);
             }
 
-            if dictionary_mode {
-                if label_resp.clicked() {
-                    action = UiAction::ShowDefinition(token.original.clone());
-                } else if label_resp.secondary_clicked() {
-                    action = UiAction::ShowReference(token.original.clone());
-                }
-            } else {
-                if label_resp.clicked() {
-                    action = UiAction::Filter(token.original.clone());
-                } else if label_resp.secondary_clicked() {
-                    action = UiAction::ShowReference(token.original.clone());
-                }
+            // Left click: apply filter; Right click: show context menu
+            if label_resp.clicked() {
+                action = UiAction::Filter(token.original.clone());
+            } else if label_resp.secondary_clicked() {
+                action = UiAction::ShowWordMenu(token.original.clone(), word_idx);
             }
         },
     );

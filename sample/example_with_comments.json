@@ -1,6 +1,7 @@
 {
   "version": 1,
-  "project_name": "example_with_comments",
+  "project_name": "example: comments",
+  "formation": [],
   "vocabulary": [
     {
       "word": "hello",

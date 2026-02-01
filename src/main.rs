@@ -24,8 +24,7 @@ use ui::constants;
 
 /// Application entry point.
 ///
-/// Initializes the GUI framework and launches the main application window
-/// with default dimensions of 1024×768 pixels.
+/// Initializes the GUI framework and launches the main application window.
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
