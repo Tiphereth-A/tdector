@@ -91,9 +91,21 @@ impl DecryptionApp {
                     let old_base_word = dialog.base_word.clone();
                     ui.text_edit_singleline(&mut dialog.base_word);
 
-                    // Update related words if base word changed
+                    // Update related words and preview if base word changed
                     if dialog.base_word != old_base_word {
                         dialog.related_words = self.find_related_words(&dialog.base_word);
+                        // Update preview if a rule is already selected
+                        if let Some(rule_idx) = dialog.selected_rule {
+                            if let Some(rule) = self.project.formation_rules.get(rule_idx) {
+                                if !dialog.base_word.is_empty() {
+                                    dialog.preview = rule
+                                        .apply(&dialog.base_word)
+                                        .unwrap_or_else(|_| dialog.base_word.clone());
+                                } else {
+                                    dialog.preview.clear();
+                                }
+                            }
+                        }
                     }
 
                     // Show top 5 related words
@@ -104,6 +116,14 @@ impl DecryptionApp {
                             if ui.selectable_label(false, &word).clicked() {
                                 dialog.base_word = word;
                                 dialog.related_words.clear(); // Hide suggestions after selection
+                                // Update preview if a rule is already selected
+                                if let Some(rule_idx) = dialog.selected_rule {
+                                    if let Some(rule) = self.project.formation_rules.get(rule_idx) {
+                                        dialog.preview = rule
+                                            .apply(&dialog.base_word)
+                                            .unwrap_or_else(|_| dialog.base_word.clone());
+                                    }
+                                }
                             }
                         }
                     }
