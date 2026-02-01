@@ -42,7 +42,32 @@ impl DecryptionApp {
 
         if let Some(word) = self.definition_popup.as_ref() {
             let mut open = true;
-            egui::Window::new(format!("Definition: {}", word))
+            let title = if self.project.font_path.is_some() {
+                let mut job = egui::text::LayoutJob::default();
+                job.append(
+                    "Definition: ",
+                    0.0,
+                    egui::TextFormat {
+                        font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
+                        ..Default::default()
+                    },
+                );
+                job.append(
+                    word,
+                    0.0,
+                    egui::TextFormat {
+                        font_id: egui::FontId::new(
+                            14.0,
+                            egui::FontFamily::Name("SentenceFont".into()),
+                        ),
+                        ..Default::default()
+                    },
+                );
+                egui::WidgetText::LayoutJob(std::sync::Arc::new(job))
+            } else {
+                egui::WidgetText::from(format!("Definition: {}", word))
+            };
+            egui::Window::new(title)
                 .id(egui::Id::new("def_popup"))
                 .open(&mut open)
                 .default_width(constants::POPUP_WIDTH)
@@ -71,7 +96,31 @@ impl DecryptionApp {
             }
 
             if should_pin {
-                let title = format!("📌 Definition: {}", word);
+                let title = if self.project.font_path.is_some() {
+                    let mut job = egui::text::LayoutJob::default();
+                    job.append(
+                        "📌 Definition: ",
+                        0.0,
+                        egui::TextFormat {
+                            font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
+                            ..Default::default()
+                        },
+                    );
+                    job.append(
+                        word,
+                        0.0,
+                        egui::TextFormat {
+                            font_id: egui::FontId::new(
+                                14.0,
+                                egui::FontFamily::Name("SentenceFont".into()),
+                            ),
+                            ..Default::default()
+                        },
+                    );
+                    job.text
+                } else {
+                    format!("📌 Definition: {}", word)
+                };
                 self.pinned_popups.push(PinnedPopup::Dictionary(
                     word.clone(),
                     PopupMode::Definition,
@@ -99,7 +148,32 @@ impl DecryptionApp {
 
         if let Some(word) = self.reference_popup.as_ref() {
             let mut open = true;
-            egui::Window::new(format!("References: {}", word))
+            let title = if self.project.font_path.is_some() {
+                let mut job = egui::text::LayoutJob::default();
+                job.append(
+                    "References: ",
+                    0.0,
+                    egui::TextFormat {
+                        font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
+                        ..Default::default()
+                    },
+                );
+                job.append(
+                    word,
+                    0.0,
+                    egui::TextFormat {
+                        font_id: egui::FontId::new(
+                            14.0,
+                            egui::FontFamily::Name("SentenceFont".into()),
+                        ),
+                        ..Default::default()
+                    },
+                );
+                egui::WidgetText::LayoutJob(std::sync::Arc::new(job))
+            } else {
+                egui::WidgetText::from(format!("References: {}", word))
+            };
+            egui::Window::new(title)
                 .id(egui::Id::new("ref_popup"))
                 .open(&mut open)
                 .default_width(constants::POPUP_WIDTH)
@@ -128,7 +202,31 @@ impl DecryptionApp {
             }
 
             if should_pin {
-                let title = format!("📌 References: {}", word);
+                let title = if self.project.font_path.is_some() {
+                    let mut job = egui::text::LayoutJob::default();
+                    job.append(
+                        "📌 References: ",
+                        0.0,
+                        egui::TextFormat {
+                            font_id: egui::FontId::new(14.0, egui::FontFamily::Proportional),
+                            ..Default::default()
+                        },
+                    );
+                    job.append(
+                        word,
+                        0.0,
+                        egui::TextFormat {
+                            font_id: egui::FontId::new(
+                                14.0,
+                                egui::FontFamily::Name("SentenceFont".into()),
+                            ),
+                            ..Default::default()
+                        },
+                    );
+                    job.text
+                } else {
+                    format!("📌 References: {}", word)
+                };
                 self.pinned_popups.push(PinnedPopup::Dictionary(
                     word.clone(),
                     PopupMode::Reference,

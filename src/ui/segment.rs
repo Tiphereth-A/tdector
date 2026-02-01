@@ -73,11 +73,8 @@ pub fn render_clickable_tokens(
                     .size(constants::GLOSS_FONT_SIZE)
                     .color(text_color);
 
-                let gloss_resp = ui.add(
-                    egui::Label::new(gloss_richtext)
-                        .extend(),
-                );
-                
+                let gloss_resp = ui.add(egui::Label::new(gloss_richtext).extend());
+
                 if !comment.is_empty() {
                     gloss_resp.on_hover_text(comment);
                 }
@@ -303,14 +300,13 @@ fn render_token_column(
                             action = UiAction::ShowReference(token.original.clone());
                         }
                     } else {
-                        let gloss_edit_resp = ui
-                            .add(
-                                egui::TextEdit::singleline(&mut gloss_edit)
-                                    .desired_width(width)
-                                    .frame(false)
-                                    .text_color(text_color),
-                            );
-                        
+                        let gloss_edit_resp = ui.add(
+                            egui::TextEdit::singleline(&mut gloss_edit)
+                                .desired_width(width)
+                                .frame(false)
+                                .text_color(text_color),
+                        );
+
                         let gloss_edit_resp = if !comment.is_empty() {
                             gloss_edit_resp.on_hover_text(&comment)
                         } else {
