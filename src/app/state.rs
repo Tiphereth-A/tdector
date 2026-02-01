@@ -10,9 +10,9 @@ use eframe::egui;
 use crate::models::Project;
 
 use super::actions::{AppAction, PinnedPopup, SortMode};
+use super::cache_lookup::LookupCache;
+use super::cache_tfidf::CachedTfidf;
 use super::commands::CommandQueue;
-use super::lookup_cache::LookupCache;
-use super::tfidf_cache::CachedTfidf;
 use crate::ui::PopupMode;
 
 /// Dialog state for creating a new word formation rule.

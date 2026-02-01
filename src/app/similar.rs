@@ -38,7 +38,7 @@ impl DecryptionApp {
         }
 
         if self.project.segments.is_empty() {
-            self.tfidf_cache = super::tfidf_cache::CachedTfidf::default();
+            self.tfidf_cache = super::cache_tfidf::CachedTfidf::default();
             self.tfidf_dirty = false;
             return;
         }
@@ -66,7 +66,7 @@ impl DecryptionApp {
                 self.tfidf_cache.set_matrix(matrix);
             }
             Err(_) => {
-                self.tfidf_cache = super::tfidf_cache::CachedTfidf::default();
+                self.tfidf_cache = super::cache_tfidf::CachedTfidf::default();
             }
         }
         self.tfidf_dirty = false;

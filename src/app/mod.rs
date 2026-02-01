@@ -21,21 +21,21 @@
 //! - [`word_formation_popups`] — Word formation and menu popups
 
 mod actions;
+mod cache_lookup;
+mod cache_tfidf;
 mod commands;
 mod dialogs;
-mod dictionary_popups;
 mod file_ops;
 mod filtering;
-mod lookup_cache;
 mod panels;
-mod pinned_popups;
+mod popup_dictionary;
+mod popup_pinned;
+mod popup_similar;
 mod popup_utils;
+mod popup_word_formation;
 mod popups;
 mod similar;
-mod similar_popups;
 mod state;
-mod tfidf_cache;
 mod update;
-mod word_formation_popups;
 
 pub use state::DecryptionApp;
