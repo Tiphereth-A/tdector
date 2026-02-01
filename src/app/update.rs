@@ -1,4 +1,15 @@
-//! Main render loop and eframe [`App`] implementation.
+//! Main application update loop and eframe integration.
+//!
+//! This module implements the [`eframe::App`] trait for [`DecryptionApp`],
+//! providing the main rendering loop that handles:
+//!
+//! - User input (keyboard shortcuts, menu actions)
+//! - UI rendering (panels, dialogs, popups)
+//! - State updates and cache invalidation
+//! - Window management and title updates
+//!
+//! The update loop follows a careful ordering to minimize frame-to-frame
+//! state inconsistencies and ensure proper cache invalidation.
 
 use std::collections::{HashMap, HashSet};
 
@@ -10,7 +21,14 @@ use super::actions::AppAction;
 use super::state::{DecryptionApp, PopupRequest};
 
 impl DecryptionApp {
-    /// Creates the application instance for eframe.
+    /// Creates a new application instance and initializes fonts.
+    ///
+    /// This is called once by eframe during application startup. It sets up
+    /// the custom "SentenceFont" family and returns a default application state.
+    ///
+    /// # Arguments
+    ///
+    /// * `cc` - The eframe creation context providing access to egui
     pub fn new(cc: &eframe::CreationContext<'_>) -> Box<dyn eframe::App> {
         Self::initialize_fonts(&cc.egui_ctx);
         Box::new(Self::default())
@@ -26,7 +44,6 @@ impl eframe::App for DecryptionApp {
         let mut do_quit = false;
         let mut do_load_font = false;
 
-        // Handle keyboard shortcuts
         self.handle_keyboard_shortcuts(
             ctx,
             &mut do_import,
@@ -36,7 +53,6 @@ impl eframe::App for DecryptionApp {
             &mut do_quit,
         );
 
-        // Render menu bar
         ui::render_menu_bar(
             ctx,
             &mut self.dictionary_mode,
@@ -49,12 +65,10 @@ impl eframe::App for DecryptionApp {
             || do_load_font = true,
         );
 
-        // Render filter panel
         if !self.project.segments.is_empty() {
             self.render_filter_panel(ctx);
         }
 
-        // Safety check: Ensure indices are initialized if project is loaded
         if !self.project.segments.is_empty()
             && self.cached_filtered_indices.is_empty()
             && self.filter_text.is_empty()
@@ -63,7 +77,6 @@ impl eframe::App for DecryptionApp {
             self.filter_dirty = true;
         }
 
-        // Update filtered indices if needed
         if self.filter_dirty {
             self.recalculate_filtered_indices();
             self.filter_dirty = false;
@@ -76,7 +89,6 @@ impl eframe::App for DecryptionApp {
             self.current_page = total_pages - 1;
         }
 
-        // Process actions
         self.process_actions(
             ctx,
             do_import,
@@ -87,41 +99,34 @@ impl eframe::App for DecryptionApp {
             do_load_font,
         );
 
-        // Handle window close
         if ctx.input(|i| i.viewport().close_requested()) && self.is_dirty {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             self.trigger_action(AppAction::Quit, ctx);
         }
 
-        // Render pagination
         if let Some(new_page) =
             ui::render_pagination(ctx, self.current_page, total_pages, &mut self.page_size)
         {
             self.current_page = new_page;
         }
 
-        // Render dialogs
         self.render_error_dialog(ctx);
         self.render_confirmation_dialog(ctx);
         self.render_import_dialog(ctx);
 
-        // Update lookup maps if needed
         if self.lookups_dirty {
             self.recalculate_lookup_maps();
             self.lookups_dirty = false;
         }
 
-        // Temporarily take ownership of maps to avoid borrow conflicts
         let headword_lookup = self.cached_headword_lookup.take();
         let usage_lookup = self.cached_usage_lookup.take();
 
         let mut any_changed = false;
         let mut popup_request = None;
 
-        // Render main content (current page slice computed inside to avoid Vec allocation)
         self.render_central_panel(ctx, &mut any_changed, &mut popup_request);
 
-        // Process popup requests
         if let Some(req) = popup_request.take() {
             match req {
                 PopupRequest::Dictionary(word, mode) => match mode {
@@ -134,17 +139,13 @@ impl eframe::App for DecryptionApp {
             }
         }
 
-        // Render popup logic
         self.render_popups(ctx, &headword_lookup, &usage_lookup, &mut popup_request);
 
-        // Process pinned popups
         self.render_pinned_popups(ctx, &headword_lookup, &usage_lookup, &mut popup_request);
 
-        // Restore lookup maps
         self.cached_headword_lookup = headword_lookup;
         self.cached_usage_lookup = usage_lookup;
 
-        // Start processing the request
         if let Some(req) = popup_request {
             match req {
                 PopupRequest::Dictionary(word, mode) => match mode {
@@ -157,26 +158,32 @@ impl eframe::App for DecryptionApp {
             }
         }
 
-        // Mark dirty if changed
         if any_changed {
             if !self.is_dirty {
                 self.is_dirty = true;
                 self.update_title(ctx);
             }
-            // Content changed, so we must re-filter and re-lookup
             self.filter_dirty = true;
             self.lookups_dirty = true;
+            self.tfidf_dirty = true;
             ctx.request_repaint();
         }
     }
 }
 
-// =============================================================================
-// Helper Methods for Update Loop
-// =============================================================================
-
 impl DecryptionApp {
-    /// Handles keyboard shortcuts for common actions.
+    /// Processes keyboard shortcuts and sets action flags.
+    ///
+    /// Checks for standard application shortcuts (Cmd/Ctrl + key combinations)
+    /// and sets the corresponding boolean flags to trigger actions.
+    ///
+    /// # Keyboard Shortcuts
+    ///
+    /// - `Cmd/Ctrl + I` - Import text file
+    /// - `Cmd/Ctrl + O` - Open project
+    /// - `Cmd/Ctrl + S` - Save project
+    /// - `Cmd/Ctrl + E` - Export to Typst
+    /// - `Cmd/Ctrl + Q` - Quit application
     fn handle_keyboard_shortcuts(
         &self,
         ctx: &egui::Context,
@@ -203,7 +210,18 @@ impl DecryptionApp {
         }
     }
 
-    /// Calculates total number of pages based on item count.
+    /// Calculates the total number of pages for pagination.
+    ///
+    /// Uses ceiling division to ensure all items are included even if
+    /// the last page is not full.
+    ///
+    /// # Arguments
+    ///
+    /// * `total_items` - Total number of items to paginate
+    ///
+    /// # Returns
+    ///
+    /// The number of pages required, or 0 if there are no items.
     fn calculate_total_pages(&self, total_items: usize) -> usize {
         if total_items > 0 {
             (total_items + self.page_size - 1) / self.page_size
@@ -212,7 +230,15 @@ impl DecryptionApp {
         }
     }
 
-    /// Processes all pending actions.
+    /// Executes pending actions based on the provided flags.
+    ///
+    /// Processes all action flags in a specific order to ensure proper
+    /// sequencing of operations (e.g., loading before saving).
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The egui context
+    /// * `do_import` through `do_load_font` - Boolean flags indicating which actions to execute
     fn process_actions(
         &mut self,
         ctx: &egui::Context,
@@ -243,7 +269,14 @@ impl DecryptionApp {
         }
     }
 
-    /// Recalculates lookup maps for headword and usage indexing.
+    /// Rebuilds the headword and usage lookup indices.
+    ///
+    /// Creates two inverted indices:
+    /// - **Headword lookup**: Maps each vocabulary word to segment indices where it appears
+    /// - **Usage lookup**: Maps each token to segment indices where it's actually used
+    ///
+    /// These indices enable efficient dictionary popup rendering showing where
+    /// words appear and how they're used in context.
     fn recalculate_lookup_maps(&mut self) {
         if self.project.segments.is_empty() {
             self.cached_headword_lookup = None;
@@ -256,21 +289,16 @@ impl DecryptionApp {
 
         for (idx, segment) in self.project.segments.iter().enumerate() {
             if let Some(first) = segment.tokens.first() {
-                if let Some(list) = headmap.get_mut(&first.original) {
-                    list.push(idx);
-                } else {
-                    headmap.insert(first.original.clone(), vec![idx]);
-                }
+                headmap.entry(first.original.clone()).or_default().push(idx);
             }
 
             let mut seen = HashSet::new();
             for token in &segment.tokens {
                 if seen.insert(&token.original) {
-                    if let Some(list) = usagemap.get_mut(&token.original) {
-                        list.push(idx);
-                    } else {
-                        usagemap.insert(token.original.clone(), vec![idx]);
-                    }
+                    usagemap
+                        .entry(token.original.clone())
+                        .or_default()
+                        .push(idx);
                 }
             }
         }

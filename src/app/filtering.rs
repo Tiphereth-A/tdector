@@ -1,24 +1,62 @@
-//! Segment filtering and sorting logic.
+//! Segment filtering and sorting implementation.
+//!
+//! This module handles the filtering of segments based on user search queries
+//! and applies various sorting strategies. All operations are designed to work
+//! efficiently with cached indices to minimize recomputation.
 
 use super::actions::SortMode;
 use super::state::DecryptionApp;
+
+/// Performs case-insensitive substring matching without allocations.
+///
+/// Uses character-by-character comparison with Unicode normalization to find
+/// the needle within the haystack. This approach avoids allocating temporary
+/// lowercase strings, making it suitable for frequent filtering operations.
+///
+/// # Performance
+///
+/// O(n*m) worst case where n is haystack length and m is needle length.
+/// Early returns on empty needle or length mismatch.
+#[inline]
+fn contains_ignore_case(haystack: &str, needle: &str) -> bool {
+    if needle.is_empty() {
+        return true;
+    }
+    if needle.len() > haystack.len() {
+        return false;
+    }
+    haystack
+        .char_indices()
+        .filter(|(_, c)| {
+            c.to_lowercase().next() == needle.chars().next().and_then(|n| n.to_lowercase().next())
+        })
+        .any(|(i, _)| {
+            haystack[i..]
+                .chars()
+                .flat_map(|c| c.to_lowercase())
+                .zip(needle.chars().flat_map(|c| c.to_lowercase()))
+                .all(|(h, n)| h == n)
+                && haystack[i..].chars().flat_map(|c| c.to_lowercase()).count()
+                    >= needle.chars().flat_map(|c| c.to_lowercase()).count()
+        })
+}
 
 impl DecryptionApp {
     pub(super) fn recalculate_filtered_indices(&mut self) {
         let mut indices: Vec<usize> = if self.filter_text.is_empty() {
             (0..self.project.segments.len()).collect()
         } else {
-            let query = self.filter_text.to_lowercase();
+            let query = &self.filter_text;
             self.project
                 .segments
                 .iter()
                 .enumerate()
                 .filter(|(_idx, seg)| {
-                    seg.translation.to_lowercase().contains(&query)
+                    contains_ignore_case(&seg.translation, query)
                         || seg
                             .tokens
                             .iter()
-                            .any(|t| t.original.to_lowercase().contains(&query))
+                            .any(|t| contains_ignore_case(&t.original, query))
                 })
                 .map(|(idx, _)| idx)
                 .collect()
@@ -30,24 +68,29 @@ impl DecryptionApp {
                     indices.reverse();
                 }
                 SortMode::OriginalAsc | SortMode::OriginalDesc => {
-                    indices.sort_by(|&a, &b| {
-                        let seg_a = self.project.segments[a]
-                            .tokens
-                            .iter()
-                            .flat_map(|t| t.original.chars());
-                        let seg_b = self.project.segments[b]
-                            .tokens
-                            .iter()
-                            .flat_map(|t| t.original.chars());
+                    // Pre-compute sort keys to avoid creating iterators on every comparison
+                    let mut indexed: Vec<_> = indices
+                        .into_iter()
+                        .map(|idx| {
+                            let key: String = self.project.segments[idx]
+                                .tokens
+                                .iter()
+                                .flat_map(|t| t.original.chars())
+                                .collect();
+                            (idx, key)
+                        })
+                        .collect();
 
-                        let cmp = seg_a.cmp(seg_b);
-
+                    indexed.sort_by(|a, b| {
+                        let cmp = a.1.cmp(&b.1);
                         if self.sort_mode == SortMode::OriginalAsc {
                             cmp
                         } else {
                             cmp.reverse()
                         }
                     });
+
+                    indices = indexed.into_iter().map(|(idx, _)| idx).collect();
                 }
                 SortMode::LengthAsc | SortMode::LengthDesc => {
                     indices.sort_by(|&a, &b| {

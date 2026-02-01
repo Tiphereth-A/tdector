@@ -31,60 +31,6 @@ impl DecryptionApp {
         self.render_similar_popup(ctx, popup_request);
     }
 
-    fn create_popup_title(
-        &self,
-        ctx: &egui::Context,
-        prefix: &str,
-        word: &str,
-        suffix: &str,
-    ) -> egui::text::LayoutJob {
-        let mut job = egui::text::LayoutJob::default();
-        let default_color = if ctx.style().visuals.dark_mode {
-            crate::ui::colors::FONT_DARK
-        } else {
-            crate::ui::colors::FONT_LIGHT
-        };
-        let default_font_id = egui::TextStyle::Body.resolve(&ctx.style());
-
-        let word_font_id = if self.project.font_path.is_some() {
-            egui::FontId {
-                size: default_font_id.size,
-                family: egui::FontFamily::Name("SentenceFont".into()),
-            }
-        } else {
-            default_font_id.clone()
-        };
-
-        job.append(
-            prefix,
-            0.0,
-            egui::TextFormat {
-                font_id: default_font_id.clone(),
-                color: default_color,
-                ..Default::default()
-            },
-        );
-        job.append(
-            word,
-            0.0,
-            egui::TextFormat {
-                font_id: word_font_id,
-                color: default_color,
-                ..Default::default()
-            },
-        );
-        job.append(
-            suffix,
-            0.0,
-            egui::TextFormat {
-                font_id: default_font_id,
-                color: default_color,
-                ..Default::default()
-            },
-        );
-        job
-    }
-
     fn render_definition_popup(
         &mut self,
         ctx: &egui::Context,
@@ -96,8 +42,7 @@ impl DecryptionApp {
 
         if let Some(word) = self.definition_popup.as_ref() {
             let mut open = true;
-            let title = self.create_popup_title(ctx, "Definition of '", word, "'");
-            egui::Window::new(title)
+            egui::Window::new(format!("Definition: {}", word))
                 .id(egui::Id::new("def_popup"))
                 .open(&mut open)
                 .default_width(constants::POPUP_WIDTH)
@@ -115,7 +60,7 @@ impl DecryptionApp {
                         word,
                         PopupMode::Definition,
                         headword_lookup,
-                        &None, // Not needed for definition
+                        &None,
                         popup_request,
                         None,
                     );
@@ -126,13 +71,15 @@ impl DecryptionApp {
             }
 
             if should_pin {
+                let title = format!("📌 Definition: {}", word);
                 self.pinned_popups.push(PinnedPopup::Dictionary(
                     word.clone(),
                     PopupMode::Definition,
                     self.next_popup_id,
+                    title,
                 ));
                 self.next_popup_id += 1;
-                should_close = true; // Close the unpinned one
+                should_close = true;
             }
         }
 
@@ -152,8 +99,7 @@ impl DecryptionApp {
 
         if let Some(word) = self.reference_popup.as_ref() {
             let mut open = true;
-            let title = self.create_popup_title(ctx, "Sentences containing '", word, "'");
-            egui::Window::new(title)
+            egui::Window::new(format!("References: {}", word))
                 .id(egui::Id::new("ref_popup"))
                 .open(&mut open)
                 .default_width(constants::POPUP_WIDTH)
@@ -170,7 +116,7 @@ impl DecryptionApp {
                         ui,
                         word,
                         PopupMode::Reference,
-                        &None, // Not needed
+                        &None,
                         usage_lookup,
                         popup_request,
                         None,
@@ -182,10 +128,12 @@ impl DecryptionApp {
             }
 
             if should_pin {
+                let title = format!("📌 References: {}", word);
                 self.pinned_popups.push(PinnedPopup::Dictionary(
                     word.clone(),
                     PopupMode::Reference,
                     self.next_popup_id,
+                    title,
                 ));
                 self.next_popup_id += 1;
                 should_close = true;
@@ -207,13 +155,7 @@ impl DecryptionApp {
 
         if let Some((target_idx, scores)) = self.similar_popup.as_ref() {
             let mut open = true;
-            let title = self.create_popup_title(
-                ctx,
-                &format!("Similar Sentences for Segment {}", target_idx + 1),
-                "",
-                "",
-            );
-            egui::Window::new(title)
+            egui::Window::new(format!("Similar to [{}]", target_idx + 1))
                 .id(egui::Id::new("similar_popup"))
                 .open(&mut open)
                 .default_width(constants::POPUP_WIDTH)
@@ -233,10 +175,12 @@ impl DecryptionApp {
             }
 
             if should_pin {
+                let title = format!("📌 Similar to [{}]", *target_idx + 1);
                 self.pinned_popups.push(PinnedPopup::Similar(
                     *target_idx,
                     scores.clone(),
                     self.next_popup_id,
+                    title,
                 ));
                 self.next_popup_id += 1;
                 should_close = true;
@@ -261,21 +205,12 @@ impl DecryptionApp {
         for (i, popup) in self.pinned_popups.iter().enumerate() {
             let mut open = true;
             match popup {
-                PinnedPopup::Dictionary(word, mode, id) => {
-                    let (prefix, suffix, height) = match mode {
-                        PopupMode::Definition => (
-                            "Definition of '",
-                            "' (Pinned)",
-                            constants::POPUP_DEFINITION_HEIGHT,
-                        ),
-                        PopupMode::Reference => (
-                            "Sentences containing '",
-                            "' (Pinned)",
-                            constants::POPUP_REFERENCE_HEIGHT,
-                        ),
+                PinnedPopup::Dictionary(word, mode, id, title) => {
+                    let height = match mode {
+                        PopupMode::Definition => constants::POPUP_DEFINITION_HEIGHT,
+                        PopupMode::Reference => constants::POPUP_REFERENCE_HEIGHT,
                     };
-                    let title = self.create_popup_title(ctx, prefix, word, suffix);
-                    egui::Window::new(title)
+                    egui::Window::new(title.as_str())
                         .id(egui::Id::new(id))
                         .open(&mut open)
                         .default_width(constants::POPUP_WIDTH)
@@ -292,14 +227,8 @@ impl DecryptionApp {
                             );
                         });
                 }
-                PinnedPopup::Similar(target_idx, similar_indices, id) => {
-                    let title = self.create_popup_title(
-                        ctx,
-                        &format!("Similar Sentences for Segment {} (Pinned)", target_idx + 1),
-                        "",
-                        "",
-                    );
-                    egui::Window::new(title)
+                PinnedPopup::Similar(_target_idx, similar_indices, id, title) => {
+                    egui::Window::new(title.as_str())
                         .id(egui::Id::new(id))
                         .open(&mut open)
                         .default_width(constants::POPUP_WIDTH)
@@ -319,15 +248,10 @@ impl DecryptionApp {
             }
         }
 
-        // Remove closed pinned popups
         for i in pinned_to_remove.iter().rev() {
             self.pinned_popups.remove(*i);
         }
     }
-
-    // =========================================================================
-    // Content Rendering Helpers
-    // =========================================================================
 
     fn render_dictionary_content(
         &self,

@@ -1,13 +1,17 @@
-//! # Text Decryption Helper
+//! Text Decryption Helper - An interactive GUI tool for linguistic analysis.
 //!
-//! An interactive GUI tool for assisted text decryption and translation.
+//! This application provides an interactive environment for text decryption, translation,
+//! and linguistic annotation. It's particularly useful for working with historical texts,
+//! cipher decryption, or learning new writing systems.
 //!
-//! ## Features
+//! # Features
 //!
-//! - Import text files and segment them into tokens
-//! - Add glosses (meanings) to individual tokens
-//! - Translate complete text segments
-//! - Export projects to Typst format for typesetting
+//! - Import and tokenize text files (character-based or word-based)
+//! - Create and manage vocabulary glossaries with per-token definitions
+//! - Translate complete segments with contextual annotations
+//! - Custom font support for special scripts and writing systems
+//! - TF-IDF similarity search for finding related segments
+//! - Export annotated documents to Typst format for professional typesetting
 
 mod app;
 mod io;
@@ -18,7 +22,10 @@ use app::DecryptionApp;
 use eframe::egui;
 use ui::constants;
 
-/// Launches the application with default window settings (1024×768).
+/// Application entry point.
+///
+/// Initializes the GUI framework and launches the main application window
+/// with default dimensions of 1024×768 pixels.
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()

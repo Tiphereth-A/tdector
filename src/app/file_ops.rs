@@ -1,4 +1,10 @@
-//! File operations: load, save, export, and font management.
+//! File operations for project and font management.
+//!
+//! This module handles all file I/O operations including:
+//! - Loading and saving projects
+//! - Importing text files
+//! - Exporting to Typst format
+//! - Custom font loading and registration
 
 use eframe::egui;
 
@@ -8,7 +14,14 @@ use super::actions::AppAction;
 use super::state::DecryptionApp;
 
 impl DecryptionApp {
-    /// Opens a file dialog and prepares text content for import.
+    /// Opens a file picker dialog to select a text file for import.
+    ///
+    /// Reads the text content and prepares it for tokenization by storing it
+    /// in the pending import state. The user will then be prompted to select
+    /// a tokenization strategy (word-based or character-based).
+    ///
+    /// Also attempts to auto-detect an accompanying font file with the same
+    /// basename as the selected text file.
     pub(super) fn load_text_file(&mut self, _ctx: &egui::Context) {
         let path = match io::pick_text_file() {
             Some(p) => p,
@@ -23,7 +36,14 @@ impl DecryptionApp {
         }
     }
 
-    /// Opens a project file and loads it into the application.
+    /// Opens a file picker dialog to select and load a project file.
+    ///
+    /// Loads the project from JSON, automatically handling format migration
+    /// from legacy formats. If the project includes a custom font, it's loaded
+    /// and registered with the UI framework.
+    ///
+    /// On successful load, all caches are invalidated and the UI is reset to
+    /// display the newly loaded project.
     pub(super) fn load_project(&mut self, ctx: &egui::Context) {
         let path = match io::pick_project_file() {
             Some(p) => p,
@@ -40,6 +60,7 @@ impl DecryptionApp {
                 self.is_dirty = false;
                 self.filter_dirty = true;
                 self.lookups_dirty = true;
+                self.tfidf_dirty = true;
                 self.filter_text.clear();
                 self.clear_popups();
                 self.update_title(ctx);
@@ -49,6 +70,15 @@ impl DecryptionApp {
     }
 
     /// Loads a custom font file and registers it as "SentenceFont".
+    ///
+    /// Reads the font file into memory and registers it with egui's font system
+    /// under the name "SentenceFont". This family is configured with fallbacks
+    /// to the default proportional fonts for characters not present in the custom font.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The egui context
+    /// * `path_str` - Absolute path to the font file (`.ttf`, `.otf`, or `.ttc`)
     pub(super) fn load_custom_font(&self, ctx: &egui::Context, path_str: &str) {
         use std::path::Path;
 
@@ -61,7 +91,6 @@ impl DecryptionApp {
                 std::sync::Arc::new(egui::FontData::from_owned(data)),
             );
 
-            // Define "SentenceFont" family with fallbacks
             let fallbacks = fonts
                 .families
                 .get(&egui::FontFamily::Proportional)
@@ -79,7 +108,12 @@ impl DecryptionApp {
         }
     }
 
-    /// Saves the project to the current path or prompts for a new location.
+    /// Saves the current project to disk.
+    ///
+    /// If the project has been saved before (`current_path` is set), saves to
+    /// that location. Otherwise, opens a file picker dialog to select a save location.
+    ///
+    /// On successful save, clears the dirty flag and updates the window title.
     pub(super) fn save_project(&mut self, ctx: &egui::Context) {
         let path = if let Some(p) = &self.current_path {
             Some(p.clone())
@@ -99,7 +133,11 @@ impl DecryptionApp {
         }
     }
 
-    /// Opens a file dialog to select and load a font file.
+    /// Opens a file picker dialog to select and load a custom font.
+    ///
+    /// Allows the user to manually load a font file for the project. The font
+    /// is immediately registered with the UI framework and the path is stored
+    /// in the project for persistence.
     pub(super) fn load_font_file(&mut self, ctx: &egui::Context) {
         if let Some(path) = io::pick_font_file() {
             if let Some(path_str) = path.to_str() {
@@ -110,11 +148,18 @@ impl DecryptionApp {
         }
     }
 
-    /// Registers the "SentenceFont" family with default fallbacks.
+    /// Initializes the "SentenceFont" family with default fallbacks.
+    ///
+    /// Called during application startup to register the "SentenceFont" family.
+    /// Initially, this family contains the default proportional fonts. When a
+    /// custom font is loaded, it's added to the front of this family.
+    ///
+    /// This approach ensures that:
+    /// 1. The "SentenceFont" family always exists (preventing lookup errors)
+    /// 2. Missing glyphs fall back to default fonts gracefully
     pub fn initialize_fonts(ctx: &egui::Context) {
         let mut fonts = egui::FontDefinitions::default();
 
-        // Initialize "SentenceFont" with default proportional fonts
         let fallbacks = fonts
             .families
             .get(&egui::FontFamily::Proportional)
@@ -128,7 +173,13 @@ impl DecryptionApp {
         ctx.set_fonts(fonts);
     }
 
-    /// Exports the project to Typst markup format.
+    /// Opens a file picker and exports the project to Typst format.
+    ///
+    /// Converts the project to Typst markup suitable for professional typesetting
+    /// of interlinear glossed text. The exported file includes:
+    /// - Project title
+    /// - Custom font specification (if present)
+    /// - All segments with aligned glosses and translations
     pub(super) fn export_typst(&mut self) {
         let path = match io::pick_typst_file() {
             Some(p) => p,
@@ -140,7 +191,13 @@ impl DecryptionApp {
         }
     }
 
-    /// Updates the window title to reflect project name and dirty state.
+    /// Updates the window title to reflect project state.
+    ///
+    /// The title shows:
+    /// - The project name (or "Text Decryption Helper" if unnamed)
+    /// - An asterisk (*) suffix if there are unsaved changes
+    ///
+    /// This provides immediate visual feedback about save state.
     pub(super) fn update_title(&self, ctx: &egui::Context) {
         let dirty_mark = if self.is_dirty { "*" } else { "" };
         let title = if self.project.project_name.is_empty() {

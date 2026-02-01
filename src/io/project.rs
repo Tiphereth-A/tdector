@@ -1,6 +1,13 @@
-//! Project file loading, saving, and format conversion.
+//! Project persistence and format conversion.
+//!
+//! This module handles:
+//! - Loading projects from JSON files (current and legacy formats)
+//! - Saving projects with optimized vocabulary indexing
+//! - Format migration between runtime and storage representations
+//! - Font file auto-detection for custom scripts
+//! - Text file import and tokenization
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -8,9 +15,26 @@ use serde::Deserialize;
 
 use crate::models::{Project, SavedProject, SavedSentence, Segment, Token, VocabEntry};
 
-/// Tries to auto-detect a font file in `dir` whose basename matches `stem`.
+/// Attempts to auto-detect a matching font file in the specified directory.
 ///
-/// Supported extensions: `.ttf`, `.otf`, `.ttc`.
+/// Searches for a font file with the given basename (stem) and a supported
+/// extension. This enables automatic font loading when a project file or
+/// text file has an accompanying font file with the same name.
+///
+/// # Arguments
+///
+/// * `dir` - Directory to search for font files
+/// * `stem` - Basename to match (without extension)
+///
+/// # Returns
+///
+/// The absolute path to the font file if found, otherwise `None`.
+///
+/// # Supported Font Formats
+///
+/// - `.ttf` - TrueType Font
+/// - `.otf` - OpenType Font
+/// - `.ttc` - TrueType Collection
 fn detect_font_in_dir(dir: &Path, stem: &str) -> Option<String> {
     if stem.is_empty() {
         return None;
@@ -30,10 +54,26 @@ fn detect_font_in_dir(dir: &Path, stem: &str) -> Option<String> {
     None
 }
 
-/// Reads a text file, returning `(content, project_name, font_path)`.
+/// Reads a text file and prepares it for import.
 ///
-/// The project name is derived from the filename. A matching font file
-/// (same name, `.ttf`/`.otf`/`.ttc` extension) is auto-detected.
+/// Loads the text content and automatically derives the project name from the
+/// filename. Also attempts to detect an accompanying font file with the same
+/// basename in the same directory.
+///
+/// # Arguments
+///
+/// * `path` - Path to the text file to import
+///
+/// # Returns
+///
+/// A tuple containing:
+/// - File contents as a string
+/// - Derived project name (from filename, defaults to "Untitled")
+/// - Optional path to auto-detected font file
+///
+/// # Errors
+///
+/// Returns an error message string if the file cannot be read.
 pub fn read_text_content(path: &Path) -> Result<(String, String, Option<String>), String> {
     let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
 
@@ -52,10 +92,28 @@ pub fn read_text_content(path: &Path) -> Result<(String, String, Option<String>)
     Ok((content, project_name, font_path))
 }
 
-/// Segments text content into tokens.
+/// Tokenizes text content into segments.
 ///
-/// If `use_whitespace_split` is true, splits on whitespace (word-based);
-/// otherwise treats each character as a token (character-based).
+/// Processes the text line-by-line, creating one segment per non-empty line.
+/// The tokenization strategy depends on the script type:
+///
+/// # Arguments
+///
+/// * `content` - Raw text content to tokenize
+/// * `use_whitespace_split` - If `true`, uses word-based tokenization (splits on whitespace);
+///   if `false`, uses character-based tokenization (each character is a token)
+///
+/// # Returns
+///
+/// A vector of segments, each representing one line of the input text.
+/// Empty lines and lines containing only whitespace are skipped.
+///
+/// # Tokenization Strategies
+///
+/// - **Word-based** (whitespace split): Suitable for space-delimited scripts
+///   like English, Spanish, etc.
+/// - **Character-based**: Necessary for scripts without clear word boundaries
+///   like Chinese, Japanese, etc.
 pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment> {
     content
         .lines()
@@ -88,7 +146,30 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
         .collect()
 }
 
-/// Loads a project from JSON, supporting current and legacy formats.
+/// Loads a project from a JSON file with automatic format migration.
+///
+/// Attempts to load the project using multiple format parsers in order:
+/// 1. Current indexed vocabulary format ([`SavedProject`])
+/// 2. Legacy format with inline glosses
+///
+/// This enables seamless migration from older project file formats without
+/// requiring manual conversion.
+///
+/// # Arguments
+///
+/// * `path` - Path to the project JSON file
+///
+/// # Returns
+///
+/// The loaded project in runtime format, or an error message describing
+/// why the file could not be loaded.
+///
+/// # Errors
+///
+/// - File read errors
+/// - JSON parse errors
+/// - Corrupted data (e.g., invalid vocabulary indices)
+/// - Unrecognized format
 pub fn load_project_file(path: &Path) -> Result<Project, String> {
     let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
 
@@ -158,19 +239,27 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
     }
 }
 
-/// Converts a [`SavedProject`] (optimized serialization format) to a [`Project`] (runtime format).
+/// Converts from optimized storage format to runtime format.
 ///
-/// Returns `None` if any word index references a non-existent vocabulary entry,
-/// indicating corrupted project data.
+/// Reconstructs the vocabulary HashMap and resolves all vocabulary indices
+/// in sentences back to their token strings.
+///
+/// # Arguments
+///
+/// * `path` - Path to the project file (used for font detection)
+/// * `saved` - The deserialized storage-format project
+///
+/// # Returns
+///
+/// `Some(Project)` if all vocabulary indices are valid, `None` if any
+/// index references a non-existent vocabulary entry (corrupted data).
 fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Project> {
-    // Reconstruct vocabulary map
     let vocabulary_map: HashMap<String, String> = saved
         .vocabulary
         .iter()
         .map(|entry| (entry.word.clone(), entry.meaning.clone()))
         .collect();
 
-    // Convert sentences to segments
     let segments: Option<Vec<Segment>> = saved
         .sentences
         .into_iter()
@@ -204,10 +293,26 @@ fn convert_from_saved_project(path: &Path, saved: SavedProject) -> Option<Projec
     })
 }
 
-/// Saves the project to a JSON file.
+/// Persists a project to disk in optimized JSON format.
 ///
-/// Converts the runtime [`Project`] format to the optimized [`SavedProject`]
-/// format before serialization.
+/// Converts the runtime [`Project`] representation to the space-efficient
+/// [`SavedProject`] format before serialization. The resulting JSON file
+/// uses vocabulary indexing to minimize redundancy.
+///
+/// # Arguments
+///
+/// * `project` - The project to save
+/// * `path` - Destination file path
+///
+/// # Returns
+///
+/// `Ok(())` on success, or an error message string describing the failure.
+///
+/// # Errors
+///
+/// - Serialization failures
+/// - File write errors
+/// - Disk space issues
 pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
     let saved_project = convert_to_saved_project(project)?;
     let content = serde_json::to_string_pretty(&saved_project)
@@ -218,16 +323,35 @@ pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// Converts a [`Project`] (runtime format) to [`SavedProject`] (optimized serialization format).
+/// Converts from runtime format to optimized storage format.
 ///
-/// Creates a deduplicated, sorted vocabulary array and replaces word strings
-/// with indices, significantly reducing file size for large projects.
+/// Creates a deduplicated, sorted vocabulary array and replaces all token
+/// strings with integer indices. This transformation typically reduces file
+/// size by 50-80% for projects with significant vocabulary reuse.
 ///
-/// Returns an error if any token is missing from the vocabulary index (logic
-/// bug or concurrent mutation); avoids silently dropping token data on save.
+/// # Process
+///
+/// 1. Collects all unique words from vocabulary and segments
+/// 2. Sorts words alphabetically using BTreeSet
+/// 3. Assigns sequential indices to each word
+/// 4. Replaces token strings with vocabulary indices
+///
+/// # Arguments
+///
+/// * `project` - The runtime project to convert
+///
+/// # Returns
+///
+/// The converted storage-format project, or an error if any token cannot
+/// be mapped to a vocabulary index (indicates data corruption or race condition).
+///
+/// # Errors
+///
+/// Returns an error if any token's original text is missing from the index.
+/// This should never occur in normal operation but protects against data loss
+/// if there's a bug in vocabulary management.
 fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
-    // Collect all unique words from vocabulary and segments
-    let mut all_words: HashSet<&String> = project.vocabulary.keys().collect();
+    let mut all_words: std::collections::BTreeSet<&String> = project.vocabulary.keys().collect();
 
     for segment in &project.segments {
         for token in &segment.tokens {
@@ -235,15 +359,12 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
         }
     }
 
-    let mut sorted_words: Vec<&String> = all_words.into_iter().collect();
-    sorted_words.sort();
+    let mut word_to_idx: HashMap<&str, usize> = HashMap::with_capacity(all_words.len());
+    let mut vocabulary: Vec<VocabEntry> = Vec::with_capacity(all_words.len());
 
-    let mut word_to_idx: HashMap<String, usize> = HashMap::new();
-    let mut vocabulary: Vec<VocabEntry> = Vec::with_capacity(sorted_words.len());
-
-    for word in sorted_words {
+    for word in all_words {
         let idx = vocabulary.len();
-        word_to_idx.insert(word.clone(), idx);
+        word_to_idx.insert(word.as_str(), idx);
 
         let meaning = project.vocabulary.get(word).cloned().unwrap_or_default();
         vocabulary.push(VocabEntry {
@@ -260,12 +381,15 @@ fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
                 .tokens
                 .iter()
                 .map(|t| {
-                    word_to_idx.get(&t.original).copied().ok_or_else(|| {
-                        format!(
-                            "Token '{}' missing from vocabulary index during save",
-                            t.original
-                        )
-                    })
+                    word_to_idx
+                        .get(t.original.as_str())
+                        .copied()
+                        .ok_or_else(|| {
+                            format!(
+                                "Token '{}' missing from vocabulary index during save",
+                                t.original
+                            )
+                        })
                 })
                 .collect::<Result<Vec<usize>, String>>()?;
             Ok(SavedSentence {

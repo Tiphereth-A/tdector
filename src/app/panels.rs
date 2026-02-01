@@ -1,4 +1,9 @@
-//! Filter/sort panel and main content area rendering.
+//! UI panel rendering for filter controls and content display.
+//!
+//! This module renders:
+//! - Top panel with filter input and sort controls
+//! - Central panel with paginated segment list
+//! - Empty state when no content is available
 
 use eframe::egui;
 
@@ -9,7 +14,14 @@ use super::actions::SortMode;
 use super::state::{DecryptionApp, PopupRequest};
 
 impl DecryptionApp {
-    /// Renders the top filter/sort controls panel.
+    /// Renders the top filter and sort control panel.
+    ///
+    /// Displays a horizontal panel containing:
+    /// - A filter text input that searches across segments and tokens
+    /// - A clear button (X) when filter text is present
+    /// - A sort mode selector dropdown
+    ///
+    /// Changes to filter or sort settings reset to page 0 and trigger cache invalidation.
     pub(super) fn render_filter_panel(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("filter_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -54,7 +66,10 @@ impl DecryptionApp {
         });
     }
 
-    /// Renders the sort mode combo box selector.
+    /// Renders the sort mode dropdown selector.
+    ///
+    /// Displays a combo box with all available sort modes. Selecting a new
+    /// mode triggers re-filtering and resets pagination to the first page.
     fn render_sort_selector(&mut self, ui: &mut egui::Ui) {
         egui::ComboBox::from_id_salt("sort_selector")
             .selected_text(self.sort_mode.display_text())
@@ -76,7 +91,17 @@ impl DecryptionApp {
         }
     }
 
-    /// Renders the central panel with segment content.
+    /// Renders the central content panel with the current page of segments.
+    ///
+    /// Computes the slice of segments for the current page and renders each one.
+    /// Handles user interactions with segments and tokens, updating state and
+    /// setting popup requests as needed.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The egui context
+    /// * `any_changed` - Set to `true` if any segment content was modified
+    /// * `popup_request` - Set to trigger popup display
     pub(super) fn render_central_panel(
         &mut self,
         ctx: &egui::Context,
@@ -163,7 +188,11 @@ impl DecryptionApp {
         }
     }
 
-    /// Renders the empty state message when no segments are displayed.
+    /// Renders a centered message when no content is available.
+    ///
+    /// Shows different messages depending on whether the list is empty due to
+    /// filtering ("No segments match filter") or because no project is loaded
+    /// ("Import a text file to begin").
     fn render_empty_state(ui: &mut egui::Ui, filter_text: &str) {
         ui.centered_and_justified(|ui| {
             if filter_text.is_empty() {

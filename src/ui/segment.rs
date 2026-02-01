@@ -1,4 +1,8 @@
-//! Segment and token rendering components.
+//! Interactive segment and token rendering components.
+//!
+//! This module provides the UI components for displaying and editing text segments,
+//! including tokens with glosses and translations. It handles both view and edit modes,
+//! with special support for custom fonts and dictionary-style interaction.
 
 use std::collections::HashMap;
 
@@ -10,9 +14,23 @@ use super::types::UiAction;
 use crate::models::{Segment, Token};
 use crate::ui::highlight::create_highlighted_layout;
 
-/// Renders clickable tokens in a horizontal layout.
+/// Renders a horizontal layout of clickable tokens with glosses.
 ///
-/// Returns `Some(UiAction)` if a token was clicked.
+/// Each token is displayed vertically with its gloss above and original text below.
+/// Tokens are interactive and respond to both left-click (show definition) and
+/// right-click (show references) actions.
+///
+/// # Arguments
+///
+/// * `ui` - The egui UI context
+/// * `tokens` - Slice of tokens to render
+/// * `vocabulary` - Vocabulary map for looking up glosses
+/// * `highlight_token` - Optional token text to highlight
+/// * `use_custom_font` - Whether to use the custom "SentenceFont" family
+///
+/// # Returns
+///
+/// `Some(UiAction)` if a token was clicked, `None` otherwise.
 pub fn render_clickable_tokens(
     ui: &mut egui::Ui,
     tokens: &[Token],
@@ -21,18 +39,20 @@ pub fn render_clickable_tokens(
     use_custom_font: bool,
 ) -> Option<UiAction> {
     let mut clicked_action = None;
+
     let font_family = if use_custom_font {
         egui::FontFamily::Name("SentenceFont".into())
     } else {
         egui::FontFamily::Proportional
     };
 
+    let text_color = if ui.visuals().dark_mode {
+        colors::FONT_DARK
+    } else {
+        colors::FONT_LIGHT
+    };
+
     ui.horizontal(|ui| {
-        let text_color = if ui.visuals().dark_mode {
-            colors::FONT_DARK
-        } else {
-            colors::FONT_LIGHT
-        };
         ui.spacing_mut().item_spacing.x = constants::TOKEN_SPACING_X;
         ui.spacing_mut().item_spacing.y = constants::TOKEN_SPACING_Y;
         for token in tokens {
@@ -79,7 +99,26 @@ pub fn render_clickable_tokens(
     clicked_action
 }
 
-/// Renders a segment with editable glosses and translation.
+/// Renders a complete segment with tokens, glosses, and translation.
+///
+/// Displays a segment as a group containing:
+/// - A clickable segment number/title that triggers similarity search
+/// - A horizontal scrollable area with all tokens and their editable glosses
+/// - An editable translation text box at the bottom
+///
+/// # Arguments
+///
+/// * `ui` - The egui UI context
+/// * `segment` - The segment to render (mutable for editing)
+/// * `vocabulary` - Vocabulary map (mutable for gloss updates)
+/// * `seg_num` - Display number for this segment (1-indexed)
+/// * `highlight` - Optional text to highlight in the segment
+/// * `dictionary_mode` - If true, clicking tokens shows dictionary popups instead of editing
+/// * `use_custom_font` - Whether to use custom font for original text
+///
+/// # Returns
+///
+/// A `UiAction` indicating what operation was triggered (if any).
 pub fn render_segment(
     ui: &mut egui::Ui,
     segment: &mut Segment,
@@ -140,7 +179,19 @@ pub fn render_segment(
     action
 }
 
-/// Renders a token column: gloss above, original text below.
+/// Renders a single token as a vertical column with gloss and original text.
+///
+/// The token is displayed with:
+/// - A bordered box containing the editable gloss (top)
+/// - The original token text with optional highlighting (bottom)
+///
+/// In dictionary mode, clicking either part shows dictionary popups.
+/// In edit mode, the gloss is editable and clicking the original sets a filter.
+///
+/// # Layout
+///
+/// The column width is calculated to accommodate the wider of the gloss or
+/// original text, ensuring visual balance and readability.
 fn render_token_column(
     ui: &mut egui::Ui,
     token: &mut Token,
@@ -149,7 +200,7 @@ fn render_token_column(
     dictionary_mode: bool,
     use_custom_font: bool,
 ) -> UiAction {
-    let mut gloss = vocabulary.get(&token.original).cloned().unwrap_or_default();
+    let gloss = vocabulary.get(&token.original).cloned().unwrap_or_default();
 
     let default_font_id = egui::TextStyle::Body.resolve(ui.style());
     let token_font_id = if use_custom_font {
@@ -167,7 +218,7 @@ fn render_token_column(
     let original_width = ui
         .painter()
         .layout_no_wrap(
-            token.original.clone(),
+            token.original.as_str().into(),
             token_font_id.clone(),
             egui::Color32::PLACEHOLDER,
         )
@@ -176,7 +227,7 @@ fn render_token_column(
     let gloss_width = ui
         .painter()
         .layout_no_wrap(
-            gloss.clone(),
+            gloss.as_str().into(),
             default_font_id.clone(),
             egui::Color32::PLACEHOLDER,
         )
@@ -193,12 +244,12 @@ fn render_token_column(
     };
 
     let mut action = UiAction::None;
+    let mut gloss_edit = gloss;
 
     ui.allocate_ui_with_layout(
         egui::vec2(width + constants::GLOSS_BOX_LAYOUT_EXTRA, 0.0),
         egui::Layout::top_down(egui::Align::LEFT),
         |ui| {
-            // Gloss Box (Top)
             egui::Frame::NONE
                 .stroke(egui::Stroke::new(
                     constants::BOX_STROKE_WIDTH,
@@ -210,12 +261,11 @@ fn render_token_column(
                     if dictionary_mode {
                         let label_resp = ui.add_sized(
                             egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
-                            egui::Label::new(egui::RichText::new(&gloss).color(text_color))
+                            egui::Label::new(egui::RichText::new(&gloss_edit).color(text_color))
                                 .truncate()
                                 .sense(egui::Sense::click()),
                         );
 
-                        // Dictionary Mode Interaction
                         if label_resp.clicked() {
                             action = UiAction::ShowDefinition(token.original.clone());
                         } else if label_resp.secondary_clicked() {
@@ -224,20 +274,19 @@ fn render_token_column(
                     } else {
                         if ui
                             .add(
-                                egui::TextEdit::singleline(&mut gloss)
+                                egui::TextEdit::singleline(&mut gloss_edit)
                                     .desired_width(width)
                                     .frame(false)
                                     .text_color(text_color),
                             )
                             .changed()
                         {
-                            vocabulary.insert(token.original.clone(), gloss);
+                            vocabulary.insert(token.original.clone(), gloss_edit.clone());
                             action = UiAction::Changed;
                         }
                     }
                 });
 
-            // Original Word (Bottom)
             let layout_job =
                 create_highlighted_layout(&token.original, highlight, token_font_id, text_color);
             let label_resp = ui.add(egui::Label::new(layout_job).sense(egui::Sense::click()));
@@ -260,7 +309,15 @@ fn render_token_column(
     action
 }
 
-/// Renders the translation text editor. Returns `true` if modified.
+/// Renders the multi-line translation editor for a segment.
+///
+/// Displays a bordered, multi-line text input with optional search highlighting.
+/// The text editor automatically grows to fit content up to the configured
+/// number of rows.
+///
+/// # Returns
+///
+/// `true` if the translation text was modified, `false` otherwise.
 fn render_translation_box(
     ui: &mut egui::Ui,
     segment: &mut Segment,

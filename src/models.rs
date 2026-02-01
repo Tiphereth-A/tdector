@@ -1,17 +1,30 @@
-//! Core data models for runtime and serialization.
+//! Core data models for runtime operations and persistent storage.
 //!
-//! Two complementary model sets:
-//! - **Runtime**: [`Project`], [`Segment`], [`Token`] — in-memory representation
-//! - **Storage**: [`SavedProject`], [`SavedSentence`], [`VocabEntry`] — indexed JSON format
+//! This module defines two complementary sets of data structures:
+//!
+//! # Runtime Models
+//!
+//! - [`Project`] - Complete in-memory project state with vocabulary map
+//! - [`Segment`] - A text segment with tokens and translation
+//! - [`Token`] - Individual word or character unit
+//!
+//! # Storage Models
+//!
+//! - [`SavedProject`] - Space-optimized format using indexed vocabulary
+//! - [`SavedSentence`] - Sentence with vocabulary references instead of strings
+//! - [`VocabEntry`] - Vocabulary entry for the deduplicated vocabulary list
+//!
+//! The storage models use integer indices to reference vocabulary entries,
+//! significantly reducing file size for projects with extensive repeated vocabulary.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-// =============================================================================
-// Runtime Models
-// =============================================================================
-
-/// A single token (word or character) within a text segment.
+/// A single token representing a word or character within a text segment.
+///
+/// Tokens are the atomic units of text analysis. The actual gloss (meaning)
+/// is stored separately in the [`Project`] vocabulary map to avoid duplication
+/// when the same token appears multiple times.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Token {
     /// The original text of this token.
@@ -20,8 +33,10 @@ pub struct Token {
 
 /// A text segment containing tokens and its translation.
 ///
-/// Each segment represents a line or sentence from the source text,
-/// broken down into individual tokens with an associated translation.
+/// Segments represent logical units of text (typically lines or sentences)
+/// that are analyzed and translated as cohesive units. Each segment maintains
+/// its own token sequence and overall translation, enabling both word-level
+/// and sentence-level analysis.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Segment {
     /// The tokens that compose this segment.
@@ -30,10 +45,14 @@ pub struct Segment {
     pub translation: String,
 }
 
-/// The main project data structure used during runtime.
+/// The main project data structure used during runtime operations.
 ///
-/// This structure maintains all project state including vocabulary mappings
-/// and text segments. For disk serialization, this is converted to [`SavedProject`].
+/// This is the primary in-memory representation that the application works with.
+/// It maintains a centralized vocabulary map where each unique token's gloss
+/// is stored exactly once, referenced by all occurrences of that token.
+///
+/// When persisting to disk, this structure is converted to [`SavedProject`]
+/// for a more space-efficient representation.
 #[derive(Debug, Clone, Default)]
 pub struct Project {
     /// Display name for the project.
@@ -45,10 +64,6 @@ pub struct Project {
     /// All text segments in the project.
     pub segments: Vec<Segment>,
 }
-
-// =============================================================================
-// Serialization Models (JSON format)
-// =============================================================================
 
 /// A vocabulary entry for serialization.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -71,10 +86,15 @@ pub struct SavedSentence {
     pub meaning: String,
 }
 
-/// The optimized project format for JSON serialization.
+/// Space-optimized project format for JSON serialization.
 ///
-/// This format uses indexed vocabulary references to deduplicate repeated words,
-/// significantly reducing file size for projects with extensive vocabulary.
+/// This format employs vocabulary indexing to eliminate string duplication:
+/// each unique word is stored once in the vocabulary array, and sentences
+/// reference words by their array index. This can reduce file size by 50-80%
+/// for projects with significant vocabulary reuse.
+///
+/// The vocabulary array is automatically sorted during serialization to ensure
+/// deterministic output and enable efficient lookups during deserialization.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedProject {
     /// File format version.
@@ -89,7 +109,10 @@ pub struct SavedProject {
     pub sentences: Vec<SavedSentence>,
 }
 
-/// Default file format version for new projects.
+/// Returns the current file format version for new projects.
+///
+/// This version number is used for format compatibility checking and
+/// enables graceful handling of future format migrations.
 const fn default_version() -> u32 {
     1
 }

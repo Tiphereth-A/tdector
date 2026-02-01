@@ -1,21 +1,63 @@
-//! Typst markup export for interlinear glossing.
+//! Typst markup export for interlinear glossed text.
+//!
+//! This module generates Typst documents from projects, creating professionally
+//! typeset interlinear glossed text suitable for academic publications.
+//!
+//! The generated markup includes:
+//! - Document setup (page size, fonts)
+//! - Project title as a heading
+//! - Each segment formatted with aligned glosses above tokens
+//! - Translations displayed below each segment
 
 use std::fs;
 use std::path::Path;
 
 use crate::models::Project;
 
-/// Exports the project as Typst markup.
+/// Exports a project to a Typst markup file.
+///
+/// Generates Typst markup for the entire project and writes it to the
+/// specified file path.
+///
+/// # Arguments
+///
+/// * `project` - The project to export
+/// * `path` - Destination file path for the `.typ` file
+///
+/// # Returns
+///
+/// `Ok(())` on success, or an error message string on failure.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be written (permissions, disk space, etc.).
 pub fn save_typst_file(project: &Project, path: &Path) -> Result<(), String> {
     let content = generate_typst_content(project);
     fs::write(path, &content).map_err(|e| format!("Failed to export file: {}", e))?;
     Ok(())
 }
 
-/// Escapes special Typst characters for safe embedding in markup and strings.
+/// Escapes text for safe inclusion in Typst markup.
 ///
-/// Backslash-escapes characters with special meaning in Typst (e.g. `#`, `[`, `]`, `{`, `}`,
-/// `$`, `*`, `_`, backtick, `@`, `=`, `"`, `~`, `&`, `<`, `>`). Strips `\r` and `\n`.
+/// Typst uses several characters for special purposes in its markup language.
+/// This function backslash-escapes all such characters and removes line breaks
+/// to ensure text is rendered literally without interpretation.
+///
+/// # Escaped Characters
+///
+/// `[`, `]`, `#`, `*`, `_`, `` ` ``, `$`, `\`, `@`, `<`, `>`, `{`, `}`, `"`, `~`, `=`, `&`
+///
+/// # Removed Characters
+///
+/// `\r`, `\n` (line breaks are controlled by the markup structure)
+///
+/// # Arguments
+///
+/// * `s` - The text to escape
+///
+/// # Returns
+///
+/// The escaped string safe for embedding in Typst markup.
 fn escape_typst(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
     for c in s.chars() {
@@ -32,7 +74,25 @@ fn escape_typst(s: &str) -> String {
     result
 }
 
-/// Generates the full Typst document content.
+/// Generates the complete Typst document markup.
+///
+/// Creates a full Typst document including:
+/// 1. Page setup (A4 paper)
+/// 2. Font configuration (using custom font if specified)
+/// 3. Project title as level-1 heading
+/// 4. All segments with interlinear glossing layout
+///
+/// Each segment is rendered as a block containing:
+/// - Horizontally aligned tokens with glosses above
+/// - Translation text below with "trans:" prefix
+///
+/// # Arguments
+///
+/// * `project` - The project to convert to Typst markup
+///
+/// # Returns
+///
+/// A complete Typst document as a string.
 #[must_use]
 fn generate_typst_content(project: &Project) -> String {
     let mut content = String::new();

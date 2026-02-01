@@ -1,8 +1,15 @@
-//! Action enums and sorting configuration.
+//! Application actions and sorting configuration.
+//!
+//! This module defines the various user actions that can be triggered through
+//! the UI (menu items, keyboard shortcuts, etc.) and the different sorting
+//! modes available for segment lists.
 
 use crate::ui::PopupMode;
 
-/// Menu/keyboard actions.
+/// High-level application actions triggered by menu items or keyboard shortcuts.
+///
+/// These actions represent user intentions that may require confirmation
+/// dialogs (e.g., if there are unsaved changes) before execution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppAction {
     /// Import a text file.
@@ -15,7 +22,10 @@ pub enum AppAction {
     Quit,
 }
 
-/// Segment list sorting modes.
+/// Available sorting modes for the segment list.
+///
+/// Segments can be sorted by index (original order), original text content,
+/// token count, or translation completion ratio.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortMode {
     IndexAsc,
@@ -29,7 +39,9 @@ pub enum SortMode {
 }
 
 impl SortMode {
-    /// All sort modes in display order for the selector.
+    /// Returns all available sort modes in their display order.
+    ///
+    /// This method provides the canonical ordering for UI selection widgets.
     #[must_use]
     pub const fn all() -> [Self; 8] {
         [
@@ -60,9 +72,15 @@ impl SortMode {
     }
 }
 
-/// Popup types that can be pinned (kept open independently).
-#[derive(Debug)]
+/// Popup window types that can be pinned to remain open independently.
+///
+/// Pinned popups allow users to keep multiple reference windows open simultaneously,
+/// which is useful for comparing segments or referring to multiple dictionary entries.
+/// Each variant caches its title string to avoid repeated allocations during rendering.
+#[derive(Debug, Clone)]
 pub enum PinnedPopup {
-    Similar(usize, Vec<(usize, f64)>, u64),
-    Dictionary(String, PopupMode, u64),
+    /// Similar segments popup: (target_idx, similarity_scores, popup_id, cached_title)
+    Similar(usize, Vec<(usize, f64)>, u64, String),
+    /// Dictionary popup: (word, mode, popup_id, cached_title)
+    Dictionary(String, PopupMode, u64, String),
 }

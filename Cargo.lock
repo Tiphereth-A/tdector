@@ -3181,6 +3181,7 @@ name = "tdector"
 version = "0.1.0"
 dependencies = [
  "eframe",
+ "ndarray",
  "rfd",
  "scirs2-text",
  "serde",
