@@ -7,9 +7,12 @@
 //! - Text file import and tokenization
 
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs;
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::Path;
 
+#[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 
 use crate::models::{Project, SavedProject, SavedSentence, Segment, Token, VocabEntry};
@@ -33,6 +36,7 @@ use crate::models::{Project, SavedProject, SavedSentence, Segment, Token, VocabE
 /// # Errors
 ///
 /// Returns an error message string if the file cannot be read.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn read_text_content(path: &Path) -> Result<(String, String), String> {
     let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?;
 
@@ -130,6 +134,7 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
 /// - JSON parse errors
 /// - Corrupted data (e.g., invalid vocabulary indices)
 /// - Unrecognized format
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load_project_file(path: &Path) -> Result<Project, String> {
     let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?;
 
@@ -207,7 +212,7 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
 
 /// Converts from optimized storage format to runtime format.
 ///
-/// Reconstructs the vocabulary HashMap and resolves all vocabulary indices
+/// Reconstructs the vocabulary `HashMap` and resolves all vocabulary indices
 /// in sentences back to their token strings.
 ///
 /// # Arguments
@@ -218,7 +223,7 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
 ///
 /// `Some(Project)` if all vocabulary indices are valid, `None` if any
 /// index references a non-existent vocabulary entry (corrupted data).
-fn convert_from_saved_project(mut saved: SavedProject) -> Option<Project> {
+pub fn convert_from_saved_project(mut saved: SavedProject) -> Option<Project> {
     for rule in &mut saved.formation {
         rule.cached_ast = crate::models::default_cached_ast();
     }
@@ -306,6 +311,7 @@ fn convert_from_saved_project(mut saved: SavedProject) -> Option<Project> {
 /// - Serialization failures
 /// - File write errors
 /// - Disk space issues
+#[cfg(not(target_arch = "wasm32"))]
 pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
     let saved_project = convert_to_saved_project(project)?;
 
@@ -330,7 +336,7 @@ pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
 /// # Process
 ///
 /// 1. Collects all unique words from vocabulary and segments
-/// 2. Sorts words alphabetically using BTreeSet
+/// 2. Sorts words alphabetically using `BTreeSet`
 /// 3. Assigns sequential indices to each word
 /// 4. Replaces token strings with vocabulary indices
 ///
@@ -348,7 +354,7 @@ pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
 /// Returns an error if any token's original text is missing from the index.
 /// This should never occur in normal operation but protects against data loss
 /// if there's a bug in vocabulary management.
-fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
+pub fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
     let mut all_words: std::collections::BTreeSet<&String> = project.vocabulary.keys().collect();
 
     for segment in &project.segments {

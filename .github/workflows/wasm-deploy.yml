@@ -1,0 +1,71 @@
+name: Build and Deploy WASM
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/**'
+      - 'src/**'
+      - 'assets/**'
+      - '*.html'
+      - '*.js'
+      - '*.toml'
+      - 'Cargo.lock'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/**'
+      - 'src/**'
+      - 'assets/**'
+      - '*.html'
+      - '*.js'
+      - '*.toml'
+      - 'Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install trunk
+        run: cargo install --locked trunk
+
+      - name: Build WASM
+        run: trunk build --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: wasm-build
+          path: dist/
+          retention-days: 3
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: ${{ contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name)  && github.ref == 'refs/heads/master' }}
+    needs: build-wasm
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

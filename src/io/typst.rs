@@ -9,7 +9,9 @@
 //! - Each segment formatted with aligned glosses above tokens
 //! - Translations displayed below each segment
 
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs;
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::Path;
 
 use crate::models::Project;
@@ -31,6 +33,7 @@ use crate::models::Project;
 /// # Errors
 ///
 /// Returns an error if the file cannot be written (permissions, disk space, etc.).
+#[cfg(not(target_arch = "wasm32"))]
 pub fn save_typst_file(project: &Project, path: &Path) -> Result<(), String> {
     let content = generate_typst_content(project);
     fs::write(path, &content).map_err(|e| format!("Failed to export file: {e}"))?;
@@ -58,7 +61,7 @@ pub fn save_typst_file(project: &Project, path: &Path) -> Result<(), String> {
 /// # Returns
 ///
 /// The escaped string safe for embedding in Typst markup.
-fn escape_typst(s: &str) -> String {
+pub fn escape_typst(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
     for c in s.chars() {
         match c {
@@ -94,7 +97,7 @@ fn escape_typst(s: &str) -> String {
 ///
 /// A complete Typst document as a string.
 #[must_use]
-fn generate_typst_content(project: &Project) -> String {
+pub fn generate_typst_content(project: &Project) -> String {
     let mut content = String::new();
     content.push_str("#set page(paper: \"a4\")\n");
     content.push_str("#set text(size: 12pt)\n");

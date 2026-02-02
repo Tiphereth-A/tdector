@@ -24,7 +24,7 @@ impl LookupCache {
     ///
     /// # Returns
     ///
-    /// A tuple of (headword_lookup, usage_lookup) that can be passed
+    /// A tuple of (`headword_lookup`, `usage_lookup`) that can be passed
     /// as immutable references.
     pub fn take(
         &mut self,

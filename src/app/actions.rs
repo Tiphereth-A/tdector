@@ -60,14 +60,14 @@ impl SortMode {
     #[must_use]
     pub fn display_text(self) -> &'static str {
         match self {
-            SortMode::IndexAsc => "Index (Asc)",
-            SortMode::IndexDesc => "Index (Desc)",
-            SortMode::OriginalAsc => "Original (Asc)",
-            SortMode::OriginalDesc => "Original (Desc)",
-            SortMode::LengthAsc => "Length (Shortest First)",
-            SortMode::LengthDesc => "Length (Longest First)",
-            SortMode::TranslatedRatioAsc => "Translated Ratio (Asc)",
-            SortMode::TranslatedRatioDesc => "Translated Ratio (Desc)",
+            Self::IndexAsc => "Index (Asc)",
+            Self::IndexDesc => "Index (Desc)",
+            Self::OriginalAsc => "Original (Asc)",
+            Self::OriginalDesc => "Original (Desc)",
+            Self::LengthAsc => "Length (Shortest First)",
+            Self::LengthDesc => "Length (Longest First)",
+            Self::TranslatedRatioAsc => "Translated Ratio (Asc)",
+            Self::TranslatedRatioDesc => "Translated Ratio (Desc)",
         }
     }
 }
@@ -79,8 +79,8 @@ impl SortMode {
 /// Each variant caches its title string to avoid repeated allocations during rendering.
 #[derive(Debug, Clone)]
 pub enum PinnedPopup {
-    /// Similar segments popup: (target_idx, similarity_scores, popup_id, cached_title)
+    /// Similar segments popup: (`target_idx`, `similarity_scores`, `popup_id`, `cached_title`)
     Similar(usize, Vec<(usize, f64)>, u64, String),
-    /// Dictionary popup: (word, mode, popup_id, cached_title)
+    /// Dictionary popup: (word, mode, `popup_id`, `cached_title`)
     Dictionary(String, PopupMode, u64, String),
 }

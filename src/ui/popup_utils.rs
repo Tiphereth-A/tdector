@@ -5,13 +5,13 @@ use eframe::egui;
 /// Creates a popup title with optional custom font support.
 ///
 /// Generates consistent title formatting across all popup windows.
-/// If `use_custom_font` is true, applies the "SentenceFont" to the word portion.
+/// If `use_custom_font` is true, applies the "`SentenceFont`" to the word portion.
 ///
 /// # Arguments
 ///
 /// * `prefix` - The text prefix (e.g., "Definition: ", "References: ")
 /// * `word` - The word to display (potentially in custom font)
-/// * `use_custom_font` - Whether to use the custom "SentenceFont" family
+/// * `use_custom_font` - Whether to use the custom "`SentenceFont`" family
 ///
 /// # Returns
 ///

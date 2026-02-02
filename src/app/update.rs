@@ -15,6 +15,8 @@ use std::collections::{HashMap, HashSet};
 
 use eframe::egui;
 
+#[cfg(target_arch = "wasm32")]
+use crate::io;
 use crate::ui::{self, PopupMode};
 
 use super::actions::AppAction;
@@ -24,7 +26,7 @@ impl DecryptionApp {
     /// Creates a new application instance and initializes fonts.
     ///
     /// This is called once by eframe during application startup. It sets up
-    /// the custom "SentenceFont" family and returns a default application state.
+    /// the custom "`SentenceFont`" family and returns a default application state.
     ///
     /// # Arguments
     ///
@@ -37,6 +39,10 @@ impl DecryptionApp {
 
 impl eframe::App for DecryptionApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Process pending file operations from WASM async callbacks
+        #[cfg(target_arch = "wasm32")]
+        self.process_pending_file_operations(ctx);
+
         let mut do_import = false;
         let mut do_open = false;
         let mut do_save = false;
@@ -333,5 +339,87 @@ impl DecryptionApp {
         }
 
         self.lookup_cache.restore(Some(headmap), Some(usagemap));
+    }
+
+    /// Process pending file operations from WASM async callbacks (WASM only).
+    ///
+    /// This function checks for completed async file operations and processes them,
+    /// updating the application state accordingly. It handles both text file imports
+    /// and project file loading.
+    #[cfg(target_arch = "wasm32")]
+    fn process_pending_file_operations(&mut self, ctx: &egui::Context) {
+        // Process pending text file
+        if let Ok(mut guard) = self.pending_text_file.try_lock() {
+            if let Some(result) = guard.take() {
+                match result {
+                    Ok((content, name)) => {
+                        self.pending_import = Some((content, name));
+                    }
+                    Err(e) => {
+                        self.error_message = Some(format!("Failed to load text file: {}", e));
+                    }
+                }
+            }
+        }
+
+        // Process pending project file
+        let project_result = if let Ok(mut guard) = self.pending_project_file.try_lock() {
+            guard.take()
+        } else {
+            None
+        };
+
+        if let Some(result) = project_result {
+            match result {
+                Ok((content, _name)) => {
+                    match serde_json::from_str::<crate::models::SavedProject>(&content) {
+                        Ok(saved_project) => {
+                            // Convert from SavedProject to Project
+                            match io::convert_from_saved_project(saved_project) {
+                                Some(project) => {
+                                    self.project = project;
+                                    self.current_path = None; // No path in browser
+                                    self.filter_dirty = true;
+                                    self.lookups_dirty = true;
+                                    self.tfidf_dirty = true;
+                                    self.filter_text.clear();
+                                    self.clear_popups();
+                                    self.update_dirty_status(false, ctx);
+                                }
+                                None => {
+                                    self.error_message =
+                                        Some("Failed to convert project format".to_string());
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            self.error_message =
+                                Some(format!("Failed to parse project file: {}", e));
+                        }
+                    }
+                }
+                Err(e) => {
+                    self.error_message = Some(format!("Failed to load project file: {}", e));
+                }
+            }
+        }
+
+        // Process pending font file
+        let font_result = if let Ok(mut guard) = self.pending_font_file.try_lock() {
+            guard.take()
+        } else {
+            None
+        };
+
+        if let Some(result) = font_result {
+            match result {
+                Ok((data, name)) => {
+                    self.load_custom_font_from_bytes(ctx, data, &name);
+                }
+                Err(e) => {
+                    self.error_message = Some(format!("Failed to load font file: {}", e));
+                }
+            }
+        }
     }
 }

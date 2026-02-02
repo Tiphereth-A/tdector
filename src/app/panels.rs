@@ -210,11 +210,11 @@ impl DecryptionApp {
     ///
     /// Shows different messages depending on whether the list is empty due to
     /// filtering ("No segments match filter") or because no project is loaded
-    /// ("Import a text file to begin").
+    /// ("Import a text file or open a project to begin").
     fn render_empty_state(ui: &mut egui::Ui, filter_text: &str) {
         ui.centered_and_justified(|ui| {
             if filter_text.is_empty() {
-                ui.label("Import a text file to begin.");
+                ui.label("Import a text file or open a project to begin.");
             } else {
                 ui.label("No segments match filter.");
             }

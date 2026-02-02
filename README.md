@@ -20,6 +20,7 @@ A GUI tool for assisted text decryption and translation.
 
 ### Advanced Analysis
 - **TF-IDF Similarity Search**: Find similar tokens and text segments using TF-IDF analysis with incremental caching for performance.
+  - **Note**: Similarity search is currently disabled in the web version and requires the desktop application. Support is pending SciRS2 v0.3.0 WASM compatibility.
 - **Full-Text Filtering**: Filter and search segments with real-time updates and multiple sort modes (by index or frequency).
 - **Word Formation Rules**: Create and apply custom word formation rules (derivation, inflection, nonmorphological) using Rhai scripting:
   - Transform words based on pattern rules
@@ -27,7 +28,7 @@ A GUI tool for assisted text decryption and translation.
   - Build vocabulary connections between related forms
 - **Context Menus**: Right-click on words or segments to access quick actions:
   - Add/edit definitions and references
-  - View similar segments
+  - View similar segments (desktop only)
   - Apply word formation rules
   - Add comments and annotations
 
@@ -48,8 +49,26 @@ A GUI tool for assisted text decryption and translation.
 
 ## Usage
 
-### Running the application
+### Building the Desktop Application
 
 ```bash
-cargo run
+cargo build --release
 ```
+
+### Building for Web
+
+Build the WASM binary and run a development server:
+
+```bash
+trunk serve
+```
+
+This starts a local development server at `http://localhost:8080` with hot-reload support.
+
+### Building Web Release
+
+```bash
+trunk build --release
+```
+
+The optimized WASM application will be in the `dist/` directory, ready for deployment to any static hosting service.

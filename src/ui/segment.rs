@@ -28,7 +28,7 @@ use crate::ui::highlight::create_highlighted_layout;
 /// * `vocabulary` - Vocabulary map for looking up glosses
 /// * `vocabulary_comments` - Comments map for looking up word comments
 /// * `highlight_token` - Optional token text to highlight
-/// * `use_custom_font` - Whether to use the custom "SentenceFont" family
+/// * `use_custom_font` - Whether to use the custom "`SentenceFont`" family
 ///
 /// # Returns
 ///
@@ -336,10 +336,8 @@ fn render_token_column(
                     } else {
                         // Regular tokens have editable gloss
                         let lookup_word = base_word.clone();
-                        let mut current_gloss = vocabulary
-                            .get(&lookup_word)
-                            .cloned()
-                            .unwrap_or_default();
+                        let mut current_gloss =
+                            vocabulary.get(&lookup_word).cloned().unwrap_or_default();
 
                         let edit_resp = ui.add_sized(
                             egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),

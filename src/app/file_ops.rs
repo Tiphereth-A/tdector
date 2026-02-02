@@ -19,6 +19,7 @@ impl DecryptionApp {
     /// Reads the text content and prepares it for tokenization by storing it
     /// in the pending import state. The user will then be prompted to select
     /// a tokenization strategy (word-based or character-based).
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn load_text_file(&mut self, _ctx: &egui::Context) {
         let path = match io::pick_text_file() {
             Some(p) => p,
@@ -33,6 +34,16 @@ impl DecryptionApp {
         }
     }
 
+    /// WASM version: Uses browser file picker API.
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn load_text_file(&mut self, _ctx: &egui::Context) {
+        let pending = self.pending_text_file.clone();
+        io::wasm_file::wasm_files::pick_and_read_text_file(move |result| {
+            let mut guard = pending.lock().unwrap();
+            *guard = Some(result);
+        });
+    }
+
     /// Opens a file picker dialog to select and load a project file.
     ///
     /// Loads the project from JSON, automatically handling format migration
@@ -41,6 +52,7 @@ impl DecryptionApp {
     ///
     /// On successful load, all caches are invalidated and the UI is reset to
     /// display the newly loaded project.
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn load_project(&mut self, ctx: &egui::Context) {
         let path = match io::pick_project_file() {
             Some(p) => p,
@@ -65,16 +77,27 @@ impl DecryptionApp {
         }
     }
 
-    /// Loads a custom font file and registers it as "SentenceFont".
+    /// WASM version: Uses browser file picker API.
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn load_project(&mut self, _ctx: &egui::Context) {
+        let pending = self.pending_project_file.clone();
+        io::wasm_file::wasm_files::pick_and_read_json_file(move |result| {
+            let mut guard = pending.lock().unwrap();
+            *guard = Some(result);
+        });
+    }
+
+    /// Loads a custom font file and registers it as "`SentenceFont`".
     ///
     /// Reads the font file into memory and registers it with egui's font system
-    /// under the name "SentenceFont". This family is configured with fallbacks
+    /// under the name "`SentenceFont`". This family is configured with fallbacks
     /// to the default proportional fonts for characters not present in the custom font.
     ///
     /// # Arguments
     ///
     /// * `ctx` - The egui context
     /// * `path_str` - Absolute path to the font file (`.ttf`, `.otf`, or `.ttc`)
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn load_custom_font(&self, ctx: &egui::Context, path_str: &str) {
         use std::path::Path;
 
@@ -110,6 +133,7 @@ impl DecryptionApp {
     /// that location. Otherwise, opens a file picker dialog to select a save location.
     ///
     /// On successful save, clears the dirty flag and updates the window title.
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn save_project(&mut self, ctx: &egui::Context) {
         let path = if let Some(p) = &self.current_path {
             Some(p.clone())
@@ -128,11 +152,36 @@ impl DecryptionApp {
         }
     }
 
+    /// WASM version: Downloads project file to browser.
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn save_project(&mut self, ctx: &egui::Context) {
+        match io::convert_to_saved_project(&self.project) {
+            Ok(saved_project) => match serde_json::to_string_pretty(&saved_project) {
+                Ok(json_content) => {
+                    let filename = "project.json";
+                    io::wasm_file::wasm_files::download_file(
+                        filename,
+                        &json_content,
+                        "application/json",
+                    );
+                    self.update_dirty_status(false, ctx);
+                }
+                Err(e) => {
+                    self.error_message = Some(format!("Failed to serialize project: {}", e));
+                }
+            },
+            Err(e) => {
+                self.error_message = Some(format!("Failed to convert project: {}", e));
+            }
+        }
+    }
+
     /// Opens a file picker dialog to select and load a custom font.
     ///
     /// Allows the user to manually load a font file for the project. The font
     /// is immediately registered with the UI framework and the path is stored
     /// in the project for persistence.
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn load_font_file(&mut self, ctx: &egui::Context) {
         if let Some(path) = io::pick_font_file()
             && let Some(path_str) = path.to_str()
@@ -143,14 +192,59 @@ impl DecryptionApp {
         }
     }
 
-    /// Initializes the "SentenceFont" family with default fallbacks.
+    /// WASM version: Uses browser file picker API to load fonts.
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn load_font_file(&mut self, _ctx: &egui::Context) {
+        let pending = self.pending_font_file.clone();
+        io::wasm_file::wasm_files::pick_and_read_font_file(move |result| {
+            let mut guard = pending.lock().unwrap();
+            *guard = Some(result);
+        });
+    }
+
+    /// WASM version: Loads a custom font from binary data.
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn load_custom_font_from_bytes(
+        &mut self,
+        ctx: &egui::Context,
+        data: Vec<u8>,
+        font_name: &str,
+    ) {
+        let mut fonts = egui::FontDefinitions::default();
+
+        fonts.font_data.insert(
+            "custom_font".to_owned(),
+            std::sync::Arc::new(egui::FontData::from_owned(data)),
+        );
+
+        let fallbacks = fonts
+            .families
+            .get(&egui::FontFamily::Proportional)
+            .cloned()
+            .unwrap_or_default();
+
+        let mut custom_list = vec!["custom_font".to_owned()];
+        custom_list.extend(fallbacks);
+
+        fonts
+            .families
+            .insert(egui::FontFamily::Name("SentenceFont".into()), custom_list);
+
+        ctx.set_fonts(fonts);
+
+        // Store font name in project (not the full data, just a reference)
+        self.project.font_path = Some(font_name.to_string());
+        self.update_title(ctx);
+    }
+
+    /// Initializes the "`SentenceFont`" family with default fallbacks.
     ///
-    /// Called during application startup to register the "SentenceFont" family.
+    /// Called during application startup to register the "`SentenceFont`" family.
     /// Initially, this family contains the default proportional fonts. When a
     /// custom font is loaded, it's added to the front of this family.
     ///
     /// This approach ensures that:
-    /// 1. The "SentenceFont" family always exists (preventing lookup errors)
+    /// 1. The "`SentenceFont`" family always exists (preventing lookup errors)
     /// 2. Missing glyphs fall back to default fonts gracefully
     pub fn initialize_fonts(ctx: &egui::Context) {
         let mut fonts = egui::FontDefinitions::default();
@@ -175,6 +269,7 @@ impl DecryptionApp {
     /// - Project title
     /// - Custom font specification (if present)
     /// - All segments with aligned glosses and translations
+    #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn export_typst(&mut self) {
         let path = match io::pick_typst_file() {
             Some(p) => p,
@@ -184,6 +279,21 @@ impl DecryptionApp {
         if let Err(e) = io::save_typst_file(&self.project, &path) {
             self.error_message = Some(e);
         }
+    }
+
+    /// WASM version: Downloads Typst file to browser.
+    #[cfg(target_arch = "wasm32")]
+    pub(super) fn export_typst(&mut self) {
+        let content = io::generate_typst_content(&self.project);
+        let filename = format!(
+            "{}.typ",
+            if self.project.project_name.is_empty() {
+                "export".to_string()
+            } else {
+                self.project.project_name.clone()
+            }
+        );
+        io::wasm_file::wasm_files::download_file(&filename, &content, "text/plain");
     }
 
     /// Updates the window title to reflect project state.

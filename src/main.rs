@@ -21,16 +21,58 @@ mod models;
 mod ui;
 
 use app::DecryptionApp;
-use eframe::egui;
-use ui::constants;
 
-/// Application entry point.
-///
-/// Initializes the GUI framework and launches the main application window.
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    use eframe::wasm_bindgen::JsCast as _;
+
+    // Redirect `log` message to `console.log` and friends:
+    eframe::WebLogger::init(log::LevelFilter::Debug).ok();
+
+    let web_options = eframe::WebOptions::default();
+
+    wasm_bindgen_futures::spawn_local(async {
+        let document = web_sys::window()
+            .expect("no window exists")
+            .document()
+            .expect("no document exists");
+        let canvas = document
+            .get_element_by_id("the_canvas_id")
+            .expect("failed to find the canvas element")
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .expect("canvas element has wrong type");
+        let runner = eframe::WebRunner::new();
+        runner
+            .start(
+                canvas,
+                web_options,
+                Box::new(|cc| Ok(DecryptionApp::new(cc))),
+            )
+            .await
+            .expect("failed to start eframe");
+
+        // Remove the loading spinner once the app has started
+        if let Some(loading_element) = document.get_element_by_id("loading_text") {
+            loading_element.remove();
+        }
+    });
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
+    use eframe::egui;
+    use ui::constants;
+
+    env_logger::init();
+
+    let mut viewport = egui::ViewportBuilder::default()
+        .with_inner_size([constants::WINDOW_WIDTH, constants::WINDOW_HEIGHT]);
+    if let Some(icon) = load_app_icon() {
+        viewport = viewport.with_icon(icon);
+    }
+
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([constants::WINDOW_WIDTH, constants::WINDOW_HEIGHT]),
+        viewport,
         ..Default::default()
     };
 
@@ -39,4 +81,17 @@ fn main() -> eframe::Result<()> {
         options,
         Box::new(|cc| Ok(DecryptionApp::new(cc))),
     )
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn load_app_icon() -> Option<eframe::egui::IconData> {
+    const ICON_BYTES: &[u8] = include_bytes!("../assets/favicon.ico");
+    let image = image::load_from_memory(ICON_BYTES).ok()?.into_rgba8();
+    let (width, height) = image.dimensions();
+
+    Some(eframe::egui::IconData {
+        rgba: image.into_raw(),
+        width,
+        height,
+    })
 }

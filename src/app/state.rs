@@ -4,6 +4,8 @@
 //! state including project data, UI state, caches, and dirty flags for invalidation.
 
 use std::path::PathBuf;
+#[cfg(target_arch = "wasm32")]
+use std::sync::{Arc, Mutex};
 
 use eframe::egui;
 
@@ -95,6 +97,12 @@ pub struct DecryptionApp {
     pub(super) page_size: usize,
     pub(super) is_dirty: bool,
     pub(super) pending_import: Option<(String, String)>,
+    #[cfg(target_arch = "wasm32")]
+    pub(super) pending_text_file: Arc<Mutex<Option<Result<(String, String), String>>>>,
+    #[cfg(target_arch = "wasm32")]
+    pub(super) pending_project_file: Arc<Mutex<Option<Result<(String, String), String>>>>,
+    #[cfg(target_arch = "wasm32")]
+    pub(super) pending_font_file: Arc<Mutex<Option<Result<(Vec<u8>, String), String>>>>,
     pub(super) filter_text: String,
     pub(super) sort_mode: SortMode,
     pub(super) error_message: Option<String>,
@@ -132,6 +140,12 @@ impl Default for DecryptionApp {
             page_size: 10,
             is_dirty: false,
             pending_import: None,
+            #[cfg(target_arch = "wasm32")]
+            pending_text_file: Arc::new(Mutex::new(None)),
+            #[cfg(target_arch = "wasm32")]
+            pending_project_file: Arc::new(Mutex::new(None)),
+            #[cfg(target_arch = "wasm32")]
+            pending_font_file: Arc::new(Mutex::new(None)),
             filter_text: String::new(),
             sort_mode: SortMode::IndexAsc,
             error_message: None,

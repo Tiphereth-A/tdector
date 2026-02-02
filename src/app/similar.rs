@@ -13,11 +13,14 @@
 //!
 //! The TF-IDF matrix is cached and only regenerated when segments change.
 
+#[cfg(not(target_arch = "wasm32"))]
 use ndarray::Array2;
+#[cfg(not(target_arch = "wasm32"))]
 use scirs2_text::{TfidfVectorizer, Vectorizer, WhitespaceTokenizer, cosine_similarity};
 
 use super::state::DecryptionApp;
 
+#[cfg(not(target_arch = "wasm32"))]
 impl DecryptionApp {
     /// Ensures the TF-IDF matrix cache is up-to-date.
     ///
@@ -134,5 +137,29 @@ impl DecryptionApp {
         scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         self.similar_popup = Some((target_idx, scores));
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl DecryptionApp {
+    /// WASM version: Similarity search not supported due to upstream SIMD dependency.
+    ///
+    /// The scirs2-text library requires SIMD instructions which are not yet available
+    /// in stable WASM. This feature will be enabled once SciRS2 v0.3.0 is released
+    /// with WASM support.
+
+    /// WASM version: Similarity search not supported due to upstream SIMD dependency.
+    ///
+    /// Shows an error message explaining that similarity features are not available
+    /// in the web version due to waiting on SciRS2 v0.3.0 for WASM compatibility.
+
+    pub(super) fn compute_similar_segments(&mut self, _target_idx: usize) {
+        self.error_message = Some(
+            "Similarity search is not yet supported in the web version. \
+            This feature requires the SciRS2 library which depends on SIMD instructions. \
+            Support will be added once SciRS2 v0.3.0 is released with WASM compatibility. \
+            Please use the desktop application for similarity features."
+                .to_string(),
+        );
     }
 }

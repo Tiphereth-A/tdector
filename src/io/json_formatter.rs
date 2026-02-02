@@ -1,6 +1,6 @@
 //! Custom JSON formatter for compact array output.
 //!
-//! Provides a serde_json formatter that keeps arrays on a single line
+//! Provides a `serde_json` formatter that keeps arrays on a single line
 //! while maintaining readable pretty-printing for objects.
 
 use std::io;

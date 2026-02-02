@@ -80,6 +80,7 @@ impl TfidfUpdateTracker {
     }
 
     /// Clears all tracking state after a successful update.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn clear(&mut self) {
         self.dirty_segments.clear();
         self.new_segments.clear();
@@ -88,6 +89,7 @@ impl TfidfUpdateTracker {
     }
 
     /// Returns true if any segments are dirty.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn is_dirty(&self) -> bool {
         !self.dirty_segments.is_empty()
             || !self.new_segments.is_empty()
@@ -116,10 +118,12 @@ impl CachedTfidf {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_matrix(&self) -> Option<&Array2<f64>> {
         self.matrix.as_ref()
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn set_matrix(&mut self, matrix: Array2<f64>) {
         self.matrix = Some(matrix);
         self.tracker.clear();
@@ -134,6 +138,7 @@ impl CachedTfidf {
         self.tracker.mark_full_rebuild();
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn is_dirty(&self) -> bool {
         self.tracker.is_dirty() || self.matrix.is_none()
     }

@@ -17,8 +17,10 @@ pub const POPUP_REFERENCE_HEIGHT: f32 = 500.0;
 pub const POPUP_SIMILAR_HEIGHT: f32 = 480.0;
 
 /// Default window width.
+#[cfg(not(target_arch = "wasm32"))]
 pub const WINDOW_WIDTH: f32 = 1024.0;
 /// Default window height.
+#[cfg(not(target_arch = "wasm32"))]
 pub const WINDOW_HEIGHT: f32 = 768.0;
 
 /// Horizontal spacing between tokens in pixels.

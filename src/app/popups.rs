@@ -2,10 +2,10 @@
 //!
 //! This module coordinates the rendering of various popup types.
 //! The actual rendering implementations are in separate modules:
-//! - dictionary_popups: Dictionary definition and reference popups
-//! - similar_popups: Similar segments popups
-//! - pinned_popups: Pinned popup management
-//! - word_formation_popups: Word formation and menu popups
+//! - `dictionary_popups`: Dictionary definition and reference popups
+//! - `similar_popups`: Similar segments popups
+//! - `pinned_popups`: Pinned popup management
+//! - `word_formation_popups`: Word formation and menu popups
 
 use std::collections::HashMap;
 

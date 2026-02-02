@@ -8,7 +8,9 @@ impl DecryptionApp {
     pub(super) fn render_sentence_menu_popup(
         &mut self,
         ctx: &egui::Context,
-        popup_request: &mut Option<PopupRequest>,
+        #[cfg_attr(target_arch = "wasm32", allow(unused_variables))] popup_request: &mut Option<
+            PopupRequest,
+        >,
     ) {
         if let Some((sentence_idx, cursor_pos)) = self.sentence_menu_popup.as_ref().cloned() {
             let mut should_close = false;
@@ -21,12 +23,22 @@ impl DecryptionApp {
                     egui::Frame::menu(ui.style()).show(ui, |ui| {
                         ui.set_min_width(200.0);
 
-                        if ui
-                            .add(egui::Button::new("Query Similar Sentences").frame(false))
-                            .clicked()
-                        {
-                            *popup_request = Some(PopupRequest::Similar(sentence_idx));
-                            should_close = true;
+                        let similarity_button = ui.add_enabled(
+                            cfg!(not(target_arch = "wasm32")),
+                            egui::Button::new("Query Similar Sentences").frame(false)
+                        );
+
+                        #[cfg(not(target_arch = "wasm32"))]
+                        if similarity_button.clicked() {
+                            {
+                                *popup_request = Some(PopupRequest::Similar(sentence_idx));
+                                should_close = true;
+                            }
+                        }
+
+                        #[cfg(target_arch = "wasm32")]
+                        if similarity_button.hovered() {
+                            similarity_button.on_hover_text("Similarity search is not yet supported in the web version.\nAwaiting SciRS2 v0.3.0 for WASM compatibility.");
                         }
 
                         if ui
