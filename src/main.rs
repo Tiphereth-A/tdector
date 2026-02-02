@@ -13,6 +13,8 @@
 //! - TF-IDF similarity search for finding related segments
 //! - Export annotated documents to Typst format for professional typesetting
 
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod app;
 mod io;
 mod models;
