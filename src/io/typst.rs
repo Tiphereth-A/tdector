@@ -97,25 +97,7 @@ fn escape_typst(s: &str) -> String {
 fn generate_typst_content(project: &Project) -> String {
     let mut content = String::new();
     content.push_str("#set page(paper: \"a4\")\n");
-
-    if let Some(font_path) = &project.font_path {
-        let font_name = std::path::Path::new(font_path)
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("");
-
-        if !font_name.is_empty() {
-            content.push_str(&format!(
-                "#set text(size: 12pt, font: \"{}\")\n",
-                escape_typst(font_name)
-            ));
-        } else {
-            content.push_str("#set text(size: 12pt)\n");
-        }
-    } else {
-        content.push_str("#set text(size: 12pt)\n");
-    }
-
+    content.push_str("#set text(size: 12pt)\n");
     content.push_str(&format!("= {}\n\n", escape_typst(&project.project_name)));
 
     for segment in &project.segments {

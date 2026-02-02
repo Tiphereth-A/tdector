@@ -19,9 +19,6 @@ impl DecryptionApp {
     /// Reads the text content and prepares it for tokenization by storing it
     /// in the pending import state. The user will then be prompted to select
     /// a tokenization strategy (word-based or character-based).
-    ///
-    /// Also attempts to auto-detect an accompanying font file with the same
-    /// basename as the selected text file.
     pub(super) fn load_text_file(&mut self, _ctx: &egui::Context) {
         let path = match io::pick_text_file() {
             Some(p) => p,
@@ -29,8 +26,8 @@ impl DecryptionApp {
         };
 
         match io::read_text_content(&path) {
-            Ok((content, name, font_path)) => {
-                self.pending_import = Some((content, name, font_path));
+            Ok((content, name)) => {
+                self.pending_import = Some((content, name));
             }
             Err(e) => self.error_message = Some(e),
         }

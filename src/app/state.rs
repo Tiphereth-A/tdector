@@ -94,7 +94,7 @@ pub struct DecryptionApp {
     pub(super) current_page: usize,
     pub(super) page_size: usize,
     pub(super) is_dirty: bool,
-    pub(super) pending_import: Option<(String, String, Option<String>)>,
+    pub(super) pending_import: Option<(String, String)>,
     pub(super) filter_text: String,
     pub(super) sort_mode: SortMode,
     pub(super) error_message: Option<String>,

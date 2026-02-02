@@ -4,7 +4,6 @@
 //! - Loading projects from JSON files (current and legacy formats)
 //! - Saving projects with optimized vocabulary indexing
 //! - Format migration between runtime and storage representations
-//! - Font file auto-detection for custom scripts
 //! - Text file import and tokenization
 
 use std::collections::HashMap;
@@ -14,45 +13,6 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::models::{Project, SavedProject, SavedSentence, Segment, Token, VocabEntry};
-
-/// Attempts to auto-detect a matching font file in the specified directory.
-///
-/// Searches for a font file with the given basename (stem) and a supported
-/// extension. This enables automatic font loading when a project file or
-/// text file has an accompanying font file with the same name.
-///
-/// # Arguments
-///
-/// * `dir` - Directory to search for font files
-/// * `stem` - Basename to match (without extension)
-///
-/// # Returns
-///
-/// The absolute path to the font file if found, otherwise `None`.
-///
-/// # Supported Font Formats
-///
-/// - `.ttf` - TrueType Font
-/// - `.otf` - OpenType Font
-/// - `.ttc` - TrueType Collection
-fn detect_font_in_dir(dir: &Path, stem: &str) -> Option<String> {
-    if stem.is_empty() {
-        return None;
-    }
-
-    let font_extensions = ["ttf", "otf", "ttc"];
-
-    for ext in font_extensions {
-        let font_file = dir.join(format!("{stem}.{ext}"));
-        if font_file.exists()
-            && let Some(path_str) = font_file.to_str()
-        {
-            return Some(path_str.to_string());
-        }
-    }
-
-    None
-}
 
 /// Reads a text file and prepares it for import.
 ///
@@ -69,12 +29,11 @@ fn detect_font_in_dir(dir: &Path, stem: &str) -> Option<String> {
 /// A tuple containing:
 /// - File contents as a string
 /// - Derived project name (from filename, defaults to "Untitled")
-/// - Optional path to auto-detected font file
 ///
 /// # Errors
 ///
 /// Returns an error message string if the file cannot be read.
-pub fn read_text_content(path: &Path) -> Result<(String, String, Option<String>), String> {
+pub fn read_text_content(path: &Path) -> Result<(String, String), String> {
     let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?;
 
     let project_name = path
@@ -83,13 +42,7 @@ pub fn read_text_content(path: &Path) -> Result<(String, String, Option<String>)
         .unwrap_or("Untitled")
         .to_string();
 
-    let font_path = path.parent().and_then(|parent| {
-        path.file_stem()
-            .and_then(|s| s.to_str())
-            .and_then(|stem| detect_font_in_dir(parent, stem))
-    });
-
-    Ok((content, project_name, font_path))
+    Ok((content, project_name))
 }
 
 /// Tokenizes text content into segments.
@@ -181,7 +134,7 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
     let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?;
 
     if let Ok(saved) = serde_json::from_str::<SavedProject>(&content) {
-        if let Some(project) = convert_from_saved_project(path, saved) {
+        if let Some(project) = convert_from_saved_project(saved) {
             return Ok(project);
         }
         return Err(
@@ -259,14 +212,13 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
 ///
 /// # Arguments
 ///
-/// * `path` - Path to the project file (used for font detection)
 /// * `saved` - The deserialized storage-format project
 ///
 /// # Returns
 ///
 /// `Some(Project)` if all vocabulary indices are valid, `None` if any
 /// index references a non-existent vocabulary entry (corrupted data).
-fn convert_from_saved_project(path: &Path, mut saved: SavedProject) -> Option<Project> {
+fn convert_from_saved_project(mut saved: SavedProject) -> Option<Project> {
     for rule in &mut saved.formation {
         rule.cached_ast = crate::models::default_cached_ast();
     }
@@ -324,13 +276,9 @@ fn convert_from_saved_project(path: &Path, mut saved: SavedProject) -> Option<Pr
         })
         .collect();
 
-    let font_path = path
-        .parent()
-        .and_then(|dir| detect_font_in_dir(dir, &saved.project_name));
-
     Some(Project {
         project_name: saved.project_name,
-        font_path,
+        font_path: None,
         vocabulary: vocabulary_map,
         vocabulary_comments,
         segments: segments?,

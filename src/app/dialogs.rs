@@ -131,15 +131,12 @@ impl DecryptionApp {
             if !open {
                 self.pending_import = None;
             } else if let Some(use_whitespace) = choice
-                && let Some((content, name, font_path)) = self.pending_import.take()
+                && let Some((content, name)) = self.pending_import.take()
             {
                 let segments = io::segment_content(&content, use_whitespace);
-                if let Some(path) = &font_path {
-                    self.load_custom_font(ctx, path);
-                }
                 self.project.segments = segments;
                 self.project.project_name = name;
-                self.project.font_path = font_path;
+                self.project.font_path = None;
                 self.current_path = None;
                 self.is_dirty = false;
                 self.filter_dirty = true;
