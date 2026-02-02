@@ -92,24 +92,15 @@ jobs:
         run: |
           cargo build --release --target ${{ matrix.target }}
 
-      - name: create artifact directory
-        shell: bash
+      - name: Copy binary to output directory
+        shell: pwsh
         run: |
-          directory=tdector-${{ matrix.target }}
-          mkdir $directory
-          if [ -f target/${{ matrix.target }}/release/tdector.exe ]; then
-            cp target/${{ matrix.target }}/release/tdector.exe $directory
-            7z a -r $directory.zip $directory
-          else
-            cp target/${{ matrix.target }}/release/tdector $directory
-            tar cJf $directory.tar.xz $directory
-          fi
+          cp "target/${{ matrix.target }}/release/tdector$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )" "tdector-${{ matrix.target }}$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )"
 
       - uses: actions/upload-artifact@v6
         with:
           name: tdector-${{ matrix.target }}
-          path: "tdector-${{ matrix.target }}.*"
-          retention-days: 3
+          path: tdector-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
 
   build_alpine:
     name: build (x86_64-unknown-linux-musl)
@@ -141,11 +132,9 @@ jobs:
           cp "target/${{ env.RUST_TARGET }}/release/tdector" "tdector-${{ env.RUST_TARGET }}"
 
       - uses: actions/upload-artifact@v6
-        if: github.event_name != 'release'
         with:
           name: tdector-${{ env.RUST_TARGET }}
-          path: "tdector-${{ env.RUST_TARGET }}.*"
-          retention-days: 3
+          path: tdector-${{ env.RUST_TARGET }}
 
   release:
     name: Create Release
@@ -166,5 +155,5 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" \
             --repo "${{ github.repository }}" \
-            --notes "Release ${{ github.ref_name }}" \
+            --notes "See [changelog](https://github.com/Tiphereth-A/tdector/blob/${{ github.ref_name }}/CHANGELOG.md)." \
             artifacts/*
