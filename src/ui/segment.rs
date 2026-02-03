@@ -4,15 +4,27 @@
 //! including tokens with glosses and translations. It handles both view and edit modes,
 //! with special support for custom fonts and dictionary-style interaction.
 
+use crate::libs::formation::FormationRule;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use eframe::egui;
 
-use super::colors;
-use super::constants;
-use super::types::UiAction;
-use crate::models::{Segment, Token};
+use crate::consts::{
+    colors::{
+        FONT_DARK, FONT_LIGHT, GLOSSBOX, GLOSSBOX_BYFORMATION, HIGHLIGHT_BG, HIGHLIGHT_FG,
+        SENTENCEBOX,
+    },
+    ui::{
+        BOX_STROKE_WIDTH, GLOSS_BOX_EXTRA_WIDTH, GLOSS_BOX_INNER_MARGIN, GLOSS_BOX_LAYOUT_EXTRA,
+        GLOSS_BOX_MIN_WIDTH, GLOSS_BOX_ROUNDING, GLOSS_FONT_SIZE, SEGMENT_SPACING_X,
+        SEGMENT_VERTICAL_SPACING, TOKEN_FONT_SIZE, TOKEN_SPACING_X, TOKEN_SPACING_Y,
+        TRANSLATION_BOX_INNER_MARGIN, TRANSLATION_BOX_ROUNDING, TRANSLATION_BOX_ROWS,
+        TRANSLATION_BOX_STROKE_WIDTH,
+    },
+};
+use crate::enums::UiAction;
+use crate::libs::{Segment, Token};
 use crate::ui::highlight::create_highlighted_layout;
 
 /// Renders a horizontal layout of clickable tokens with glosses.
@@ -40,7 +52,7 @@ pub fn render_clickable_tokens(
     vocabulary_comments: &HashMap<String, String>,
     highlight_token: Option<&str>,
     use_custom_font: bool,
-    formation_rules: &[crate::models::FormationRule],
+    formation_rules: &[FormationRule],
 ) -> Option<UiAction> {
     let mut clicked_action = None;
 
@@ -51,14 +63,14 @@ pub fn render_clickable_tokens(
     };
 
     let text_color = if ui.visuals().dark_mode {
-        colors::FONT_DARK
+        FONT_DARK
     } else {
-        colors::FONT_LIGHT
+        FONT_LIGHT
     };
 
     ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = constants::TOKEN_SPACING_X;
-        ui.spacing_mut().item_spacing.y = constants::TOKEN_SPACING_Y;
+        ui.spacing_mut().item_spacing.x = TOKEN_SPACING_X;
+        ui.spacing_mut().item_spacing.y = TOKEN_SPACING_Y;
         for token in tokens {
             let is_highlighted = highlight_token.is_some_and(|h| h == token.original);
             let text = &token.original;
@@ -90,7 +102,7 @@ pub fn render_clickable_tokens(
             ui.vertical(|ui| {
                 let gloss_richtext = egui::RichText::new(gloss_owned)
                     .family(egui::FontFamily::Proportional)
-                    .size(constants::GLOSS_FONT_SIZE)
+                    .size(GLOSS_FONT_SIZE)
                     .color(text_color);
 
                 let gloss_resp = ui.add(egui::Label::new(gloss_richtext).extend());
@@ -102,14 +114,14 @@ pub fn render_clickable_tokens(
                 let label = if is_highlighted {
                     egui::RichText::new(text)
                         .family(font_family.clone())
-                        .size(constants::TOKEN_FONT_SIZE)
+                        .size(TOKEN_FONT_SIZE)
                         .strong()
-                        .background_color(colors::HIGHLIGHT_BG)
-                        .color(colors::HIGHLIGHT_FG)
+                        .background_color(HIGHLIGHT_BG)
+                        .color(HIGHLIGHT_FG)
                 } else {
                     egui::RichText::new(text)
                         .family(font_family.clone())
-                        .size(constants::TOKEN_FONT_SIZE)
+                        .size(TOKEN_FONT_SIZE)
                         .color(text_color)
                 };
 
@@ -158,7 +170,7 @@ pub fn render_segment(
     seg_num: usize,
     highlight: Option<&str>,
     use_custom_font: bool,
-    formation_rules: &[crate::models::FormationRule],
+    formation_rules: &[FormationRule],
 ) -> UiAction {
     let mut action = UiAction::None;
     ui.group(|ui| {
@@ -177,7 +189,7 @@ pub fn render_segment(
             .id_salt(seg_num)
             .show(ui, |ui| {
                 ui.horizontal_top(|ui| {
-                    ui.spacing_mut().item_spacing.x = constants::SEGMENT_SPACING_X;
+                    ui.spacing_mut().item_spacing.x = SEGMENT_SPACING_X;
                     for (word_idx, token) in segment.tokens.iter_mut().enumerate() {
                         let token_action = render_token_column(
                             ui,
@@ -206,7 +218,7 @@ pub fn render_segment(
                 });
             });
 
-        ui.add_space(constants::SEGMENT_VERTICAL_SPACING);
+        ui.add_space(SEGMENT_VERTICAL_SPACING);
 
         let editbox_highlight = None;
         if render_translation_box(ui, segment, editbox_highlight) && action == UiAction::None {
@@ -237,7 +249,7 @@ fn render_token_column(
     highlight: Option<&str>,
     use_custom_font: bool,
     word_idx: usize,
-    formation_rules: &[crate::models::FormationRule],
+    formation_rules: &[FormationRule],
 ) -> UiAction {
     let base_word = token.base_word.as_ref().unwrap_or(&token.original);
     let base_gloss = vocabulary.get(base_word).cloned().unwrap_or_default();
@@ -267,12 +279,12 @@ fn render_token_column(
     let default_font_id = egui::TextStyle::Body.resolve(ui.style());
     let token_font_id = if use_custom_font {
         egui::FontId {
-            size: constants::TOKEN_FONT_SIZE,
+            size: TOKEN_FONT_SIZE,
             family: egui::FontFamily::Name("SentenceFont".into()),
         }
     } else {
         egui::FontId {
-            size: constants::TOKEN_FONT_SIZE,
+            size: TOKEN_FONT_SIZE,
             family: default_font_id.family.clone(),
         }
     };
@@ -296,34 +308,32 @@ fn render_token_column(
         .rect
         .width();
 
-    let width = (original_width.max(gloss_width) + constants::GLOSS_BOX_EXTRA_WIDTH)
-        .max(constants::GLOSS_BOX_MIN_WIDTH);
+    let width = (original_width.max(gloss_width) + GLOSS_BOX_EXTRA_WIDTH).max(GLOSS_BOX_MIN_WIDTH);
 
     let text_color = if ui.visuals().dark_mode {
-        colors::FONT_DARK
+        FONT_DARK
     } else {
-        colors::FONT_LIGHT
+        FONT_LIGHT
     };
 
     let mut action = UiAction::None;
 
     ui.allocate_ui_with_layout(
-        egui::vec2(width + constants::GLOSS_BOX_LAYOUT_EXTRA, 0.0),
+        egui::vec2(width + GLOSS_BOX_LAYOUT_EXTRA, 0.0),
         egui::Layout::top_down(egui::Align::LEFT),
         |ui| {
             let box_color = if has_rule {
-                colors::GLOSSBOX_BYFORMATION
+                GLOSSBOX_BYFORMATION
             } else {
-                colors::GLOSSBOX
+                GLOSSBOX
             };
 
             egui::Frame::NONE
-                .stroke(egui::Stroke::new(constants::BOX_STROKE_WIDTH, box_color))
-                .inner_margin(constants::GLOSS_BOX_INNER_MARGIN)
-                .corner_radius(constants::GLOSS_BOX_ROUNDING)
+                .stroke(egui::Stroke::new(BOX_STROKE_WIDTH, box_color))
+                .inner_margin(GLOSS_BOX_INNER_MARGIN)
+                .corner_radius(GLOSS_BOX_ROUNDING)
                 .show(ui, |ui| {
                     if has_rule {
-                        // Tokens with formation rules show read-only combined gloss
                         let label_resp = ui.add_sized(
                             egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
                             egui::Label::new(egui::RichText::new(&gloss).color(text_color))
@@ -334,7 +344,6 @@ fn render_token_column(
                             label_resp.on_hover_text(&comment);
                         }
                     } else {
-                        // Regular tokens have editable gloss
                         let lookup_word = base_word.clone();
                         let mut current_gloss =
                             vocabulary.get(&lookup_word).cloned().unwrap_or_default();
@@ -390,17 +399,14 @@ fn render_translation_box(
     highlight: Option<&str>,
 ) -> bool {
     egui::Frame::NONE
-        .stroke(egui::Stroke::new(
-            constants::TRANSLATION_BOX_STROKE_WIDTH,
-            colors::SENTENCEBOX,
-        ))
-        .inner_margin(constants::TRANSLATION_BOX_INNER_MARGIN)
-        .corner_radius(constants::TRANSLATION_BOX_ROUNDING)
+        .stroke(egui::Stroke::new(TRANSLATION_BOX_STROKE_WIDTH, SENTENCEBOX))
+        .inner_margin(TRANSLATION_BOX_INNER_MARGIN)
+        .corner_radius(TRANSLATION_BOX_ROUNDING)
         .show(ui, |ui| {
             let text_color = if ui.visuals().dark_mode {
-                colors::FONT_DARK
+                FONT_DARK
             } else {
-                colors::FONT_LIGHT
+                FONT_LIGHT
             };
             let mut layouter = |ui: &egui::Ui, string: &dyn egui::TextBuffer, wrap_width: f32| {
                 let string = string.as_str();
@@ -414,7 +420,7 @@ fn render_translation_box(
             ui.add(
                 egui::TextEdit::multiline(&mut segment.translation)
                     .desired_width(f32::INFINITY)
-                    .desired_rows(constants::TRANSLATION_BOX_ROWS)
+                    .desired_rows(TRANSLATION_BOX_ROWS)
                     .frame(false)
                     .layouter(&mut layouter),
             )

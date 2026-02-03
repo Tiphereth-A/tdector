@@ -9,36 +9,7 @@
 //! - Each segment formatted with aligned glosses above tokens
 //! - Translations displayed below each segment
 
-#[cfg(not(target_arch = "wasm32"))]
-use std::fs;
-#[cfg(not(target_arch = "wasm32"))]
-use std::path::Path;
-
-use crate::models::Project;
-
-/// Exports a project to a Typst markup file.
-///
-/// Generates Typst markup for the entire project and writes it to the
-/// specified file path.
-///
-/// # Arguments
-///
-/// * `project` - The project to export
-/// * `path` - Destination file path for the `.typ` file
-///
-/// # Returns
-///
-/// `Ok(())` on success, or an error message string on failure.
-///
-/// # Errors
-///
-/// Returns an error if the file cannot be written (permissions, disk space, etc.).
-#[cfg(not(target_arch = "wasm32"))]
-pub fn save_typst_file(project: &Project, path: &Path) -> Result<(), String> {
-    let content = generate_typst_content(project);
-    fs::write(path, &content).map_err(|e| format!("Failed to export file: {e}"))?;
-    Ok(())
-}
+use crate::libs::models::Project;
 
 /// Escapes text for safe inclusion in Typst markup.
 ///

@@ -1,26 +1,20 @@
-//! File I/O: dialogs, project persistence, and export.
+//! I/O layer: File operations, persistence, and format handling.
+//!
+//! Handles all file-related operations and data serialization:
+//!
+//! - **file_io**: Unified async file I/O using rfd for both desktop and WASM
+//! - **project**: Project loading and saving (JSON formats with migration)
+//! - **json_formatter**: JSON serialization with custom formatting
+//! - **typst**: Export functionality for Typst typesetting format
+//! - **file_ops**: Integration point for async I/O operations
 
-mod dialogs;
-mod json_formatter;
+pub mod file_io;
+mod file_ops;
+pub mod json_formatter;
 mod project;
 mod typst;
 
-#[cfg(target_arch = "wasm32")]
-pub mod wasm_file;
-
-#[cfg(not(target_arch = "wasm32"))]
-pub use dialogs::{
-    pick_font_file, pick_project_file, pick_save_file, pick_text_file, pick_typst_file,
-};
-
-#[cfg(target_arch = "wasm32")]
+pub use file_io::FileIO;
+pub use file_ops::{initialize_fonts, register_custom_font};
 pub use project::{convert_from_saved_project, convert_to_saved_project, segment_content};
-
-#[cfg(not(target_arch = "wasm32"))]
-pub use project::{load_project_file, read_text_content, save_project_file, segment_content};
-
-#[cfg(not(target_arch = "wasm32"))]
-pub use typst::save_typst_file;
-
-#[cfg(target_arch = "wasm32")]
 pub use typst::generate_typst_content;

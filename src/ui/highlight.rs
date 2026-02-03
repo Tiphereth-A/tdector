@@ -6,7 +6,7 @@
 
 use eframe::egui;
 
-use super::colors;
+use crate::consts::colors::{HIGHLIGHT_BG, HIGHLIGHT_FG};
 
 /// Creates a text layout with highlighted search matches.
 ///
@@ -53,8 +53,8 @@ pub fn create_highlighted_layout(
     };
 
     let highlight_format = egui::TextFormat {
-        background: colors::HIGHLIGHT_BG,
-        color: colors::HIGHLIGHT_FG,
+        background: HIGHLIGHT_BG,
+        color: HIGHLIGHT_FG,
         font_id: font_id.clone(),
         ..Default::default()
     };

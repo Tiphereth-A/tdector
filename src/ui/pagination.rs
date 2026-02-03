@@ -2,8 +2,15 @@
 
 use eframe::egui;
 
-use super::colors;
-use super::constants;
+use crate::consts::{
+    colors::{FONT_DARK, FONT_LIGHT},
+    ui::{
+        PAGINATION_BUTTON_ADJACENT_COUNT, PAGINATION_BUTTON_SIDE_COUNT,
+        PAGINATION_DEFAULT_PAGE_SIZE, PAGINATION_DRAG_SPEED, PAGINATION_ITEM_WIDTH,
+        PAGINATION_NAV_WIDTH_DEDUCTION, PAGINATION_SIZE_EXTRA_LARGE, PAGINATION_SIZE_LARGE,
+        PAGINATION_SIZE_MEDIUM, PAGINATION_SIZE_SMALL,
+    },
+};
 
 /// Renders pagination controls. Returns `Some(page)` if navigation occurred.
 pub fn render_pagination(
@@ -12,7 +19,7 @@ pub fn render_pagination(
     total_pages: usize,
     page_size: &mut usize,
 ) -> Option<usize> {
-    if total_pages <= 1 && *page_size == constants::PAGINATION_DEFAULT_PAGE_SIZE {
+    if total_pages <= 1 && *page_size == PAGINATION_DEFAULT_PAGE_SIZE {
         return None;
     }
 
@@ -20,9 +27,9 @@ pub fn render_pagination(
 
     egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
         let text_color = if ui.visuals().dark_mode {
-            colors::FONT_DARK
+            FONT_DARK
         } else {
-            colors::FONT_LIGHT
+            FONT_LIGHT
         };
         ui.with_layout(
             egui::Layout::left_to_right(egui::Align::Center).with_main_align(egui::Align::Center),
@@ -36,11 +43,11 @@ pub fn render_pagination(
                 }
 
                 let available = ui.available_width();
-                let max_items = ((available - constants::PAGINATION_NAV_WIDTH_DEDUCTION)
-                    / constants::PAGINATION_ITEM_WIDTH)
+                let max_items = ((available - PAGINATION_NAV_WIDTH_DEDUCTION)
+                    / PAGINATION_ITEM_WIDTH)
                     .floor() as isize;
-                let delta = ((max_items - constants::PAGINATION_BUTTON_ADJACENT_COUNT)
-                    / constants::PAGINATION_BUTTON_SIDE_COUNT)
+                let delta = ((max_items - PAGINATION_BUTTON_ADJACENT_COUNT)
+                    / PAGINATION_BUTTON_SIDE_COUNT)
                     .max(1);
 
                 for page in 0..total_pages {
@@ -82,10 +89,26 @@ pub fn render_pagination(
                 egui::ComboBox::from_id_salt("page_size_selector")
                     .selected_text(format!("Show {page_size} per page"))
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(page_size, 10, "Show 10 per page");
-                        ui.selectable_value(page_size, 20, "Show 20 per page");
-                        ui.selectable_value(page_size, 50, "Show 50 per page");
-                        ui.selectable_value(page_size, 100, "Show 100 per page");
+                        ui.selectable_value(
+                            page_size,
+                            PAGINATION_SIZE_SMALL,
+                            format!("Show {PAGINATION_SIZE_SMALL} per page"),
+                        );
+                        ui.selectable_value(
+                            page_size,
+                            PAGINATION_SIZE_MEDIUM,
+                            format!("Show {PAGINATION_SIZE_MEDIUM} per page"),
+                        );
+                        ui.selectable_value(
+                            page_size,
+                            PAGINATION_SIZE_LARGE,
+                            format!("Show {PAGINATION_SIZE_LARGE} per page"),
+                        );
+                        ui.selectable_value(
+                            page_size,
+                            PAGINATION_SIZE_EXTRA_LARGE,
+                            format!("Show {PAGINATION_SIZE_EXTRA_LARGE} per page"),
+                        );
                     });
 
                 ui.separator();
@@ -98,7 +121,7 @@ pub fn render_pagination(
                 let res = ui.add(
                     egui::DragValue::new(&mut jump_page)
                         .range(1..=total_pages)
-                        .speed(0.1),
+                        .speed(PAGINATION_DRAG_SPEED),
                 );
 
                 if res.changed() {

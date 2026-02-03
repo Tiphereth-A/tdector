@@ -1,53 +1,15 @@
 //! Project persistence and format conversion.
 //!
 //! This module handles:
-//! - Loading projects from JSON files (current and legacy formats)
-//! - Saving projects with optimized vocabulary indexing
+//! - Converting projects between runtime and storage formats
 //! - Format migration between runtime and storage representations
 //! - Text file import and tokenization
 
 use std::collections::HashMap;
-#[cfg(not(target_arch = "wasm32"))]
-use std::fs;
-#[cfg(not(target_arch = "wasm32"))]
-use std::path::Path;
 
-#[cfg(not(target_arch = "wasm32"))]
-use serde::{Deserialize, Serialize};
-
-use crate::models::{Project, SavedProject, SavedSentence, Segment, Token, VocabEntry};
-
-/// Reads a text file and prepares it for import.
-///
-/// Loads the text content and automatically derives the project name from the
-/// filename. Also attempts to detect an accompanying font file with the same
-/// basename in the same directory.
-///
-/// # Arguments
-///
-/// * `path` - Path to the text file to import
-///
-/// # Returns
-///
-/// A tuple containing:
-/// - File contents as a string
-/// - Derived project name (from filename, defaults to "Untitled")
-///
-/// # Errors
-///
-/// Returns an error message string if the file cannot be read.
-#[cfg(not(target_arch = "wasm32"))]
-pub fn read_text_content(path: &Path) -> Result<(String, String), String> {
-    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?;
-
-    let project_name = path
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("Untitled")
-        .to_string();
-
-    Ok((content, project_name))
-}
+use crate::consts::domain::PROJECT_VERSION;
+use crate::enums::{AppError, AppResult, WordRef};
+use crate::libs::models::{Project, SavedProject, SavedSentence, Segment, Token, VocabEntry};
 
 /// Tokenizes text content into segments.
 ///
@@ -72,143 +34,12 @@ pub fn read_text_content(path: &Path) -> Result<(String, String), String> {
 /// - **Character-based**: Necessary for scripts without clear word boundaries
 ///   like Chinese, Japanese, etc.
 pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment> {
-    content
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .filter_map(|line| {
-            let tokens: Vec<Token> = if use_whitespace_split {
-                line.split_whitespace()
-                    .map(|s| Token {
-                        original: s.to_string(),
-                        comment: String::new(),
-                        base_word: None,
-                        formation_rule_indices: Vec::new(),
-                    })
-                    .collect()
-            } else {
-                line.chars()
-                    .filter(|c| !c.is_whitespace())
-                    .map(|c| Token {
-                        original: c.to_string(),
-                        comment: String::new(),
-                        base_word: None,
-                        formation_rule_indices: Vec::new(),
-                    })
-                    .collect()
-            };
-
-            if tokens.is_empty() {
-                None
-            } else {
-                Some(Segment {
-                    tokens,
-                    translation: String::new(),
-                    comment: String::new(),
-                })
-            }
-        })
-        .collect()
+    // Delegate to domain layer's TextProcessor for consistent segmentation logic
+    crate::libs::text_analysis::TextProcessor::segment_text(content, use_whitespace_split)
+        .unwrap_or_else(|_| Vec::new())
 }
 
-/// Loads a project from a JSON file with automatic format migration.
-///
-/// Attempts to load the project using multiple format parsers in order:
-/// 1. Current indexed vocabulary format ([`SavedProject`])
-/// 2. Legacy format with inline glosses
-///
-/// This enables seamless migration from older project file formats without
-/// requiring manual conversion.
-///
-/// # Arguments
-///
-/// * `path` - Path to the project JSON file
-///
-/// # Returns
-///
-/// The loaded project in runtime format, or an error message describing
-/// why the file could not be loaded.
-///
-/// # Errors
-///
-/// - File read errors
-/// - JSON parse errors
-/// - Corrupted data (e.g., invalid vocabulary indices)
-/// - Unrecognized format
-#[cfg(not(target_arch = "wasm32"))]
-pub fn load_project_file(path: &Path) -> Result<Project, String> {
-    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {e}"))?;
-
-    if let Ok(saved) = serde_json::from_str::<SavedProject>(&content) {
-        if let Some(project) = convert_from_saved_project(saved) {
-            return Ok(project);
-        }
-        return Err(
-            "Project data is corrupted: Reference to non-existent vocabulary entry.".to_string(),
-        );
-    }
-
-    #[derive(Deserialize)]
-    struct LegacyToken {
-        original: String,
-        #[serde(default)]
-        gloss: String,
-    }
-    #[derive(Deserialize)]
-    struct LegacySegment {
-        tokens: Vec<LegacyToken>,
-        translation: String,
-    }
-    #[derive(Deserialize)]
-    struct LegacyProject {
-        #[serde(default)]
-        project_name: String,
-        segments: Vec<LegacySegment>,
-    }
-
-    if let Ok(legacy) = serde_json::from_str::<LegacyProject>(&content) {
-        let mut vocabulary = HashMap::new();
-        let segments = legacy
-            .segments
-            .into_iter()
-            .map(|seg| {
-                let tokens = seg
-                    .tokens
-                    .into_iter()
-                    .map(|tok| {
-                        if !tok.gloss.is_empty() {
-                            vocabulary.insert(tok.original.clone(), tok.gloss);
-                        }
-                        Token {
-                            original: tok.original,
-                            comment: String::new(),
-                            base_word: None,
-                            formation_rule_indices: Vec::new(),
-                        }
-                    })
-                    .collect();
-                Segment {
-                    tokens,
-                    translation: seg.translation,
-                    comment: String::new(),
-                }
-            })
-            .collect();
-
-        return Ok(Project {
-            project_name: legacy.project_name,
-            font_path: None,
-            vocabulary,
-            vocabulary_comments: HashMap::new(),
-            segments,
-            formation_rules: Vec::new(),
-        });
-    }
-
-    match serde_json::from_str::<serde_json::Value>(&content) {
-        Ok(_) => Err("Unknown file format: Missing required fields ('vocabulary'/'sentences' or 'segments').".to_string()),
-        Err(e) => Err(format!("File is not valid JSON: {e}")),
-    }
-}
+/// Loads project JSON content with automatic format migration.
 
 /// Converts from optimized storage format to runtime format.
 ///
@@ -225,7 +56,7 @@ pub fn load_project_file(path: &Path) -> Result<Project, String> {
 /// index references a non-existent vocabulary entry (corrupted data).
 pub fn convert_from_saved_project(mut saved: SavedProject) -> Option<Project> {
     for rule in &mut saved.formation {
-        rule.cached_ast = crate::models::default_cached_ast();
+        rule.cached_ast = crate::libs::formation::default_cached_ast();
     }
 
     let vocabulary_map: HashMap<String, String> = saved
@@ -291,42 +122,6 @@ pub fn convert_from_saved_project(mut saved: SavedProject) -> Option<Project> {
     })
 }
 
-/// Persists a project to disk in optimized JSON format.
-///
-/// Converts the runtime [`Project`] representation to the space-efficient
-/// [`SavedProject`] format before serialization. The resulting JSON file
-/// uses vocabulary indexing to minimize redundancy.
-///
-/// # Arguments
-///
-/// * `project` - The project to save
-/// * `path` - Destination file path
-///
-/// # Returns
-///
-/// `Ok(())` on success, or an error message string describing the failure.
-///
-/// # Errors
-///
-/// - Serialization failures
-/// - File write errors
-/// - Disk space issues
-#[cfg(not(target_arch = "wasm32"))]
-pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
-    let saved_project = convert_to_saved_project(project)?;
-
-    let formatter = super::json_formatter::Formatter::new();
-    let mut buf = Vec::new();
-    let mut serializer = serde_json::Serializer::with_formatter(&mut buf, formatter);
-    saved_project
-        .serialize(&mut serializer)
-        .map_err(|e| format!("Failed to serialize project: {e}"))?;
-
-    fs::write(path, &buf).map_err(|e| format!("Failed to save file: {e}"))?;
-
-    Ok(())
-}
-
 /// Converts from runtime format to optimized storage format.
 ///
 /// Creates a deduplicated, sorted vocabulary array and replaces all token
@@ -354,7 +149,7 @@ pub fn save_project_file(project: &Project, path: &Path) -> Result<(), String> {
 /// Returns an error if any token's original text is missing from the index.
 /// This should never occur in normal operation but protects against data loss
 /// if there's a bug in vocabulary management.
-pub fn convert_to_saved_project(project: &Project) -> Result<SavedProject, String> {
+pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProject> {
     let mut all_words: std::collections::BTreeSet<&String> = project.vocabulary.keys().collect();
 
     for segment in &project.segments {
@@ -407,7 +202,7 @@ pub fn convert_to_saved_project(project: &Project) -> Result<SavedProject, Strin
         .segments
         .iter()
         .map(|segment| {
-            let words: Vec<crate::models::WordRef> = segment
+            let words: Vec<WordRef> = segment
                 .tokens
                 .iter()
                 .map(|t| {
@@ -415,8 +210,10 @@ pub fn convert_to_saved_project(project: &Project) -> Result<SavedProject, Strin
 
                     let vocab_idx = word_to_idx.get(lookup_word.as_str()).copied().ok_or_else(
                         || {
-                            format!(
-                                "Token '{lookup_word}' missing from vocabulary index during save"
+                            AppError::InvalidProjectFormat(
+                                format!(
+                                    "Token '{lookup_word}' missing from vocabulary index during save"
+                                )
                             )
                         },
                     )?;
@@ -428,32 +225,34 @@ pub fn convert_to_saved_project(project: &Project) -> Result<SavedProject, Strin
                         for rule_idx in &t.formation_rule_indices {
                             let new_rule_idx = old_to_new_idx.get(rule_idx).copied().ok_or_else(
                                 || {
-                                    format!(
-                                        "Formation rule index {rule_idx} not found in mapping during save"
+                                    AppError::InvalidProjectFormat(
+                                        format!(
+                                            "Formation rule index {rule_idx} not found in mapping during save"
+                                        )
                                     )
                                 },
                             )?;
                             indices.push(new_rule_idx);
                         }
 
-                        crate::models::WordRef::WithRule(indices)
+                        WordRef::WithRule(indices)
                     } else {
-                        crate::models::WordRef::Single(vocab_idx)
+                        WordRef::Single(vocab_idx)
                     };
 
                     Ok(word_ref)
                 })
-                .collect::<Result<Vec<crate::models::WordRef>, String>>()?;
+                .collect::<AppResult<Vec<WordRef>>>()?;
             Ok(SavedSentence {
                 words,
                 meaning: segment.translation.clone(),
                 comment: segment.comment.clone(),
             })
         })
-        .collect::<Result<Vec<SavedSentence>, String>>()?;
+        .collect::<AppResult<Vec<SavedSentence>>>()?;
 
     Ok(SavedProject {
-        version: 1,
+        version: PROJECT_VERSION,
         project_name: project.project_name.clone(),
         formation: sorted_formation_rules,
         vocabulary,

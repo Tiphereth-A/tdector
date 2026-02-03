@@ -1,32 +1,44 @@
-//! Text Decryption Helper - An interactive GUI tool for linguistic analysis.
+//! Text Decryption Helper - An interactive GUI application for linguistic analysis and text annotation.
 //!
-//! This application provides an interactive environment for text decryption, translation,
-//! and linguistic annotation. It's particularly useful for working with historical texts,
-//! cipher decryption, or learning new writing systems.
+//! A comprehensive tool for text decryption, translation, and linguistic annotation.
+//! Particularly useful for historical texts, cipher analysis, and learning new writing systems.
 //!
-//! # Features
+//! ## Core Features
 //!
-//! - Import and tokenize text files (character-based or word-based)
-//! - Create and manage vocabulary glossaries with per-token definitions
-//! - Translate complete segments with contextual annotations
-//! - Custom font support for special scripts and writing systems
-//! - TF-IDF similarity search for finding related segments
-//! - Export annotated documents to Typst format for professional typesetting
+//! - **Import & Tokenization**: Support for character-based and word-based text segmentation
+//! - **Vocabulary Management**: Create and maintain comprehensive glossaries with per-token definitions
+//! - **Segment Translation**: Translate segments with contextual annotations and metadata
+//! - **Custom Fonts**: Support for special scripts and non-Latin writing systems
+//! - **Similarity Search**: TF-IDF-based engine to find semantically related segments
+//! - **Export**: Generate professionally typeset documents in Typst format
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod app;
+//! ## Module Organization
+//!
+//! The codebase is organized into distinct architectural layers:
+
+/// Constants: Application-wide domain rules and UI theming
+mod consts;
+
+/// Domain layer: Core business logic and algorithms
+mod libs;
+
+/// Enumerations: Core enum types used throughout the application
+mod enums;
+
+/// I/O layer: File operations, persistence, and format handling
 mod io;
-mod models;
+
+/// Presentation layer: UI components, rendering, and user interaction
 mod ui;
 
-use app::DecryptionApp;
+use ui::DecryptionApp;
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
     use eframe::wasm_bindgen::JsCast as _;
 
-    // Redirect `log` message to `console.log` and friends:
     eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
     let web_options = eframe::WebOptions::default();
@@ -51,7 +63,6 @@ fn main() {
             .await
             .expect("failed to start eframe");
 
-        // Remove the loading spinner once the app has started
         if let Some(loading_element) = document.get_element_by_id("loading_text") {
             loading_element.remove();
         }
@@ -61,12 +72,13 @@ fn main() {
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
     use eframe::egui;
-    use ui::constants;
+
+    use crate::consts::ui::{WINDOW_HEIGHT, WINDOW_WIDTH};
 
     env_logger::init();
 
-    let mut viewport = egui::ViewportBuilder::default()
-        .with_inner_size([constants::WINDOW_WIDTH, constants::WINDOW_HEIGHT]);
+    let mut viewport =
+        egui::ViewportBuilder::default().with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]);
     if let Some(icon) = load_app_icon() {
         viewport = viewport.with_icon(icon);
     }
