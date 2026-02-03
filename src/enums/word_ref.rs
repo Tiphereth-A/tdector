@@ -32,3 +32,10 @@ impl WordRef {
         }
     }
 }
+
+/// Comment target for a word or formatted word.
+#[derive(Debug, Clone)]
+pub enum CommentTarget {
+    BaseWord(String),
+    FormattedWord(String),
+}

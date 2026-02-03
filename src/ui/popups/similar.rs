@@ -110,11 +110,12 @@ impl DecryptionApp {
                                         &seg.tokens,
                                         &self.project.vocabulary,
                                         &self.project.vocabulary_comments,
+                                        &self.project.formatted_word_comments,
                                         None,
                                         self.project.font_path.is_some(),
                                         &self.project.formation_rules,
                                     ) {
-                                        self.handle_ui_action(ui, action, popup_request);
+                                        self.handle_ui_action(ui, action, popup_request, *idx);
                                     }
                                 });
                             ui.add_space(5.0);

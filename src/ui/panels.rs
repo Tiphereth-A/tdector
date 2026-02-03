@@ -127,6 +127,7 @@ impl DecryptionApp {
             segments,
             vocabulary,
             vocabulary_comments,
+            formatted_word_comments,
             formation_rules,
             ..
         } = &mut self.project;
@@ -150,6 +151,7 @@ impl DecryptionApp {
                                 segment,
                                 vocabulary,
                                 vocabulary_comments,
+                                formatted_word_comments,
                                 seg_idx + 1,
                                 highlight,
                                 use_custom_font,

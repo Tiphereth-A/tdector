@@ -9,7 +9,9 @@ use std::collections::HashMap;
 
 use crate::consts::domain::PROJECT_VERSION;
 use crate::enums::{AppError, AppResult, WordRef};
-use crate::libs::models::{Project, SavedProject, SavedSentence, Segment, Token, VocabEntry};
+use crate::libs::models::{
+    FormattedWordEntry, Project, SavedProject, SavedSentence, Segment, Token, VocabEntry,
+};
 
 /// Tokenizes text content into segments.
 ///
@@ -57,6 +59,39 @@ pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment
 pub fn convert_from_saved_project(mut saved: SavedProject) -> Option<Project> {
     for rule in &mut saved.formation {
         rule.cached_ast = crate::libs::formation::default_cached_ast();
+    }
+
+    let mut formatted_word_comments: HashMap<String, String> = HashMap::new();
+    for entry in &saved.formatted_word {
+        if entry.comment.is_empty() {
+            continue;
+        }
+
+        let Some((vocab_idx, rule_indices)) = entry.word.split_first() else {
+            continue;
+        };
+
+        let base_word = match saved.vocabulary.get(*vocab_idx) {
+            Some(word) => word.word.clone(),
+            None => continue,
+        };
+
+        if rule_indices.is_empty() {
+            continue;
+        }
+
+        let mut formatted_word = base_word;
+        for rule_idx in rule_indices {
+            let Some(rule) = saved.formation.get(*rule_idx) else {
+                formatted_word.clear();
+                break;
+            };
+            formatted_word = rule.apply(&formatted_word).unwrap_or(formatted_word);
+        }
+
+        if !formatted_word.is_empty() {
+            formatted_word_comments.insert(formatted_word, entry.comment.clone());
+        }
     }
 
     let vocabulary_map: HashMap<String, String> = saved
@@ -117,6 +152,7 @@ pub fn convert_from_saved_project(mut saved: SavedProject) -> Option<Project> {
         font_path: None,
         vocabulary: vocabulary_map,
         vocabulary_comments,
+        formatted_word_comments,
         segments: segments?,
         formation_rules: saved.formation,
     })
@@ -198,6 +234,55 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProject> {
         other => other,
     });
 
+    let mut formatted_word_entries: Vec<FormattedWordEntry> = Vec::new();
+    for (formatted_word_text, comment) in &project.formatted_word_comments {
+        if comment.is_empty() {
+            continue;
+        }
+
+        let token = project
+            .segments
+            .iter()
+            .flat_map(|seg| seg.tokens.iter())
+            .find(|token| {
+                token.original == *formatted_word_text && !token.formation_rule_indices.is_empty()
+            })
+            .ok_or_else(|| {
+                AppError::InvalidProjectFormat(format!(
+                    "Formatted word '{formatted_word_text}' missing from segments during save"
+                ))
+            })?;
+
+        let base_word = token.base_word.as_ref().unwrap_or(&token.original).as_str();
+
+        let vocab_idx = word_to_idx.get(base_word).copied().ok_or_else(|| {
+            AppError::InvalidProjectFormat(format!(
+                "Formatted word base '{base_word}' missing from vocabulary index during save"
+            ))
+        })?;
+
+        let mut indices = Vec::with_capacity(1 + token.formation_rule_indices.len());
+        indices.push(vocab_idx);
+
+        for rule_idx in &token.formation_rule_indices {
+            let new_rule_idx = old_to_new_idx.get(rule_idx).copied().ok_or_else(|| {
+                AppError::InvalidProjectFormat(format!(
+                    "Formation rule index {rule_idx} not found in mapping during save"
+                ))
+            })?;
+            indices.push(new_rule_idx);
+        }
+
+        if indices.len() > 1 {
+            formatted_word_entries.push(FormattedWordEntry {
+                word: indices,
+                comment: comment.clone(),
+            });
+        }
+    }
+
+    formatted_word_entries.sort_by(|a, b| a.word.cmp(&b.word));
+
     let sentences: Vec<SavedSentence> = project
         .segments
         .iter()
@@ -256,6 +341,7 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProject> {
         project_name: project.project_name.clone(),
         formation: sorted_formation_rules,
         vocabulary,
+        formatted_word: formatted_word_entries,
         sentences,
     })
 }

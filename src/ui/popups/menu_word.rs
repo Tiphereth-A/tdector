@@ -74,7 +74,13 @@ impl DecryptionApp {
                             should_close = true;
                         }
 
-                        self.render_update_comment_menu_item(ui, &word, &mut should_close);
+                        self.render_update_comment_menu_item(
+                            ui,
+                            &word,
+                            sentence_idx,
+                            word_idx,
+                            &mut should_close,
+                        );
                     });
                 });
 

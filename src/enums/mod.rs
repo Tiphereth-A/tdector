@@ -17,7 +17,7 @@ pub use popups::{DictionaryPopupType, PinnedPopup, PopupRequest};
 pub use sort_mode::{SortDirection, SortField, SortMode};
 pub use ui_action::UiAction;
 
-pub use word_ref::WordRef;
+pub use word_ref::{CommentTarget, WordRef};
 
 /// Result type alias for operations that may produce an [`AppError`].
 pub type AppResult<T> = Result<T, AppError>;

@@ -50,6 +50,7 @@ pub fn render_clickable_tokens(
     tokens: &[Token],
     vocabulary: &HashMap<String, String>,
     vocabulary_comments: &HashMap<String, String>,
+    formatted_word_comments: &HashMap<String, String>,
     highlight_token: Option<&str>,
     use_custom_font: bool,
     formation_rules: &[FormationRule],
@@ -71,16 +72,29 @@ pub fn render_clickable_tokens(
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = TOKEN_SPACING_X;
         ui.spacing_mut().item_spacing.y = TOKEN_SPACING_Y;
-        for token in tokens {
+        for (word_idx, token) in tokens.iter().enumerate() {
             let is_highlighted = highlight_token.is_some_and(|h| h == token.original);
             let text = &token.original;
 
             let base_word = token.base_word.as_ref().unwrap_or(text);
             let base_gloss = vocabulary.get(base_word).map(|s| s.as_str()).unwrap_or("");
-            let comment = vocabulary_comments
+            let base_comment = vocabulary_comments
                 .get(base_word)
                 .map(|s| s.as_str())
                 .unwrap_or("");
+            let formatted_comment = if !token.formation_rule_indices.is_empty() {
+                formatted_word_comments
+                    .get(text)
+                    .map(|s| s.as_str())
+                    .unwrap_or("")
+            } else {
+                ""
+            };
+            let comment = if !formatted_comment.is_empty() {
+                formatted_comment
+            } else {
+                base_comment
+            };
 
             let gloss_owned = if !token.formation_rule_indices.is_empty() {
                 let descriptions: Vec<String> = token
@@ -134,7 +148,8 @@ pub fn render_clickable_tokens(
                 if resp.clicked() {
                     clicked_action = Some(UiAction::Filter(Arc::from(text.as_str())));
                 } else if resp.secondary_clicked() {
-                    clicked_action = Some(UiAction::ShowWordMenu(Arc::from(text.as_str()), 0));
+                    clicked_action =
+                        Some(UiAction::ShowWordMenu(Arc::from(text.as_str()), word_idx));
                 }
             });
         }
@@ -167,6 +182,7 @@ pub fn render_segment(
     segment: &mut Segment,
     vocabulary: &mut HashMap<String, String>,
     vocabulary_comments: &HashMap<String, String>,
+    formatted_word_comments: &HashMap<String, String>,
     seg_num: usize,
     highlight: Option<&str>,
     use_custom_font: bool,
@@ -196,6 +212,7 @@ pub fn render_segment(
                             token,
                             vocabulary,
                             vocabulary_comments,
+                            formatted_word_comments,
                             highlight,
                             use_custom_font,
                             word_idx,
@@ -246,6 +263,7 @@ fn render_token_column(
     token: &mut Token,
     vocabulary: &mut HashMap<String, String>,
     vocabulary_comments: &HashMap<String, String>,
+    formatted_word_comments: &HashMap<String, String>,
     highlight: Option<&str>,
     use_custom_font: bool,
     word_idx: usize,
@@ -257,6 +275,19 @@ fn render_token_column(
         .get(base_word)
         .cloned()
         .unwrap_or_default();
+    let formatted_comment = if !token.formation_rule_indices.is_empty() {
+        formatted_word_comments
+            .get(&token.original)
+            .cloned()
+            .unwrap_or_default()
+    } else {
+        String::new()
+    };
+    let active_comment = if !formatted_comment.is_empty() {
+        formatted_comment
+    } else {
+        base_comment
+    };
 
     let (gloss, comment, has_rule) = if !token.formation_rule_indices.is_empty() {
         let descriptions: Vec<String> = token
@@ -267,13 +298,13 @@ fn render_token_column(
             .collect();
 
         if descriptions.is_empty() {
-            (base_gloss, base_comment, false)
+            (base_gloss, active_comment, false)
         } else {
             let combined_gloss = format!("{base_gloss} ({})", descriptions.join("; "));
-            (combined_gloss, base_comment, true)
+            (combined_gloss, active_comment, true)
         }
     } else {
-        (base_gloss, base_comment, false)
+        (base_gloss, active_comment, false)
     };
 
     let default_font_id = egui::TextStyle::Body.resolve(ui.style());

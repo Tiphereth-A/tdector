@@ -77,6 +77,8 @@ pub struct Project {
     pub vocabulary: HashMap<String, String>,
     /// Comments map: maps each word to its comment.
     pub vocabulary_comments: HashMap<String, String>,
+    /// Comments map for formatted words (keyed by formatted word text).
+    pub formatted_word_comments: HashMap<String, String>,
     /// All text segments in the project.
     pub segments: Vec<Segment>,
     /// Word formation rules for deriving and inflecting words.
@@ -91,6 +93,16 @@ pub struct VocabEntry {
     /// The meaning (gloss) of the word.
     pub meaning: String,
     /// Optional comment for the word.
+    #[serde(default)]
+    pub comment: String,
+}
+
+/// Comment entry for a formatted word in the saved project.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct FormattedWordEntry {
+    /// Word reference as indices: [`vocab_idx`, `rule_idx`, ...].
+    pub word: Vec<usize>,
+    /// Optional comment for the formatted word.
     #[serde(default)]
     pub comment: String,
 }
@@ -135,6 +147,9 @@ pub struct SavedProject {
     pub formation: Vec<FormationRule>,
     /// Deduplicated vocabulary entries.
     pub vocabulary: Vec<VocabEntry>,
+    /// Comments for formatted words (by word reference indices).
+    #[serde(default)]
+    pub formatted_word: Vec<FormattedWordEntry>,
     /// Sentences with word indices referencing the vocabulary.
     pub sentences: Vec<SavedSentence>,
 }

@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 
 use eframe::egui;
 
-use crate::enums::{AppAction, FormationType, PinnedPopup, SortMode};
+use crate::enums::{AppAction, CommentTarget, FormationType, PinnedPopup, SortMode};
 use crate::libs::{
     Project,
     cache::{CachedTfidf, LookupCache},
@@ -56,6 +56,8 @@ pub struct UpdateCommentDialog {
     pub word: String,
     /// The comment text (editable by user)
     pub comment: String,
+    /// Target for the comment update
+    pub target: CommentTarget,
 }
 
 /// Dialog state for updating sentence comments.

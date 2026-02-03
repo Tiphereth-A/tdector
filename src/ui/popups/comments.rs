@@ -2,6 +2,7 @@
 
 use eframe::egui;
 
+use crate::enums::CommentTarget;
 use crate::ui::popup_utils::create_popup_title;
 use crate::ui::states::state::DecryptionApp;
 
@@ -10,22 +11,59 @@ impl DecryptionApp {
         &mut self,
         ui: &mut egui::Ui,
         word: &str,
+        sentence_idx: usize,
+        word_idx: usize,
         should_close: &mut bool,
     ) {
         if ui
             .add(egui::Button::new("Update Comment").frame(false))
             .clicked()
         {
-            let current_comment = self
+            let (target, current_comment) = self
                 .project
-                .vocabulary_comments
-                .get(word)
-                .cloned()
-                .unwrap_or_default();
+                .segments
+                .get(sentence_idx)
+                .and_then(|seg| seg.tokens.get(word_idx))
+                .map(|token| {
+                    let base_word = token
+                        .base_word
+                        .clone()
+                        .unwrap_or_else(|| token.original.clone());
+
+                    if token.formation_rule_indices.is_empty() {
+                        let comment = self
+                            .project
+                            .vocabulary_comments
+                            .get(&base_word)
+                            .cloned()
+                            .unwrap_or_default();
+                        (CommentTarget::BaseWord(base_word), comment)
+                    } else {
+                        let formatted_word = token.original.clone();
+                        let comment = self
+                            .project
+                            .formatted_word_comments
+                            .get(&formatted_word)
+                            .cloned()
+                            .unwrap_or_default();
+                        (CommentTarget::FormattedWord(formatted_word), comment)
+                    }
+                })
+                .unwrap_or_else(|| {
+                    (
+                        CommentTarget::BaseWord(word.to_string()),
+                        self.project
+                            .vocabulary_comments
+                            .get(word)
+                            .cloned()
+                            .unwrap_or_default(),
+                    )
+                });
 
             self.update_comment_popup = Some(crate::ui::states::state::UpdateCommentDialog {
                 word: word.to_string(),
                 comment: current_comment,
+                target,
             });
             *should_close = true;
         }
@@ -53,12 +91,25 @@ impl DecryptionApp {
 
                     ui.horizontal(|ui| {
                         if ui.button("Save").clicked() {
-                            if dialog.comment.is_empty() {
-                                self.project.vocabulary_comments.remove(&dialog.word);
-                            } else {
-                                self.project
-                                    .vocabulary_comments
-                                    .insert(dialog.word.clone(), dialog.comment.clone());
+                            match &dialog.target {
+                                CommentTarget::BaseWord(base_word) => {
+                                    if dialog.comment.is_empty() {
+                                        self.project.vocabulary_comments.remove(base_word);
+                                    } else {
+                                        self.project
+                                            .vocabulary_comments
+                                            .insert(base_word.clone(), dialog.comment.clone());
+                                    }
+                                }
+                                CommentTarget::FormattedWord(formatted_word) => {
+                                    if dialog.comment.is_empty() {
+                                        self.project.formatted_word_comments.remove(formatted_word);
+                                    } else {
+                                        self.project
+                                            .formatted_word_comments
+                                            .insert(formatted_word.clone(), dialog.comment.clone());
+                                    }
+                                }
                             }
                             self.update_dirty_status(true, ctx);
                             should_close = true;
