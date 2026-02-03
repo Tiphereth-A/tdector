@@ -92,7 +92,8 @@ pub struct DecryptionApp {
     pub(crate) is_dirty: bool,
     pub(crate) pending_import: Option<(String, String)>,
     pub(crate) pending_text_file: Arc<Mutex<Option<Result<(String, String), String>>>>,
-    pub(crate) pending_project_file: Arc<Mutex<Option<Result<(String, String, Option<String>), String>>>>,
+    pub(crate) pending_project_file:
+        Arc<Mutex<Option<Result<(String, String, Option<String>), String>>>>,
     pub(crate) pending_font_file: Arc<Mutex<Option<Result<(Vec<u8>, String), String>>>>,
     pub(crate) pending_save_result: Arc<Mutex<Option<Result<(), String>>>>,
     pub(crate) filter_text: String,

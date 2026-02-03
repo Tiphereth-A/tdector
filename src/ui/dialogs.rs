@@ -139,13 +139,12 @@ impl DecryptionApp {
                 self.project.font_path = None;
                 self.current_path = None;
                 self.project_filename = None;
-                self.is_dirty = true;
                 self.filter_dirty = true;
                 self.lookups_dirty = true;
                 self.tfidf_dirty = true;
                 self.filter_text.clear();
                 self.clear_popups();
-                self.update_title(ctx);
+                self.update_dirty_status(true, ctx);
             }
         }
     }

@@ -32,14 +32,14 @@ impl FileIO {
             Some(handle) => {
                 let bytes = handle.read().await;
                 let filename = handle.file_name();
-                
+
                 // On desktop, get the full path for in-place saving
                 #[cfg(not(target_arch = "wasm32"))]
                 let full_path = handle.path().to_string_lossy().to_string();
-                
+
                 #[cfg(target_arch = "wasm32")]
                 let full_path = filename.clone();
-                
+
                 Ok((bytes, filename, Some(full_path)))
             }
             None => Err(AppError::OperationCancelled),

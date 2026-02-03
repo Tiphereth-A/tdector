@@ -82,7 +82,7 @@ impl DecryptionApp {
                         let json_content =
                             String::from_utf8(buf).unwrap_or_else(|_| String::from("{}"));
                         let json_bytes = json_content.into_bytes();
-                        
+
                         // Desktop: If we have a stored filename, save directly to that file
                         #[cfg(not(target_arch = "wasm32"))]
                         if let Some(ref filename) = self.project_filename {
@@ -90,14 +90,15 @@ impl DecryptionApp {
                             let path = PathBuf::from(filename);
                             let pending = self.pending_save_result.clone();
                             io::FileIO::spawn(async move {
-                                let result = io::FileIO::save_file_to_path(&json_bytes, &path).await
+                                let result = io::FileIO::save_file_to_path(&json_bytes, &path)
+                                    .await
                                     .map_err(|e| e.to_string());
                                 let mut guard = pending.lock().unwrap();
                                 *guard = Some(result);
                             });
                             return;
                         }
-                        
+
                         // Use stored filename if available, otherwise generate from project name
                         let filename = if let Some(ref stored_filename) = self.project_filename {
                             stored_filename.clone()
@@ -108,9 +109,10 @@ impl DecryptionApp {
                         };
                         let pending = self.pending_save_result.clone();
                         io::FileIO::spawn(async move {
-                            let result = io::FileIO::save_file(&json_bytes, &filename, "JSON", &["json"])
-                                .await
-                                .map_err(|e| e.to_string());
+                            let result =
+                                io::FileIO::save_file(&json_bytes, &filename, "JSON", &["json"])
+                                    .await
+                                    .map_err(|e| e.to_string());
                             let mut guard = pending.lock().unwrap();
                             *guard = Some(result);
                         });
@@ -226,6 +228,10 @@ impl DecryptionApp {
         if self.is_dirty != new_flag {
             self.is_dirty = new_flag;
             self.update_title(ctx);
+
+            // Update WASM dirty flag for beforeunload handler
+            #[cfg(target_arch = "wasm32")]
+            crate::set_app_dirty(new_flag);
         }
     }
 
@@ -250,7 +256,7 @@ impl DecryptionApp {
             AppAction::Open => self.load_project(ctx),
             AppAction::Export => self.export_typst(),
             AppAction::Quit => {
-                self.is_dirty = false;
+                self.update_dirty_status(false, ctx);
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
         }

@@ -122,13 +122,13 @@ pub struct CachedTfidf;
 #[allow(dead_code)]
 impl CachedTfidf {
     /// No-op for WASM.
-#[allow(dead_code)]
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self
     }
 
     /// No-op for WASM.
-#[allow(dead_code)]
+    #[allow(dead_code)]
     pub fn is_dirty(&self) -> bool {
         true
     }
