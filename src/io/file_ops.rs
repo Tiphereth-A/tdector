@@ -29,7 +29,7 @@ impl DecryptionApp {
             let result =
                 io::FileIO::pick_file(file_type.filter_name(), file_type.extensions()).await;
             let decoded = result
-                .and_then(|(bytes, filename)| {
+                .and_then(|(bytes, filename, _path)| {
                     String::from_utf8(bytes)
                         .map(|content| (content, filename))
                         .map_err(|e| AppError::IoError(format!("Failed to decode file: {e}")))
@@ -55,9 +55,9 @@ impl DecryptionApp {
             let result =
                 io::FileIO::pick_file(file_type.filter_name(), file_type.extensions()).await;
             let decoded = result
-                .and_then(|(bytes, filename)| {
+                .and_then(|(bytes, filename, full_path)| {
                     String::from_utf8(bytes)
-                        .map(|content| (content, filename))
+                        .map(|content| (content, filename, full_path))
                         .map_err(|e| AppError::IoError(format!("Failed to decode file: {e}")))
                 })
                 .map_err(|e| e.to_string());
@@ -69,7 +69,8 @@ impl DecryptionApp {
     /// Saves the current project to disk or downloads in browser.
     ///
     /// Converts the project to JSON format and uses async file dialog to save.
-    /// On successful save, clears the dirty flag and updates the window title.
+    /// On desktop, if the project was loaded from a file, saves directly to that file.
+    /// Otherwise, shows a save dialog. On successful save, clears the dirty flag and updates the window title.
     pub(crate) fn save_project(&mut self, ctx: &egui::Context) {
         match io::convert_to_saved_project(&self.project) {
             Ok(saved_project) => {
@@ -80,12 +81,28 @@ impl DecryptionApp {
                     Ok(()) => {
                         let json_content =
                             String::from_utf8(buf).unwrap_or_else(|_| String::from("{}"));
-                        let filename = if self.project.project_name.is_empty() {
+                        let json_bytes = json_content.into_bytes();
+                        
+                        // Desktop: If we have a stored filename, save directly to that file
+                        #[cfg(not(target_arch = "wasm32"))]
+                        if let Some(ref filename) = self.project_filename {
+                            use std::path::PathBuf;
+                            let path = PathBuf::from(filename);
+                            io::FileIO::spawn(async move {
+                                let _result = io::FileIO::save_file_to_path(&json_bytes, &path).await;
+                            });
+                            self.update_dirty_status(false, ctx);
+                            return;
+                        }
+                        
+                        // Use stored filename if available, otherwise generate from project name
+                        let filename = if let Some(ref stored_filename) = self.project_filename {
+                            stored_filename.clone()
+                        } else if self.project.project_name.is_empty() {
                             "project.json".to_string()
                         } else {
                             format!("{}.json", self.project.project_name)
                         };
-                        let json_bytes = json_content.into_bytes();
                         io::FileIO::spawn(async move {
                             let _result =
                                 io::FileIO::save_file(&json_bytes, &filename, "JSON", &["json"])
@@ -114,7 +131,9 @@ impl DecryptionApp {
             let file_type = FileType::Font;
             let result =
                 io::FileIO::pick_file(file_type.filter_name(), file_type.extensions()).await;
-            let converted = result.map_err(|e| e.to_string());
+            let converted = result
+                .map(|(bytes, filename, _path)| (bytes, filename))
+                .map_err(|e| e.to_string());
             let mut guard = pending.lock().unwrap();
             *guard = Some(converted);
         });

@@ -119,13 +119,16 @@ impl std::fmt::Debug for CachedTfidf {
 pub struct CachedTfidf;
 
 #[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
 impl CachedTfidf {
     /// No-op for WASM.
+#[allow(dead_code)]
     pub fn new() -> Self {
         Self
     }
 
     /// No-op for WASM.
+#[allow(dead_code)]
     pub fn is_dirty(&self) -> bool {
         true
     }

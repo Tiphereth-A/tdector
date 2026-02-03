@@ -110,13 +110,16 @@ impl SimilarityEngine {
 }
 
 #[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
 impl SimilarityEngine {
     /// WASM version: TF-IDF computation is not available on WASM.
+    #[allow(dead_code)]
     pub fn compute_tfidf_matrix(_project: &Project) -> Option<()> {
         None
     }
 
     /// WASM version: No-op similarity search.
+    #[allow(dead_code)]
     pub fn find_similar(_matrix: &(), _target_idx: usize, _limit: usize) -> Vec<(usize, f32)> {
         Vec::new()
     }

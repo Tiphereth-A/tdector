@@ -86,12 +86,13 @@ pub struct UpdateSentenceCommentDialog {
 pub struct DecryptionApp {
     pub(crate) project: Project,
     pub(crate) current_path: Option<PathBuf>,
+    pub(crate) project_filename: Option<String>,
     pub(crate) current_page: usize,
     pub(crate) page_size: usize,
     pub(crate) is_dirty: bool,
     pub(crate) pending_import: Option<(String, String)>,
     pub(crate) pending_text_file: Arc<Mutex<Option<Result<(String, String), String>>>>,
-    pub(crate) pending_project_file: Arc<Mutex<Option<Result<(String, String), String>>>>,
+    pub(crate) pending_project_file: Arc<Mutex<Option<Result<(String, String, Option<String>), String>>>>,
     pub(crate) pending_font_file: Arc<Mutex<Option<Result<(Vec<u8>, String), String>>>>,
     pub(crate) filter_text: String,
     pub(crate) sort_mode: SortMode,
@@ -199,6 +200,7 @@ impl Default for DecryptionApp {
         Self {
             project: Project::default(),
             current_path: None,
+            project_filename: None,
             current_page: 0,
             page_size: 10,
             is_dirty: false,

@@ -12,8 +12,8 @@ use rfd::AsyncFileDialog;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_futures::spawn_local;
 
-/// Result of a file read operation: (bytes, filename)
-pub type FileResult = (Vec<u8>, String);
+/// Result of a file read operation: (bytes, filename, optional full path on desktop)
+pub type FileResult = (Vec<u8>, String, Option<String>);
 
 /// Unified async file operations struct
 pub struct FileIO;
@@ -21,6 +21,7 @@ pub struct FileIO;
 impl FileIO {
     /// Pick and read a file with specified filters
     /// Returns raw bytes - caller can decode as UTF-8 if needed
+    /// On desktop, also returns the full path to enable in-place saving
     pub async fn pick_file(filter_name: &str, extensions: &[&str]) -> AppResult<FileResult> {
         let mut dialog = AsyncFileDialog::new();
         if !extensions.is_empty() {
@@ -30,7 +31,16 @@ impl FileIO {
         match dialog.pick_file().await {
             Some(handle) => {
                 let bytes = handle.read().await;
-                Ok((bytes, handle.file_name()))
+                let filename = handle.file_name();
+                
+                // On desktop, get the full path for in-place saving
+                #[cfg(not(target_arch = "wasm32"))]
+                let full_path = handle.path().to_string_lossy().to_string();
+                
+                #[cfg(target_arch = "wasm32")]
+                let full_path = filename.clone();
+                
+                Ok((bytes, filename, Some(full_path)))
             }
             None => Err(AppError::OperationCancelled),
         }
@@ -55,6 +65,13 @@ impl FileIO {
                 .map_err(|e| AppError::IoError(format!("Failed to save file: {e}"))),
             None => Err(AppError::OperationCancelled),
         }
+    }
+
+    /// Desktop-only: Save directly to a path without showing a dialog
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn save_file_to_path(content: &[u8], path: &std::path::Path) -> AppResult<()> {
+        std::fs::write(path, content)
+            .map_err(|e| AppError::IoError(format!("Failed to write file: {e}")))
     }
 
     /// Platform-specific async spawner for launching async tasks

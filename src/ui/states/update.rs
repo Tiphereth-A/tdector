@@ -373,7 +373,7 @@ impl DecryptionApp {
 
         if let Some(result) = project_result {
             match result {
-                Ok((content, _name)) => {
+                Ok((content, name, full_path)) => {
                     match serde_json::from_str::<SavedProject>(&content) {
                         Ok(saved_project) => {
                             // Convert from SavedProject to Project
@@ -381,6 +381,8 @@ impl DecryptionApp {
                                 Some(project) => {
                                     self.project = project;
                                     self.current_path = None; // No path in browser
+                                    // Use full path if available (desktop), otherwise just the filename (WASM)
+                                    self.project_filename = full_path.or(Some(name));
                                     self.filter_dirty = true;
                                     self.lookups_dirty = true;
                                     self.tfidf_dirty = true;
