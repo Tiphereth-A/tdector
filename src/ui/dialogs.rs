@@ -138,7 +138,8 @@ impl DecryptionApp {
                 self.project.project_name = name;
                 self.project.font_path = None;
                 self.current_path = None;
-                self.is_dirty = false;
+                self.project_filename = None;
+                self.is_dirty = true;
                 self.filter_dirty = true;
                 self.lookups_dirty = true;
                 self.tfidf_dirty = true;

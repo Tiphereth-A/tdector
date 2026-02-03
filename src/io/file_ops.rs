@@ -71,7 +71,7 @@ impl DecryptionApp {
     /// Converts the project to JSON format and uses async file dialog to save.
     /// On desktop, if the project was loaded from a file, saves directly to that file.
     /// Otherwise, shows a save dialog. On successful save, clears the dirty flag and updates the window title.
-    pub(crate) fn save_project(&mut self, ctx: &egui::Context) {
+    pub(crate) fn save_project(&mut self, _ctx: &egui::Context) {
         match io::convert_to_saved_project(&self.project) {
             Ok(saved_project) => {
                 let formatter = io::json_formatter::Formatter::new();
@@ -88,10 +88,13 @@ impl DecryptionApp {
                         if let Some(ref filename) = self.project_filename {
                             use std::path::PathBuf;
                             let path = PathBuf::from(filename);
+                            let pending = self.pending_save_result.clone();
                             io::FileIO::spawn(async move {
-                                let _result = io::FileIO::save_file_to_path(&json_bytes, &path).await;
+                                let result = io::FileIO::save_file_to_path(&json_bytes, &path).await
+                                    .map_err(|e| e.to_string());
+                                let mut guard = pending.lock().unwrap();
+                                *guard = Some(result);
                             });
-                            self.update_dirty_status(false, ctx);
                             return;
                         }
                         
@@ -103,12 +106,14 @@ impl DecryptionApp {
                         } else {
                             format!("{}.json", self.project.project_name)
                         };
+                        let pending = self.pending_save_result.clone();
                         io::FileIO::spawn(async move {
-                            let _result =
-                                io::FileIO::save_file(&json_bytes, &filename, "JSON", &["json"])
-                                    .await;
+                            let result = io::FileIO::save_file(&json_bytes, &filename, "JSON", &["json"])
+                                .await
+                                .map_err(|e| e.to_string());
+                            let mut guard = pending.lock().unwrap();
+                            *guard = Some(result);
                         });
-                        self.update_dirty_status(false, ctx);
                     }
                     Err(e) => {
                         self.error_message = Some(format!("Failed to serialize project: {e}"));

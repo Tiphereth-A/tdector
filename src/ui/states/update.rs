@@ -407,6 +407,29 @@ impl DecryptionApp {
             }
         }
 
+        // Process pending save result
+        let save_result = if let Ok(mut guard) = self.pending_save_result.try_lock() {
+            guard.take()
+        } else {
+            None
+        };
+
+        if let Some(result) = save_result {
+            match result {
+                Ok(()) => {
+                    // Save succeeded, clear dirty flag
+                    self.update_dirty_status(false, ctx);
+                }
+                Err(e) => {
+                    // Save failed or was cancelled, keep dirty flag unchanged
+                    // Only show error if it's not a cancellation
+                    if !e.contains("cancelled") && !e.contains("Cancelled") {
+                        self.error_message = Some(format!("Failed to save project: {e}"));
+                    }
+                }
+            }
+        }
+
         // Process pending font file
         let font_result = if let Ok(mut guard) = self.pending_font_file.try_lock() {
             guard.take()
