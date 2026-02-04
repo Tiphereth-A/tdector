@@ -1,25 +1,28 @@
-/// Sort direction for segment list ordering.
+/// Direction for sorting operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortDirection {
     Ascending,
     Descending,
 }
 
-/// Sort field for segment list.
+/// Field to sort segments by
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortField {
+    /// Sort by original segment index (no reordering)
     Index,
+    /// Sort by the original text of tokens (alphabetical)
     Original,
+    /// Sort by number of tokens in each segment
     Length,
+    /// Sort by token count
     Count,
+    /// Sort by translation completion ratio (0.0 to 1.0)
     TranslatedRatio,
+    /// Sort by number of translated tokens
     TranslatedCount,
 }
 
-/// Available sorting modes for the segment list.
-///
-/// Segments can be sorted by index (original order), original text content,
-/// token count, or translation completion ratio.
+/// Complete sort specification combining field and direction
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SortMode {
     pub field: SortField,
@@ -27,9 +30,7 @@ pub struct SortMode {
 }
 
 impl SortMode {
-    /// Returns all available sort modes in their display order.
-    ///
-    /// This method provides the canonical ordering for UI selection widgets.
+    /// Get all possible sort mode combinations (12 total: 6 fields × 2 directions)
     #[must_use]
     pub const fn all() -> [Self; 12] {
         [
@@ -84,7 +85,7 @@ impl SortMode {
         ]
     }
 
-    /// Returns the display text for this sort mode.
+    /// Get a human-readable display text for UI menus
     #[must_use]
     pub fn display_text(self) -> &'static str {
         match (self.field, self.direction) {
@@ -107,6 +108,7 @@ impl SortMode {
         }
     }
 
+    /// Default sort mode: by index in ascending order
     pub const DEFAULT: Self = Self {
         field: SortField::Index,
         direction: SortDirection::Ascending,

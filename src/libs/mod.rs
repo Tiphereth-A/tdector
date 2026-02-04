@@ -1,25 +1,27 @@
-//! Domain layer: Encapsulated business logic and algorithms.
-//!
-//! Pure business logic separated from UI and infrastructure concerns.
-//! Implements linguistic algorithms and domain-driven validation:
-//!
-//! - **cache**: Memoization for expensive computations (LookupCache, CachedTfidf)
-//! - **filtering**: Text pattern matching and segment filtering
-//! - **menu**: Context menu generation for vocabulary and linguistic operations
-//! - **similarity**: TF-IDF similarity ranking and nearest-neighbor search
-//! - **text_analysis**: Tokenization, normalization, and linguistic processing
-//! - **types**: Domain-specific type wrappers for type safety
-//! - **validation**: Business rule enforcement and data constraint validation
-//!
-//! Note: Constants have been moved to the `consts` module.
+/// Core business logic for the text decryption and translation tool
+///
+/// Key concepts:
+/// - Project: The root container for all data (segments, vocabulary, rules)
+/// - Segment: A logical unit of text containing tokens to be translated
+/// - Token: Individual word or character, potentially derived from a base word
+/// - FormationRule: Rhai script that transforms base words into derived forms
+///
+/// The library provides:
+/// - Text analysis: Tokenization and translation ratio calculations
+/// - Caching: Lookup maps and TF-IDF matrices for performance
+/// - Filtering: Full-text search across segments and translations
+/// - Sorting: Multiple sort criteria for segment ordering
+/// - Similarity: TF-IDF based semantic search (native only)
+/// - Formation: Safe script execution for word transformations
+/// - Project I/O: Serialization with version migration support
 
 pub mod cache;
 pub mod filtering;
 pub mod formation;
-pub mod models;
+pub mod project;
 pub mod similarity;
 pub mod sorting;
 pub mod text_analysis;
 pub mod types;
 
-pub use models::{Project, Segment, Token};
+pub use project::{Project, Segment, Token};

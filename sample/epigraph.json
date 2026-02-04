@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "project_name": "epigraph",
   "formation": [{
     "description": "Future Tense Verb",
@@ -30,346 +30,498 @@
     "type": "inflection",
     "command": "fn transform(word) { word + \"󰀀\" }"
   }],
-  "vocabulary": [{
-    "word": "󰀇󰀖󰀳󰀬",
-    "meaning": "Bakuzhati",
-    "comment": ""
-  }, {
-    "word": "󰀉󰀔",
-    "meaning": "gift",
-    "comment": ""
-  }, {
-    "word": "󰀉󰀞",
-    "meaning": "child",
-    "comment": ""
-  }, {
-    "word": "󰀉󰀡",
-    "meaning": "not",
-    "comment": ""
-  }, {
-    "word": "󰀊󰀕",
-    "meaning": "god",
-    "comment": ""
-  }, {
-    "word": "󰀍󰀐󰀚",
-    "meaning": "contact",
-    "comment": ""
-  }, {
-    "word": "󰀎󰀗",
-    "meaning": "prepare",
-    "comment": ""
-  }, {
-    "word": "󰀎󰀩",
-    "meaning": "home",
-    "comment": ""
-  }, {
-    "word": "󰀑󰀲",
-    "meaning": "new",
-    "comment": ""
-  }, {
-    "word": "󰀑󰀳",
-    "meaning": "village",
-    "comment": ""
-  }, {
-    "word": "󰀒󰀊󰀐",
-    "meaning": "of",
-    "comment": ""
-  }, {
-    "word": "󰀒󰀥",
-    "meaning": "for",
-    "comment": ""
-  }, {
-    "word": "󰀓󰀥",
-    "meaning": "tribe",
-    "comment": ""
-  }, {
-    "word": "󰀔󰀖",
-    "meaning": "must",
-    "comment": ""
-  }, {
-    "word": "󰀔󰀨󰀴",
-    "meaning": "diamond",
-    "comment": ""
-  }, {
-    "word": "󰀖󰀙",
-    "meaning": "hide",
-    "comment": ""
-  }, {
-    "word": "󰀖󰀲󰀝",
-    "meaning": "planet",
-    "comment": ""
-  }, {
-    "word": "󰀗󰀖󰀍󰀲",
-    "meaning": "Makudovu",
-    "comment": ""
-  }, {
-    "word": "󰀘󰀛",
-    "meaning": "next",
-    "comment": ""
-  }, {
-    "word": "󰀙󰀕󰀉",
-    "meaning": "work",
-    "comment": ""
-  }, {
-    "word": "󰀚󰀢󰀶",
-    "meaning": "temple",
-    "comment": ""
-  }, {
-    "word": "󰀛󰀤",
-    "meaning": "Nari",
-    "comment": ""
-  }, {
-    "word": "󰀞󰀛",
-    "meaning": "language",
-    "comment": ""
-  }, {
-    "word": "󰀞󰀝",
-    "meaning": "other",
-    "comment": ""
-  }, {
-    "word": "󰀟󰀑󰀗󰀦",
-    "meaning": "Pagomaru",
-    "comment": ""
-  }, {
-    "word": "󰀟󰀯󰀲",
-    "meaning": "create",
-    "comment": ""
-  }, {
-    "word": "󰀠󰀈󰀳",
-    "meaning": "king",
-    "comment": ""
-  }, {
-    "word": "󰀡󰀦",
-    "meaning": "above",
-    "comment": ""
-  }, {
-    "word": "󰀢󰀖",
-    "meaning": "great",
-    "comment": ""
-  }, {
-    "word": "󰀢󰀚󰀊",
-    "meaning": "speak",
-    "comment": ""
-  }, {
-    "word": "󰀢󰀯",
-    "meaning": "power",
-    "comment": ""
-  }, {
-    "word": "󰀣󰀱󰀕",
-    "meaning": "stop",
-    "comment": ""
-  }, {
-    "word": "󰀥󰀜",
-    "meaning": "this",
-    "comment": ""
-  }, {
-    "word": "󰀦󰀢",
-    "meaning": "fear",
-    "comment": ""
-  }, {
-    "word": "󰀨󰀓",
-    "meaning": "wise",
-    "comment": ""
-  }, {
-    "word": "󰀩󰀓󰀝",
-    "meaning": "commence",
-    "comment": ""
-  }, {
-    "word": "󰀩󰀤",
-    "meaning": "Shori",
-    "comment": ""
-  }, {
-    "word": "󰀩󰀥󰀩",
-    "meaning": "teach",
-    "comment": ""
-  }, {
-    "word": "󰀪󰀉󰀝",
-    "meaning": "we",
-    "comment": ""
-  }, {
-    "word": "󰀪󰀣󰀈",
-    "meaning": "Shurabi",
-    "comment": ""
-  }, {
-    "word": "󰀪󰀫",
-    "meaning": "old",
-    "comment": ""
-  }, {
-    "word": "󰀪󰀶",
-    "meaning": "from",
-    "comment": ""
-  }, {
-    "word": "󰀮󰀔",
-    "meaning": "all",
-    "comment": ""
-  }, {
-    "word": "󰀯󰀉",
-    "meaning": "conque",
-    "comment": ""
-  }, {
-    "word": "󰀱",
-    "meaning": "and",
-    "comment": ""
-  }, {
-    "word": "󰀲󰀊",
-    "meaning": "man",
-    "comment": ""
-  }, {
-    "word": "󰀲󰀯󰀟",
-    "meaning": "create",
-    "comment": ""
-  }, {
-    "word": "󰀲󰀴",
-    "meaning": "fight",
-    "comment": ""
-  }, {
-    "word": "󰀳󰀔",
-    "meaning": "with",
-    "comment": ""
-  }, {
-    "word": "󰀳󰀫",
-    "meaning": "by",
-    "comment": ""
-  }, {
-    "word": "󰀵󰀩",
-    "meaning": "our",
-    "comment": ""
-  }, {
-    "word": "󰀶󰀓󰀬",
-    "meaning": "offering",
-    "comment": ""
-  }, {
-    "word": "󰀶󰀰",
-    "meaning": "is",
-    "comment": ""
-  }, {
-    "word": "󰀶󰀲",
-    "meaning": "stone",
-    "comment": ""
-  }, {
-    "word": "󰀸󰀗",
-    "meaning": "first",
-    "comment": ""
-  }, {
-    "word": "󰀸󰀹",
-    "meaning": "12",
-    "comment": ""
-  }, {
-    "word": "󰀸󰀻󰀷󰀻",
-    "meaning": "1404",
-    "comment": ""
-  }, {
-    "word": "󰀸󰁀󰀿",
-    "meaning": "198",
-    "comment": ""
-  }, {
-    "word": "󰀹󰀽󰀼󰀾",
-    "meaning": "2657",
-    "comment": ""
-  }, {
-    "word": "󰀹󰀽󰀾",
-    "meaning": "267",
-    "comment": ""
-  }, {
-    "word": "󰀺󰀸󰀼󰀻",
-    "meaning": "3154",
-    "comment": ""
-  }, {
-    "word": "󰀻",
-    "meaning": "4",
-    "comment": ""
-  }, {
-    "word": "󰀼󰀿󰀸󰀸",
-    "meaning": "5811",
-    "comment": ""
-  }, {
-    "word": "󰀼󰁀󰀾",
-    "meaning": "597",
-    "comment": ""
-  }, {
-    "word": "󰀾",
-    "meaning": "7",
-    "comment": ""
-  }, {
-    "word": "󰀿󰀷󰀾",
-    "meaning": "807",
-    "comment": ""
-  }],
-  "formatted_word": [],
+  "vocabulary": {
+    "orignal": [{
+      "word": "󰀇󰀖󰀳󰀬",
+      "meaning": "Bakuzhati",
+      "comment": ""
+    }, {
+      "word": "󰀉󰀔",
+      "meaning": "gift",
+      "comment": ""
+    }, {
+      "word": "󰀉󰀞",
+      "meaning": "child",
+      "comment": ""
+    }, {
+      "word": "󰀉󰀡",
+      "meaning": "not",
+      "comment": ""
+    }, {
+      "word": "󰀊󰀕",
+      "meaning": "god",
+      "comment": ""
+    }, {
+      "word": "󰀍󰀐󰀚",
+      "meaning": "contact",
+      "comment": ""
+    }, {
+      "word": "󰀎󰀗",
+      "meaning": "prepare",
+      "comment": ""
+    }, {
+      "word": "󰀎󰀩",
+      "meaning": "home",
+      "comment": ""
+    }, {
+      "word": "󰀑󰀲",
+      "meaning": "new",
+      "comment": ""
+    }, {
+      "word": "󰀑󰀳",
+      "meaning": "village",
+      "comment": ""
+    }, {
+      "word": "󰀒󰀊󰀐",
+      "meaning": "of",
+      "comment": ""
+    }, {
+      "word": "󰀒󰀥",
+      "meaning": "for",
+      "comment": ""
+    }, {
+      "word": "󰀓󰀥",
+      "meaning": "tribe",
+      "comment": ""
+    }, {
+      "word": "󰀔󰀖",
+      "meaning": "must",
+      "comment": ""
+    }, {
+      "word": "󰀔󰀨󰀴",
+      "meaning": "diamond",
+      "comment": ""
+    }, {
+      "word": "󰀖󰀙",
+      "meaning": "hide",
+      "comment": ""
+    }, {
+      "word": "󰀖󰀲󰀝",
+      "meaning": "planet",
+      "comment": ""
+    }, {
+      "word": "󰀗󰀖󰀍󰀲",
+      "meaning": "Makudovu",
+      "comment": ""
+    }, {
+      "word": "󰀘󰀛",
+      "meaning": "next",
+      "comment": ""
+    }, {
+      "word": "󰀙󰀕󰀉",
+      "meaning": "work",
+      "comment": ""
+    }, {
+      "word": "󰀚󰀢󰀶",
+      "meaning": "temple",
+      "comment": ""
+    }, {
+      "word": "󰀛󰀤",
+      "meaning": "Nari",
+      "comment": ""
+    }, {
+      "word": "󰀞󰀛",
+      "meaning": "language",
+      "comment": ""
+    }, {
+      "word": "󰀞󰀝",
+      "meaning": "other",
+      "comment": ""
+    }, {
+      "word": "󰀟󰀑󰀗󰀦",
+      "meaning": "Pagomaru",
+      "comment": ""
+    }, {
+      "word": "󰀟󰀯󰀲",
+      "meaning": "create",
+      "comment": ""
+    }, {
+      "word": "󰀠󰀈󰀳",
+      "meaning": "king",
+      "comment": ""
+    }, {
+      "word": "󰀡󰀦",
+      "meaning": "above",
+      "comment": ""
+    }, {
+      "word": "󰀢󰀖",
+      "meaning": "great",
+      "comment": ""
+    }, {
+      "word": "󰀢󰀚󰀊",
+      "meaning": "speak",
+      "comment": ""
+    }, {
+      "word": "󰀢󰀯",
+      "meaning": "power",
+      "comment": ""
+    }, {
+      "word": "󰀣󰀱󰀕",
+      "meaning": "stop",
+      "comment": ""
+    }, {
+      "word": "󰀥󰀜",
+      "meaning": "this",
+      "comment": ""
+    }, {
+      "word": "󰀦󰀢",
+      "meaning": "fear",
+      "comment": ""
+    }, {
+      "word": "󰀨󰀓",
+      "meaning": "wise",
+      "comment": ""
+    }, {
+      "word": "󰀩󰀓󰀝",
+      "meaning": "commence",
+      "comment": ""
+    }, {
+      "word": "󰀩󰀤",
+      "meaning": "Shori",
+      "comment": ""
+    }, {
+      "word": "󰀩󰀥󰀩",
+      "meaning": "teach",
+      "comment": ""
+    }, {
+      "word": "󰀪󰀉󰀝",
+      "meaning": "we",
+      "comment": ""
+    }, {
+      "word": "󰀪󰀣󰀈",
+      "meaning": "Shurabi",
+      "comment": ""
+    }, {
+      "word": "󰀪󰀫",
+      "meaning": "old",
+      "comment": ""
+    }, {
+      "word": "󰀪󰀶",
+      "meaning": "from",
+      "comment": ""
+    }, {
+      "word": "󰀮󰀔",
+      "meaning": "all",
+      "comment": ""
+    }, {
+      "word": "󰀯󰀉",
+      "meaning": "conque",
+      "comment": ""
+    }, {
+      "word": "󰀱",
+      "meaning": "and",
+      "comment": ""
+    }, {
+      "word": "󰀲󰀊",
+      "meaning": "man",
+      "comment": ""
+    }, {
+      "word": "󰀲󰀯󰀟",
+      "meaning": "create",
+      "comment": ""
+    }, {
+      "word": "󰀲󰀴",
+      "meaning": "fight",
+      "comment": ""
+    }, {
+      "word": "󰀳󰀔",
+      "meaning": "with",
+      "comment": ""
+    }, {
+      "word": "󰀳󰀫",
+      "meaning": "by",
+      "comment": ""
+    }, {
+      "word": "󰀵󰀩",
+      "meaning": "our",
+      "comment": ""
+    }, {
+      "word": "󰀶󰀓󰀬",
+      "meaning": "offering",
+      "comment": ""
+    }, {
+      "word": "󰀶󰀰",
+      "meaning": "is",
+      "comment": ""
+    }, {
+      "word": "󰀶󰀲",
+      "meaning": "stone",
+      "comment": ""
+    }, {
+      "word": "󰀸󰀗",
+      "meaning": "first",
+      "comment": ""
+    }, {
+      "word": "󰀸󰀹",
+      "meaning": "12",
+      "comment": ""
+    }, {
+      "word": "󰀸󰀻󰀷󰀻",
+      "meaning": "1404",
+      "comment": ""
+    }, {
+      "word": "󰀸󰁀󰀿",
+      "meaning": "198",
+      "comment": ""
+    }, {
+      "word": "󰀹󰀽󰀼󰀾",
+      "meaning": "2657",
+      "comment": ""
+    }, {
+      "word": "󰀹󰀽󰀾",
+      "meaning": "267",
+      "comment": ""
+    }, {
+      "word": "󰀺󰀸󰀼󰀻",
+      "meaning": "3154",
+      "comment": ""
+    }, {
+      "word": "󰀻",
+      "meaning": "4",
+      "comment": ""
+    }, {
+      "word": "󰀼󰀿󰀸󰀸",
+      "meaning": "5811",
+      "comment": ""
+    }, {
+      "word": "󰀼󰁀󰀾",
+      "meaning": "597",
+      "comment": ""
+    }, {
+      "word": "󰀾",
+      "meaning": "7",
+      "comment": ""
+    }, {
+      "word": "󰀿󰀷󰀾",
+      "meaning": "807",
+      "comment": ""
+    }],
+    "formatted": [{
+      "word": [0, 6],
+      "comment": ""
+    }, {
+      "word": [1, 6],
+      "comment": ""
+    }, {
+      "word": [2, 6],
+      "comment": ""
+    }, {
+      "word": [4, 4],
+      "comment": ""
+    }, {
+      "word": [4, 6],
+      "comment": ""
+    }, {
+      "word": [5, 0],
+      "comment": ""
+    }, {
+      "word": [6, 5],
+      "comment": ""
+    }, {
+      "word": [7, 6],
+      "comment": ""
+    }, {
+      "word": [12, 1],
+      "comment": ""
+    }, {
+      "word": [12, 2],
+      "comment": ""
+    }, {
+      "word": [12, 4],
+      "comment": ""
+    }, {
+      "word": [12, 6],
+      "comment": ""
+    }, {
+      "word": [13, 0],
+      "comment": ""
+    }, {
+      "word": [14, 6],
+      "comment": ""
+    }, {
+      "word": [15, 5],
+      "comment": ""
+    }, {
+      "word": [16, 4],
+      "comment": ""
+    }, {
+      "word": [17, 6],
+      "comment": ""
+    }, {
+      "word": [19, 6],
+      "comment": ""
+    }, {
+      "word": [20, 6],
+      "comment": ""
+    }, {
+      "word": [21, 6],
+      "comment": ""
+    }, {
+      "word": [22, 1],
+      "comment": ""
+    }, {
+      "word": [22, 4],
+      "comment": ""
+    }, {
+      "word": [22, 6],
+      "comment": ""
+    }, {
+      "word": [23, 1],
+      "comment": ""
+    }, {
+      "word": [23, 6],
+      "comment": ""
+    }, {
+      "word": [24, 6],
+      "comment": ""
+    }, {
+      "word": [25, 0],
+      "comment": ""
+    }, {
+      "word": [26, 4],
+      "comment": ""
+    }, {
+      "word": [26, 6],
+      "comment": ""
+    }, {
+      "word": [29, 0],
+      "comment": ""
+    }, {
+      "word": [29, 3],
+      "comment": ""
+    }, {
+      "word": [29, 5],
+      "comment": ""
+    }, {
+      "word": [31, 0],
+      "comment": ""
+    }, {
+      "word": [33, 3],
+      "comment": ""
+    }, {
+      "word": [33, 5],
+      "comment": ""
+    }, {
+      "word": [35, 0],
+      "comment": ""
+    }, {
+      "word": [36, 6],
+      "comment": ""
+    }, {
+      "word": [37, 3],
+      "comment": ""
+    }, {
+      "word": [39, 6],
+      "comment": ""
+    }, {
+      "word": [42, 6],
+      "comment": ""
+    }, {
+      "word": [43, 3],
+      "comment": ""
+    }, {
+      "word": [45, 3],
+      "comment": ""
+    }, {
+      "word": [45, 4],
+      "comment": ""
+    }, {
+      "word": [45, 6],
+      "comment": ""
+    }, {
+      "word": [46, 0],
+      "comment": ""
+    }, {
+      "word": [46, 3],
+      "comment": ""
+    }, {
+      "word": [47, 5],
+      "comment": ""
+    }, {
+      "word": [51, 6],
+      "comment": ""
+    }, {
+      "word": [52, 0],
+      "comment": ""
+    }, {
+      "word": [53, 6],
+      "comment": ""
+    }]
+  },
   "sentences": [{
-    "words": [55, [4, 4], [42, 6], 27, 64, [16, 4], [46, 3], 44, [45, 3], [42, 6], 48, 61, [12, 4]],
+    "words": [55, -4, -40, 27, 64, -16, -46, 44, -42, -40, 48, 61, -11],
     "meaning": "12 Gods All Above Created 7 Planets And Occupied All With Four Tribes.",
     "comment": ""
   }, {
-    "words": [[4, 4], [45, 4], [37, 3], [1, 6], 28, [22, 6]],
+    "words": [-4, -43, -38, -2, 28, -23],
     "meaning": "Gods Taught Men The Gift Of Great Language.",
     "comment": ""
   }, {
-    "words": [54, [4, 6], [51, 6], [33, 3], [1, 6], [45, 4], 30, 30, [46, 0], 41, 42, [12, 4], [37, 3], 23, [22, 1]],
+    "words": [54, -5, -48, -34, -2, -43, 30, 30, -45, 41, 42, -11, -38, 23, -21],
     "meaning": "The First God Feared The Offering. The Gift Creates Men Very Powerful From All The Other Languages The Tribes Taught.",
     "comment": ""
   }, {
-    "words": [[12, 4], 3, 48, [4, 4], [29, 5], 44, 42, 23, [12, 1], [47, 5]],
+    "words": [-11, 3, 48, -4, -32, 44, 42, 23, -9, -47],
     "meaning": "Tribes Not Speak With Gods And All Other Tribes Fight",
     "comment": ""
   }, {
-    "words": [[21, 6], 50, [19, 6], 49, [23, 1], [13, 0], [35, 0], 38, [33, 5], 38, [52, 0], [43, 3], 49, [23, 6], [12, 6], 32, [13, 0], 3, 28, [19, 6], [31, 0], 40, [22, 6], [29, 0], 44, [4, 4], [5, 0]],
+    "words": [-20, 50, -18, 49, -24, -13, -36, 38, -35, 38, -49, -41, 49, -25, -12, 32, -13, 3, 28, -18, -33, 40, -23, -30, 44, -4, -6],
     "meaning": "Nari: By Others Our Work Must Continue. We Fear We Will Conquered By Other Tribe. This Must Not Stop Great Work. Speak Old Language And Contact Gods.",
     "comment": ""
   }, {
-    "words": [28, [26, 6], [0, 6], [2, 6], 10, [17, 6]],
+    "words": [28, -29, -1, -3, 10, -17],
     "meaning": "Great King Bakuzhati Child Of Makudovu",
     "comment": ""
   }, {
-    "words": [18, 10, [21, 6]],
+    "words": [18, 10, -20],
     "meaning": "Next Of Nari",
     "comment": ""
   }, {
-    "words": [[45, 6], [4, 4], [29, 0]],
+    "words": [-44, -4, -30],
     "meaning": "Man Speak Gods (Speaker To The Gods)",
     "comment": ""
   }, {
-    "words": [[26, 6], 10, [26, 4]],
+    "words": [-29, 10, -28],
     "meaning": "King Of Kings",
     "comment": ""
   }, {
-    "words": [34, [45, 4], [26, 6], [37, 3], 42, [12, 4], [22, 4]],
+    "words": [34, -43, -29, -38, 42, -11, -22],
     "meaning": "Wise Men Taught King All Tribes Languages",
     "comment": ""
   }, {
-    "words": [[22, 6], 10, [4, 4], [46, 3], 8],
+    "words": [-23, 10, -4, -46, 8],
     "meaning": "Created New Language of Gods",
     "comment": ""
   }, {
-    "words": [28, [20, 6], 10, [24, 6], [46, 3], 11, [4, 4], [29, 0]],
+    "words": [28, -19, 10, -26, -46, 11, -4, -30],
     "meaning": "Created Great Temple Of Pagomaru For Speaking To Gods",
     "comment": ""
   }, {
-    "words": [23, [12, 2], [36, 6], [6, 5], [47, 5], 28, [14, 6], [15, 5]],
+    "words": [23, -10, -37, -7, -47, 28, -14, -15],
     "meaning": "Other Tribe Shori Prepared To Fight. Hide The Great Diamond",
     "comment": ""
   }, {
-    "words": [60, 32, 58, 44, 62, [25, 0]],
+    "words": [60, 32, 58, 44, 62, -27],
     "meaning": "3154 + 2657 = 5811",
     "comment": ""
   }, {
-    "words": [63, 32, 65, 44, 56, [25, 0]],
+    "words": [63, 32, 65, 44, 56, -27],
     "meaning": "597 + 807 = 1404",
     "comment": ""
   }, {
-    "words": [[39, 6], 11, 32, [53, 6], [29, 3]],
+    "words": [-39, 11, 32, -50, -31],
     "meaning": "Shurabi Spoke For This Stone",
     "comment": ""
   }, {
-    "words": [8, [21, 6], 40, [21, 6], 16, 45, 2, 7, 9, 14],
+    "words": [8, -20, 40, -20, 16, 45, 2, 7, 9, 14],
     "meaning": "",
     "comment": ""
   }, {
-    "words": [[4, 4], [7, 6]],
+    "words": [-4, -8],
     "meaning": "",
     "comment": ""
   }, {
-    "words": [40, 40, [4, 6]],
+    "words": [40, 40, -5],
     "meaning": "",
     "comment": ""
   }, {
@@ -377,7 +529,7 @@
     "meaning": "",
     "comment": ""
   }, {
-    "words": [18, 34, [45, 6]],
+    "words": [18, 34, -44],
     "meaning": "",
     "comment": ""
   }]

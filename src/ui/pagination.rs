@@ -1,5 +1,3 @@
-//! Bottom pagination controls.
-
 use eframe::egui;
 
 use crate::consts::{
@@ -12,7 +10,6 @@ use crate::consts::{
     },
 };
 
-/// Renders pagination controls. Returns `Some(page)` if navigation occurred.
 pub fn render_pagination(
     ctx: &egui::Context,
     current_page: usize,

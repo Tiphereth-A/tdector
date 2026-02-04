@@ -1,26 +1,10 @@
-//! Domain filtering and search operations.
-//!
-//! Provides business logic for segment filtering and sorting:
-//! - **Case-insensitive search** across segment text and metadata
-//! - **Flexible sorting**: By index, segment text, translation, headword count
-//! - **Cached filtering**: Works with pre-computed indices for efficiency
+use crate::libs::Project;
 
-use crate::libs::models::Project;
-
-/// Represents a filtering and sorting operation on a project's segments.
+/// Text filtering and search operations for finding relevant segments.
 pub struct FilterOperation;
 
 impl FilterOperation {
-    /// Performs case-insensitive substring matching.
-    ///
-    /// # Arguments
-    ///
-    /// * `haystack` - The text to search in
-    /// * `needle_lower` - The search query (should already be lowercased)
-    ///
-    /// # Performance
-    ///
-    /// Avoids repeated lowercasing of the needle across multiple calls.
+    /// Case-insensitive substring search. Empty needle matches all haystacks.
     #[inline]
     pub fn contains_ignore_case(haystack: &str, needle_lower: &str) -> bool {
         if needle_lower.is_empty() {
@@ -33,18 +17,9 @@ impl FilterOperation {
         haystack.to_lowercase().contains(needle_lower)
     }
 
-    /// Filters segments by a search query.
-    ///
-    /// Returns a vector of segment indices that match the filter criteria.
-    ///
-    /// # Arguments
-    ///
-    /// * `project` - The project containing segments to filter
-    /// * `query` - The search query (empty string matches all)
-    ///
-    /// # Returns
-    ///
-    /// Vector of filtered segment indices
+    /// Filter segment indices to those matching the query string.
+    /// A segment matches if the query appears in its translation text or in any of its tokens.
+    /// Empty query returns all segment indices.
     pub fn apply_filter(project: &Project, query: &str) -> Vec<usize> {
         if query.is_empty() {
             (0..project.segments.len()).collect()
@@ -55,6 +30,7 @@ impl FilterOperation {
                 .iter()
                 .enumerate()
                 .filter(|(_idx, seg)| {
+                    // Match if translation contains query or any token contains query
                     Self::contains_ignore_case(&seg.translation, &query_lower)
                         || seg
                             .tokens

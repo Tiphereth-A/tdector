@@ -1,18 +1,18 @@
 use std::fmt;
 
-/// Application error type combining all possible error scenarios.
-///
-/// This enum wraps errors from various subsystems into a single type
-/// that can be easily converted to user-facing messages.
+/// Error types that can occur during application execution
 #[derive(Debug, Clone)]
 pub enum AppError {
-    /// File I/O error
+    /// File system I/O errors (reading, writing, dialog cancellation)
     IoError(String),
-    /// Invalid project format or corrupted data
+
+    /// Project JSON format is invalid or corrupted
     InvalidProjectFormat(String),
-    /// Script execution (Rhai) failed
+
+    /// Rhai script compilation or execution failed
     ScriptExecutionError(String),
-    /// Dialog or file picker was cancelled
+
+    /// User cancelled an operation (e.g., file dialog)
     OperationCancelled,
 }
 

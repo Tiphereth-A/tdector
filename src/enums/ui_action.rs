@@ -1,21 +1,25 @@
 use std::sync::Arc;
 
-/// User interaction result from UI components.
+/// Actions triggered by UI elements that affect application state
 #[derive(Debug, PartialEq, Eq)]
 pub enum UiAction {
+    /// No action occurred
     None,
+    /// Some data was modified
     Changed,
+    /// Apply text filter to segment list
     Filter(Arc<str>),
+    /// Request to show similar segments (desktop only)
     #[allow(dead_code)]
     ShowSimilar(usize),
-    /// Show dictionary definition for a word.
+    /// Request to show word definition popup
     #[allow(dead_code)]
     ShowDefinition(Arc<str>),
-    /// Show reference sentences containing a word.
+    /// Request to show word reference popup
     #[allow(dead_code)]
     ShowReference(Arc<str>),
-    /// Show context menu for a sentence (right-click).
+    /// Show context menu for a segment
     ShowSentenceMenu(usize),
-    /// Show context menu for a word (right-click).
+    /// Show context menu for a word (with segment and word indices)
     ShowWordMenu(Arc<str>, usize),
 }

@@ -1,18 +1,21 @@
-/// Supported file types for I/O operations
+/// File types supported by the application for import/export and loading
 #[derive(Debug, Clone, Copy)]
 pub enum FileType {
-    /// Text files (.txt)
+    /// Plain text files containing segments to be translated
     Text,
-    /// JSON project files (.json)
+
+    /// JSON project files (see SavedProjectV2 format)
     Json,
-    /// Font files (.ttf, .otf, .ttc)
+
+    /// Font files for rendering special scripts and writing systems
     Font,
-    /// Typst markup files (.typ)
+
+    /// Typst markup files for academic publishing and typesetting
     Typst,
 }
 
 impl FileType {
-    /// Get the user-friendly filter name for this file type
+    /// Get the human-readable name for file dialogs
     pub fn filter_name(&self) -> &'static str {
         match self {
             FileType::Text => "Text",
@@ -22,7 +25,7 @@ impl FileType {
         }
     }
 
-    /// Get the file extensions for this file type
+    /// Get the file extensions associated with this type
     pub fn extensions(&self) -> &'static [&'static str] {
         match self {
             FileType::Text => &["txt"],

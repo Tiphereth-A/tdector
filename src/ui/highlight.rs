@@ -1,34 +1,7 @@
-//! Text highlighting utilities for search query visualization.
-//!
-//! This module provides case-insensitive substring matching with visual highlighting
-//! for search results in the UI. The highlighting is implemented at the character level
-//! to properly handle Unicode and multi-byte characters.
-
 use eframe::egui;
 
 use crate::consts::colors::{HIGHLIGHT_BG, HIGHLIGHT_FG};
 
-/// Creates a text layout with highlighted search matches.
-///
-/// Performs case-insensitive substring matching and applies visual highlighting
-/// to all matches found in the text. The search is Unicode-aware and handles
-/// multi-byte characters correctly.
-///
-/// # Arguments
-///
-/// * `text` - The text to search and highlight
-/// * `query` - Search query (if `None` or empty, returns unhighlighted text)
-/// * `font_id` - Font specification for the text
-/// * `text_color` - Base color for non-highlighted text
-///
-/// # Returns
-///
-/// An `egui::text::LayoutJob` with highlighted matches ready for rendering.
-///
-/// # Performance
-///
-/// Uses optimized string searching with pre-normalized lowercase strings for O(n+m) performance.
-/// All matches are found in a single pass through the text.
 #[must_use]
 pub fn create_highlighted_layout(
     text: &str,

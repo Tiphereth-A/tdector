@@ -1,5 +1,3 @@
-//! Dictionary popup rendering (Definition and Reference popups).
-
 use std::collections::HashMap;
 
 use eframe::egui;
@@ -171,7 +169,6 @@ impl DecryptionApp {
             });
     }
 
-    /// Generic helper to render a list of segments obtained from a lookup map.
     pub(super) fn render_segment_list(
         &self,
         ui: &mut egui::Ui,

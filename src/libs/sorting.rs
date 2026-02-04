@@ -1,24 +1,19 @@
-//! Domain sorting operations.
-//!
-//! Provides business logic for segment sorting:
-//! - **Flexible sorting**: By index, segment text, translation ratio, token count
-//! - **Unified direction handling**: All sort functions use ascending order with optional reversal
-
 use crate::enums::{SortDirection, SortField, SortMode};
-use crate::libs::models::Project;
+use crate::libs::Project;
 
-/// Represents sorting operations on project segments.
+/// Sorting operations to order segments by various criteria.
 pub struct SortOperation;
 
 impl SortOperation {
-    /// Applies a sorting mode to a set of segment indices.
+    /// Sort segment indices in-place according to the specified sort mode.
+    /// Handles multiple sort fields (Index, Original text, Length, Count, TranslatedRatio, TranslatedCount)
+    /// and sort directions (Ascending/Descending).
     pub fn apply_sort(project: &Project, indices: &mut [usize], sort_mode: SortMode) {
         use SortField::*;
 
+        // Apply the primary sort based on selected field
         match sort_mode.field {
-            Index => {
-                // Already in ascending order
-            }
+            Index => {}  // Index order is default; no sorting needed
             Original => {
                 Self::sort_by_original_text(project, indices);
             }
@@ -36,13 +31,13 @@ impl SortOperation {
             }
         }
 
-        // Handle descending sort by reversing
+        // Reverse if descending order requested
         if sort_mode.direction == SortDirection::Descending {
             indices.reverse();
         }
     }
 
-    /// Sorts segments by original text content (ascending).
+    /// Sort by the concatenated original text of all tokens in each segment (alphabetical)
     fn sort_by_original_text(project: &Project, indices: &mut [usize]) {
         let mut indexed: Vec<_> = indices
             .iter()
@@ -63,7 +58,7 @@ impl SortOperation {
         }
     }
 
-    /// Sorts segments by token count (ascending).
+    /// Sort by the number of tokens (words/characters) in each segment
     fn sort_by_length(project: &Project, indices: &mut [usize]) {
         let mut indexed: Vec<_> = indices
             .iter()
@@ -77,7 +72,7 @@ impl SortOperation {
         }
     }
 
-    /// Sorts segments by token count (same as length, ascending).
+    /// Sort by token count (same as length; kept for compatibility)
     fn sort_by_count(project: &Project, indices: &mut [usize]) {
         let mut indexed: Vec<_> = indices
             .iter()
@@ -91,7 +86,7 @@ impl SortOperation {
         }
     }
 
-    /// Sorts segments by translation completion ratio (ascending).
+    /// Sort by translation ratio (0.0 if no translation, 1.0 if translated)
     fn sort_by_translation_ratio(project: &Project, indices: &mut [usize]) {
         use super::text_analysis::TextProcessor;
 
@@ -114,7 +109,6 @@ impl SortOperation {
         }
     }
 
-    /// Sorts segments by the number of tokens with vocabulary entries (ascending).
     fn sort_by_translated_count(project: &Project, indices: &mut [usize]) {
         use super::text_analysis::TextProcessor;
 

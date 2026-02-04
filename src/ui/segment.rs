@@ -1,9 +1,3 @@
-//! Interactive segment and token rendering components.
-//!
-//! This module provides the UI components for displaying and editing text segments,
-//! including tokens with glosses and translations. It handles both view and edit modes,
-//! with special support for custom fonts and dictionary-style interaction.
-
 use crate::libs::formation::FormationRule;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -27,24 +21,6 @@ use crate::enums::UiAction;
 use crate::libs::{Segment, Token};
 use crate::ui::highlight::create_highlighted_layout;
 
-/// Renders a horizontal layout of clickable tokens with glosses.
-///
-/// Each token is displayed vertically with its gloss above and original text below.
-/// Tokens are interactive and respond to both left-click (show definition) and
-/// right-click (show references) actions.
-///
-/// # Arguments
-///
-/// * `ui` - The egui UI context
-/// * `tokens` - Slice of tokens to render
-/// * `vocabulary` - Vocabulary map for looking up glosses
-/// * `vocabulary_comments` - Comments map for looking up word comments
-/// * `highlight_token` - Optional token text to highlight
-/// * `use_custom_font` - Whether to use the custom "`SentenceFont`" family
-///
-/// # Returns
-///
-/// `Some(UiAction)` if a token was clicked, `None` otherwise.
 pub fn render_clickable_tokens(
     ui: &mut egui::Ui,
     tokens: &[Token],
@@ -157,26 +133,6 @@ pub fn render_clickable_tokens(
     clicked_action
 }
 
-/// Renders a complete segment with tokens, glosses, and translation.
-///
-/// Displays a segment as a group containing:
-/// - A segment number/title with right-click sentence menu
-/// - A horizontal scrollable area with all tokens and their editable glosses
-/// - An editable translation text box at the bottom
-///
-/// # Arguments
-///
-/// * `ui` - The egui UI context
-/// * `segment` - The segment to render (mutable for editing)
-/// * `vocabulary` - Vocabulary map (mutable for gloss updates)
-/// * `vocabulary_comments` - Comments map for looking up word comments
-/// * `seg_num` - Display number for this segment (1-indexed)
-/// * `highlight` - Optional text to highlight in the segment
-/// * `use_custom_font` - Whether to use custom font for original text
-///
-/// # Returns
-///
-/// A `UiAction` indicating what operation was triggered (if any).
 pub fn render_segment(
     ui: &mut egui::Ui,
     segment: &mut Segment,
@@ -246,18 +202,6 @@ pub fn render_segment(
     action
 }
 
-/// Renders a single token as a vertical column with gloss and original text.
-/// The token is displayed with:
-/// - A bordered box containing the editable gloss (top)
-/// - The original token text with optional highlighting (bottom)
-///
-/// In dictionary mode (always enabled), clicking parts shows dictionary popups
-/// or applies filters. Right-clicking shows a context menu.
-///
-/// # Layout
-///
-/// The column width is calculated to accommodate the wider of the gloss or
-/// original text, ensuring visual balance and readability.
 fn render_token_column(
     ui: &mut egui::Ui,
     token: &mut Token,
@@ -415,15 +359,6 @@ fn render_token_column(
     action
 }
 
-/// Renders the multi-line translation editor for a segment.
-///
-/// Displays a bordered, multi-line text input with optional search highlighting.
-/// The text editor automatically grows to fit content up to the configured
-/// number of rows.
-///
-/// # Returns
-///
-/// `true` if the translation text was modified, `false` otherwise.
 fn render_translation_box(
     ui: &mut egui::Ui,
     segment: &mut Segment,

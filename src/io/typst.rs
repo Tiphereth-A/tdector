@@ -1,37 +1,5 @@
-//! Typst markup export for interlinear glossed text.
-//!
-//! This module generates Typst documents from projects, creating professionally
-//! typeset interlinear glossed text suitable for academic publications.
-//!
-//! The generated markup includes:
-//! - Document setup (page size, fonts)
-//! - Project title as a heading
-//! - Each segment formatted with aligned glosses above tokens
-//! - Translations displayed below each segment
+use crate::libs::Project;
 
-use crate::libs::models::Project;
-
-/// Escapes text for safe inclusion in Typst markup.
-///
-/// Typst uses several characters for special purposes in its markup language.
-/// This function backslash-escapes all such characters and removes line breaks
-/// to ensure text is rendered literally without interpretation.
-///
-/// # Escaped Characters
-///
-/// `[`, `]`, `#`, `*`, `_`, `` ` ``, `$`, `\`, `@`, `<`, `>`, `{`, `}`, `"`, `~`, `=`, `&`
-///
-/// # Removed Characters
-///
-/// `\r`, `\n` (line breaks are controlled by the markup structure)
-///
-/// # Arguments
-///
-/// * `s` - The text to escape
-///
-/// # Returns
-///
-/// The escaped string safe for embedding in Typst markup.
 pub fn escape_typst(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
     for c in s.chars() {
@@ -48,25 +16,6 @@ pub fn escape_typst(s: &str) -> String {
     result
 }
 
-/// Generates the complete Typst document markup.
-///
-/// Creates a full Typst document including:
-/// 1. Page setup (A4 paper)
-/// 2. Font configuration (using custom font if specified)
-/// 3. Project title as level-1 heading
-/// 4. All segments with interlinear glossing layout
-///
-/// Each segment is rendered as a block containing:
-/// - Horizontally aligned tokens with glosses above
-/// - Translation text below with "trans:" prefix
-///
-/// # Arguments
-///
-/// * `project` - The project to convert to Typst markup
-///
-/// # Returns
-///
-/// A complete Typst document as a string.
 #[must_use]
 pub fn generate_typst_content(project: &Project) -> String {
     let mut content = String::new();

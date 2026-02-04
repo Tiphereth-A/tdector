@@ -1,5 +1,3 @@
-//! Comment popup rendering.
-
 use eframe::egui;
 
 use crate::enums::CommentTarget;

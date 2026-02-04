@@ -1,15 +1,17 @@
 use serde::{Deserialize, Serialize};
 
-/// The type of word formation rule.
+/// Category of word formation rule being applied
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FormationType {
-    /// Derivation: changing word class (e.g., verb to adjective)
+    /// Rule produces related word forms through morphological derivation (e.g., noun -> verb)
     #[serde(rename = "derivation")]
     Derivation,
-    /// Inflection: grammatical changes (e.g., pluralization)
+
+    /// Rule produces inflected forms of the same word (e.g., singular -> plural, tense changes)
     #[serde(rename = "inflection")]
     Inflection,
-    /// Non-morphological changes (e.g., case conversion)
+
+    /// Rule produces forms through non-morphological transformations (e.g., phonetic, script)
     #[serde(rename = "nonmorphological")]
     Nonmorphological,
 }

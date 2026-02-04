@@ -1,5 +1,3 @@
-//! Similar segments popup rendering.
-
 use eframe::egui;
 
 use crate::consts::ui::{POPUP_SIMILAR_HEIGHT, POPUP_WIDTH};

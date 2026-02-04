@@ -1,30 +1,21 @@
-//! Domain caching layer for expensive computations.
-//!
-//! Provides specialized caches for frequently-accessed data:
-//! - [`LookupCache`]: Pre-computed indices for vocabulary lookups
-//! - [`CachedTfidf`]: TF-IDF matrix cache for similarity search operations
-
 use std::collections::HashMap;
 
 #[cfg(not(target_arch = "wasm32"))]
 use ndarray::Array2;
 
-/// Caches pre-computed lookup indices for vocabulary queries.
-///
-/// Stores two `HashMap` indices:
-/// - **`headword_lookup`**: Maps headwords to segment indices containing them
-/// - **`usage_lookup`**: Maps words to segment indices where they appear in translations
-///
-/// Uses a take/restore pattern for temporary ownership: temporarily extract maps,
-/// use them, then restore them to avoid cloning.
+/// Caches lookup maps for quick token searches across the project.
+/// Stores two separate lookup indices: one for headword (base word) lookups
+/// and one for usage (all occurrences) lookups.
 #[derive(Debug, Clone, Default)]
 pub struct LookupCache {
+    /// Maps headwords to the segment+token indices where they appear as base words
     headword_lookup: Option<HashMap<String, Vec<usize>>>,
+    /// Maps words to all segment+token indices where they appear (including derived forms)
     usage_lookup: Option<HashMap<String, Vec<usize>>>,
 }
 
 impl LookupCache {
-    /// Creates a new empty lookup cache.
+    /// Create a new empty lookup cache
     #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
@@ -33,7 +24,8 @@ impl LookupCache {
         }
     }
 
-    /// Takes ownership of both lookup maps for temporary use.
+    /// Extract both lookup maps from the cache (ownership transfer).
+    /// After calling this, the cache is empty until restored.
     pub fn take(
         &mut self,
     ) -> (
@@ -43,7 +35,7 @@ impl LookupCache {
         (self.headword_lookup.take(), self.usage_lookup.take())
     }
 
-    /// Restores both lookup maps after temporary use.
+    /// Restore lookup maps to the cache
     pub fn restore(
         &mut self,
         headword: Option<HashMap<String, Vec<usize>>>,
@@ -53,7 +45,7 @@ impl LookupCache {
         self.usage_lookup = usage;
     }
 
-    /// Marks the cache as dirty, clearing all stored data.
+    /// Clear all cached lookup data
     pub fn invalidate(&mut self) {
         self.headword_lookup = None;
         self.usage_lookup = None;
@@ -61,37 +53,37 @@ impl LookupCache {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-/// Caches TF-IDF vectorization matrices for similarity search.
-///
-/// Avoids expensive recomputation when segments haven't changed.
+/// Caches the TF-IDF (Term Frequency-Inverse Document Frequency) matrix computed from project segments.
+/// Used for similarity search to find semantically similar segments.
 #[derive(Clone)]
 pub struct CachedTfidf {
+    /// The cached TF-IDF matrix (None means cache is invalid/dirty)
     matrix: Option<Array2<f64>>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 impl CachedTfidf {
-    /// Creates a new empty TF-IDF cache.
+    /// Create a new empty TF-IDF cache
     pub fn new() -> Self {
         Self { matrix: None }
     }
 
-    /// Stores the computed TF-IDF matrix.
+    /// Store a computed TF-IDF matrix in the cache
     pub fn set_matrix(&mut self, matrix: Array2<f64>) {
         self.matrix = Some(matrix);
     }
 
-    /// Returns a reference to the cached matrix if available.
+    /// Retrieve a reference to the cached TF-IDF matrix, if available
     pub fn get_matrix(&self) -> Option<&Array2<f64>> {
         self.matrix.as_ref()
     }
 
-    /// Checks if the cache is marked as dirty (invalid).
+    /// Check if the cache is invalid/dirty (no matrix cached)
     pub fn is_dirty(&self) -> bool {
         self.matrix.is_none()
     }
 
-    /// Clears the cached matrix.
+    /// Clear the cached matrix
     pub fn invalidate(&mut self) {
         self.matrix = None;
     }
@@ -114,25 +106,21 @@ impl std::fmt::Debug for CachedTfidf {
 }
 
 #[cfg(target_arch = "wasm32")]
-/// WASM version: TF-IDF computation is not available, so cache is a no-op.
 #[derive(Debug, Clone, Default)]
 pub struct CachedTfidf;
 
 #[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
 impl CachedTfidf {
-    /// No-op for WASM.
     #[allow(dead_code)]
     pub fn new() -> Self {
         Self
     }
 
-    /// No-op for WASM.
     #[allow(dead_code)]
     pub fn is_dirty(&self) -> bool {
         true
     }
 
-    /// No-op for WASM.
     pub fn invalidate(&mut self) {}
 }

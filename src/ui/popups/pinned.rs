@@ -1,5 +1,3 @@
-//! Pinned popup rendering.
-
 use std::collections::HashMap;
 
 use eframe::egui;
@@ -11,7 +9,6 @@ use crate::enums::{DictionaryPopupType, PinnedPopup, PopupRequest};
 use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
-    /// Renders all pinned popup windows.
     pub(crate) fn render_pinned_popups(
         &mut self,
         ctx: &egui::Context,

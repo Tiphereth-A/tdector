@@ -1,31 +1,5 @@
-//! Application menu bar with File menu and settings.
-//!
-//! Provides the top menu bar containing:
-//! - File operations (Import, Open, Save, Export, Quit)
-//! - Theme selection (Light/Dark mode)
-//!
-//! Uses platform-appropriate keyboard shortcuts (Cmd on macOS, Ctrl elsewhere).
-
 use eframe::egui;
 
-/// Renders the application menu bar.
-///
-/// Displays a menu bar with File operations and theme selection.
-/// Uses callback functions to decouple menu actions from application state.
-///
-/// # Arguments
-///
-/// * `ctx` - The egui context
-/// * `project_loaded` - Whether a project is currently loaded (enables/disables certain menu items)
-/// * `on_*` - Callback functions invoked when menu items are clicked
-///
-/// # Keyboard Shortcuts
-///
-/// - Cmd/Ctrl+I: Import text file
-/// - Cmd/Ctrl+O: Open project
-/// - Cmd/Ctrl+S: Save project
-/// - Cmd/Ctrl+E: Export to Typst
-/// - Cmd/Ctrl+Q: Quit application
 pub fn render_menu_bar(
     ctx: &egui::Context,
     project_loaded: bool,

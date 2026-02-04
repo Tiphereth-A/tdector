@@ -1,15 +1,3 @@
-//! Popup window rendering coordination module.
-//!
-//! This module coordinates the rendering of various popup types.
-//! The actual rendering implementations are in sibling modules within `ui::popups`:
-//! - `dictionary`: Dictionary definition and reference popups
-//! - `similar`: Similar segments popups
-//! - `pinned`: Pinned popup management
-//! - `word_formation`: Word formation and menu popups
-//! - `comments`: Comment editing popups
-//! - `menu_word`: Word context menu
-//! - `menu_sentence`: Sentence context menu
-
 use std::collections::HashMap;
 
 use eframe::egui;
@@ -18,7 +6,6 @@ use crate::enums::PopupRequest;
 use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
-    /// Closes all active and pinned popups.
     pub(crate) fn clear_popups(&mut self) {
         self.definition_popup = None;
         self.reference_popup = None;
@@ -31,7 +18,6 @@ impl DecryptionApp {
         self.pinned_popups.clear();
     }
 
-    /// Renders the currently active unpinned popups.
     pub(crate) fn render_popups(
         &mut self,
         ctx: &egui::Context,

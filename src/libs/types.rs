@@ -1,24 +1,17 @@
-//! Type-safe wrappers for domain concepts.
-//!
-//! This module provides newtype wrappers that add compile-time safety
-//! to prevent mixing different kinds of indices and IDs.
-
 use serde::{Deserialize, Serialize};
 
-/// Type-safe wrapper for segment indices.
-///
-/// Prevents accidentally mixing segment indices with token indices
-/// or other integer values.
+/// Strongly-typed wrapper for segment indices to prevent mixing with token or rule indices.
+/// Segments are top-level containers of tokens (words/characters) that represent logical units of text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SegmentIndex(pub usize);
 
 impl SegmentIndex {
-    /// Creates a new segment index.
+    /// Create a new segment index from a raw usize value
     pub fn new(index: usize) -> Self {
         Self(index)
     }
 
-    /// Gets the raw index value.
+    /// Extract the underlying index value
     pub fn get(self) -> usize {
         self.0
     }
@@ -36,20 +29,18 @@ impl From<SegmentIndex> for usize {
     }
 }
 
-/// Type-safe wrapper for token indices within a segment.
-///
-/// Prevents accidentally using segment indices where token indices
-/// are expected.
+/// Strongly-typed wrapper for token indices within a segment.
+/// Tokens represent individual words or characters depending on segmentation mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TokenIndex(pub usize);
 
 impl TokenIndex {
-    /// Creates a new token index.
+    /// Create a new token index from a raw usize value
     pub fn new(index: usize) -> Self {
         Self(index)
     }
 
-    /// Gets the raw index value.
+    /// Extract the underlying index value
     pub fn get(self) -> usize {
         self.0
     }
@@ -67,17 +58,18 @@ impl From<TokenIndex> for usize {
     }
 }
 
-/// Type-safe wrapper for formation rule indices.
+/// Strongly-typed wrapper for word formation rule indices.
+/// Rules contain Rhai scripts that transform base words into derived forms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RuleIndex(pub usize);
 
 impl RuleIndex {
-    /// Creates a new rule index.
+    /// Create a new rule index from a raw usize value
     pub fn new(index: usize) -> Self {
         Self(index)
     }
 
-    /// Gets the raw index value.
+    /// Extract the underlying index value
     pub fn get(self) -> usize {
         self.0
     }

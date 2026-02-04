@@ -1,5 +1,3 @@
-//! Word context menu popup rendering.
-
 use eframe::egui;
 
 use crate::enums::{DictionaryPopupType, PopupRequest};

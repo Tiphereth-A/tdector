@@ -1,27 +1,18 @@
-//! Unified async file I/O using rfd for both desktop and WASM.
-//!
-//! This module provides platform-agnostic async file operations using rfd's `AsyncFileDialog`.
-//! It eliminates code duplication by using the same async API for both platforms:
-//! - File picking (async dialogs work on both desktop and browser)
-//! - File reading (async on both platforms)
-//! - File writing (async on both platforms)
-
 use crate::enums::{AppError, AppResult};
 use rfd::AsyncFileDialog;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_futures::spawn_local;
 
-/// Result of a file read operation: (bytes, filename, optional full path on desktop)
+/// File I/O result tuple: (file bytes, filename, full path)
 pub type FileResult = (Vec<u8>, String, Option<String>);
 
-/// Unified async file operations struct
+/// Cross-platform file I/O utilities supporting both native and WASM targets
 pub struct FileIO;
 
 impl FileIO {
-    /// Pick and read a file with specified filters
-    /// Returns raw bytes - caller can decode as UTF-8 if needed
-    /// On desktop, also returns the full path to enable in-place saving
+    /// Open a file picker dialog and read the selected file asynchronously.
+    /// Returns file bytes, filename, and full path (if available on this platform).
     pub async fn pick_file(filter_name: &str, extensions: &[&str]) -> AppResult<FileResult> {
         let mut dialog = AsyncFileDialog::new();
         if !extensions.is_empty() {
@@ -33,7 +24,7 @@ impl FileIO {
                 let bytes = handle.read().await;
                 let filename = handle.file_name();
 
-                // On desktop, get the full path for in-place saving
+                // Native: use full file system path; WASM: use filename only
                 #[cfg(not(target_arch = "wasm32"))]
                 let full_path = handle.path().to_string_lossy().to_string();
 
@@ -46,7 +37,7 @@ impl FileIO {
         }
     }
 
-    /// Save a file with specified filters
+    /// Open a save file dialog and write content to the selected file asynchronously
     pub async fn save_file(
         content: &[u8],
         filename: &str,
@@ -67,14 +58,14 @@ impl FileIO {
         }
     }
 
-    /// Desktop-only: Save directly to a path without showing a dialog
+    /// Synchronously write content to a specific file path (native only)
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn save_file_to_path(content: &[u8], path: &std::path::Path) -> AppResult<()> {
         std::fs::write(path, content)
             .map_err(|e| AppError::IoError(format!("Failed to write file: {e}")))
     }
 
-    /// Platform-specific async spawner for launching async tasks
+    /// Platform-specific async spawning: WASM uses spawn_local, native uses pollster::block_on
     #[cfg(target_arch = "wasm32")]
     pub fn spawn<F>(future: F)
     where
@@ -83,6 +74,7 @@ impl FileIO {
         spawn_local(future);
     }
 
+    /// Platform-specific async spawning: WASM uses spawn_local, native uses pollster::block_on
     #[cfg(not(target_arch = "wasm32"))]
     pub fn spawn<F>(future: F)
     where

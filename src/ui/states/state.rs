@@ -1,11 +1,3 @@
-//! Main application state container and lifecycle.
-//!
-//! The [`DecryptionApp`] struct consolidates all application state:
-//! - **Project data**: Segments, vocabulary, comments, translation rules
-//! - **UI state**: Current page, filters, sort mode, popup windows
-//! - **Caches**: Filtered indices, lookup maps, TF-IDF matrix (with dirty flags)
-//! - **I/O state**: Pending file imports and UI dialogs
-
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -17,116 +9,132 @@ use crate::libs::{
     cache::{CachedTfidf, LookupCache},
 };
 
-/// Dialog state for creating a new word formation rule.
+/// Dialog for creating a new word formation rule
 #[derive(Debug, Clone)]
 pub struct NewFormationRuleDialog {
-    /// Human-readable description of the rule
+    /// Human-readable description of what the rule does
     pub description: String,
-    /// Type of formation rule
+    /// Category: Derivation, Inflection, or Non-morphological
     pub rule_type: FormationType,
-    /// Rhai script command to apply the transformation
+    /// Rhai script implementing the transformation
     pub command: String,
-    /// Test word for previewing the transformation
+    /// Test word to preview the rule's effect
     pub test_word: String,
-    /// Preview of the transformation result
+    /// Preview of the rule applied to the test word
     pub preview: String,
 }
 
-/// Dialog state for applying word formation rules.
+/// Dialog for applying word formation rules to create a derived form
 #[derive(Debug, Clone)]
 pub struct WordFormationDialog {
-    /// The selected word to apply rule to
+    /// The base word to apply rules to
     pub selected_word: String,
-    /// Base word to transform (editable by user)
+    /// The base word (may differ from selected_word for derived forms)
     pub base_word: String,
-    /// Currently previewed transformation result
+    /// Preview of the final derived form after all rules are applied
     pub preview: String,
-    /// Index of selected formation rule
+    /// Index of the currently selected rule (if any)
     pub selected_rule: Option<usize>,
-    /// Top 5 related words from vocabulary for suggestions
+    /// Related words created by applying this rule
     pub related_words: Vec<String>,
-    /// Search text for filtering formation rules
+    /// Search text to filter available rules
     pub rule_search_text: String,
 }
 
-/// Dialog state for updating word comments.
+/// Dialog for editing comments on words
 #[derive(Debug, Clone)]
 pub struct UpdateCommentDialog {
     /// The word being commented on
     pub word: String,
-    /// The comment text (editable by user)
+    /// The comment text
     pub comment: String,
-    /// Target for the comment update
+    /// Whether this is a base word or formatted word comment
     pub target: CommentTarget,
 }
 
-/// Dialog state for updating sentence comments.
+/// Dialog for editing segment-level comments
 #[derive(Debug, Clone)]
 pub struct UpdateSentenceCommentDialog {
-    /// Index of the sentence/segment being commented on
+    /// Index of the segment being commented on
     pub segment_idx: usize,
-    /// The comment text (editable by user)
+    /// The comment text
     pub comment: String,
 }
 
-/// Main application state container.
-///
-/// Holds all persistent and transient application state:
-/// - **project**: Current document with segments, vocabulary, and metadata
-/// - **`current_path`**: File path of loaded project (None if new/unsaved)
-/// - **`current_page` & `page_size`**: Pagination state for segment list
-/// - **`filter_text` & `sort_mode`**: Active filters and sort order
-/// - **`cached_filtered_indices`**: Pre-computed filtered segment indices (cached)
-/// - **`lookup_cache` & `tfidf_cache`**: Expensive computation caches
-/// - **`filter_dirty`, `lookups_dirty`, `tfidf_dirty`**: Cache invalidation flags
-/// - **popup_* fields**: Open popup windows and their state
-/// - **`pending_import`**: Deferred file import awaiting user confirmation
-///
-/// ## Interaction Model
-/// Dictionary mode is always active: right-click selects words for definition lookup,
-/// left-click applies vocabulary filters.
+/// Main application state for the decryption UI
 pub struct DecryptionApp {
+    /// The loaded translation project
     pub(crate) project: Project,
+    /// Path to the currently open project file (if saved to disk)
     pub(crate) current_path: Option<PathBuf>,
+    /// Filename of the current project
     pub(crate) project_filename: Option<String>,
+    /// Current page being displayed (0-indexed)
     pub(crate) current_page: usize,
+    /// Number of segments per page
     pub(crate) page_size: usize,
+    /// Whether the project has unsaved changes
     pub(crate) is_dirty: bool,
+    /// Pending text content to import (text content, tokenization flag)
     pub(crate) pending_import: Option<(String, String)>,
+    /// Result of async text file load operation
     pub(crate) pending_text_file: Arc<Mutex<Option<Result<(String, String), String>>>>,
+    /// Result of async project file load operation
     pub(crate) pending_project_file:
         Arc<Mutex<Option<Result<(String, String, Option<String>), String>>>>,
+    /// Result of async font file load operation
     pub(crate) pending_font_file: Arc<Mutex<Option<Result<(Vec<u8>, String), String>>>>,
+    /// Result of async save operation
     pub(crate) pending_save_result: Arc<Mutex<Option<Result<(), String>>>>,
+    /// Current filter query text
     pub(crate) filter_text: String,
+    /// Current sort mode
     pub(crate) sort_mode: SortMode,
+    /// Error message to display in error dialog (if any)
     pub(crate) error_message: Option<String>,
+    /// Pending confirmation dialog with question and action to confirm
     pub(crate) confirmation: Option<(String, AppAction)>,
 
+    /// Currently open definition popup word
     pub(crate) definition_popup: Option<String>,
+    /// Currently open reference popup word
     pub(crate) reference_popup: Option<String>,
+    /// Currently open similarity search popup
     pub(crate) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
+    /// Currently open word context menu
     pub(crate) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>,
+    /// Currently open segment context menu
     pub(crate) sentence_menu_popup: Option<(usize, egui::Pos2)>,
+    /// Word formation rule application dialog
     pub(crate) word_formation_popup: Option<WordFormationDialog>,
+    /// New formation rule creation dialog
     pub(crate) new_formation_rule_popup: Option<NewFormationRuleDialog>,
+    /// Word comment editing dialog
     pub(crate) update_comment_popup: Option<UpdateCommentDialog>,
+    /// Segment comment editing dialog
     pub(crate) update_sentence_comment_popup: Option<UpdateSentenceCommentDialog>,
+    /// Popups pinned to remain visible (not auto-closing)
     pub(crate) pinned_popups: Vec<PinnedPopup>,
+    /// Counter for generating unique popup IDs
     pub(crate) next_popup_id: u64,
 
+    /// Cached list of segment indices matching current filter
     pub(crate) cached_filtered_indices: Vec<usize>,
+    /// Cache for quick token lookups
     pub(crate) lookup_cache: LookupCache,
+    /// Cache for TF-IDF matrix (similarity search)
     pub(crate) tfidf_cache: CachedTfidf,
 
+    /// Whether filtered indices cache needs recalculation
     pub(crate) filter_dirty: bool,
+    /// Whether lookup maps need recalculation
     pub(crate) lookups_dirty: bool,
+    /// Whether TF-IDF matrix needs recalculation
     pub(crate) tfidf_dirty: bool,
 }
 
 impl DecryptionApp {
-    /// Recalculate filtered and sorted segment indices.
-    /// Delegates to the domain layer's filtering and sorting engines.
+    /// Recalculate the cached list of segment indices based on current filter and sort settings
     pub(crate) fn recalculate_filtered_indices(&mut self) {
         use crate::libs::filtering::FilterOperation;
         use crate::libs::sorting::SortOperation;
@@ -136,8 +144,7 @@ impl DecryptionApp {
         self.cached_filtered_indices = indices;
     }
 
-    /// Ensures the TF-IDF matrix cache is up-to-date.
-    /// Delegates to the domain layer's similarity engine.
+    /// Ensure the TF-IDF matrix cache is up-to-date (native only)
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn ensure_tfidf_cache_impl(&mut self) {
         use crate::libs::similarity::SimilarityEngine;
@@ -158,9 +165,7 @@ impl DecryptionApp {
         self.tfidf_dirty = false;
     }
 
-    /// Computes the most similar segments to the target segment.
-    /// Delegates to the domain layer's similarity engine.
-    /// Returns the top N most similar segments (N from domain constants).
+    /// Compute similar segments to a target segment and update the UI
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn compute_similar_segments(&mut self, target_idx: usize) {
         use crate::consts::domain::DEFAULT_SIMILARITY_RESULTS;
@@ -180,13 +185,13 @@ impl DecryptionApp {
         let similarities =
             SimilarityEngine::find_similar(matrix, target_idx, DEFAULT_SIMILARITY_RESULTS);
 
-        // Convert f32 scores to f64 for UI compatibility
         let scores: Vec<(usize, f64)> = similarities.into_iter().collect();
 
         self.similar_popup = Some((target_idx, scores));
     }
 
-    /// WASM version: Similarity search not supported due to upstream SIMD dependency.
+    /// WASM stub: similarity search not supported in web version
+    /// WASM stub: similarity search not supported in web version
     #[cfg(target_arch = "wasm32")]
     pub(crate) fn compute_similar_segments(&mut self, _target_idx: usize) {
         self.error_message = Some(
@@ -200,6 +205,7 @@ impl DecryptionApp {
 }
 
 impl Default for DecryptionApp {
+    /// Create a new default app state with empty project and default UI settings
     fn default() -> Self {
         Self {
             project: Project::default(),

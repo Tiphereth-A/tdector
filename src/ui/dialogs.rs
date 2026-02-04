@@ -1,22 +1,8 @@
-//! Modal dialog rendering for user interactions.
-//!
-//! This module provides centered modal dialogs for:
-//! - Error messages with dismissal
-//! - Yes/No confirmation prompts for destructive actions
-//! - Import options for selecting tokenization strategy
-
 use eframe::egui;
-
-use crate::io;
 
 use crate::ui::states::DecryptionApp;
 
 impl DecryptionApp {
-    /// Renders the error message dialog if one is pending.
-    ///
-    /// Displays a centered, non-resizable modal with the error message
-    /// and an OK button for dismissal. The dialog can also be closed
-    /// via the window close button.
     pub(crate) fn render_error_dialog(&mut self, ctx: &egui::Context) {
         if let Some(msg) = &self.error_message {
             let mut open = true;
@@ -39,11 +25,6 @@ impl DecryptionApp {
         }
     }
 
-    /// Renders a Yes/No confirmation dialog if one is pending.
-    ///
-    /// Used for confirming potentially destructive actions like quitting with
-    /// unsaved changes. If the user confirms, the associated action is executed.
-    /// Canceling simply closes the dialog without taking action.
     pub(crate) fn render_confirmation_dialog(&mut self, ctx: &egui::Context) {
         let mut confirmed_action = None;
         let mut close_dialog = false;
@@ -85,14 +66,6 @@ impl DecryptionApp {
         }
     }
 
-    /// Renders the tokenization strategy selection dialog.
-    ///
-    /// After selecting a text file for import, this dialog prompts the user
-    /// to choose between:
-    /// - **Word-based tokenization**: Splits on whitespace (for languages like English)
-    /// - **Character-based tokenization**: Each character is a token (for languages like Chinese)
-    ///
-    /// Once selected, the text is tokenized and loaded into a new project.
     pub(crate) fn render_import_dialog(&mut self, ctx: &egui::Context) {
         if self.pending_import.is_some() {
             let mut choice = None;
@@ -133,7 +106,7 @@ impl DecryptionApp {
             } else if let Some(use_whitespace) = choice
                 && let Some((content, name)) = self.pending_import.take()
             {
-                let segments = io::segment_content(&content, use_whitespace);
+                let segments = crate::libs::project::segment_content(&content, use_whitespace);
                 self.project.segments = segments;
                 self.project.project_name = name;
                 self.project.font_path = None;

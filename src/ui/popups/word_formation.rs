@@ -1,5 +1,3 @@
-//! Word formation popup rendering.
-
 use eframe::egui;
 
 use crate::consts::ui::WORD_FORMATION_SCRIPT_ROWS;

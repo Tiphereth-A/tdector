@@ -1,33 +1,31 @@
-/// Request to open a specific type of popup window.
-///
-/// Used to decouple popup triggering from popup rendering, allowing the
-/// central panel to request popup display without borrowing state mutably.
+/// Requests to open different types of popup windows
 pub enum PopupRequest {
+    /// Show definition or reference popup for a word
     Dictionary(String, DictionaryPopupType),
+    /// Show segments similar to a given segment (by index)
     Similar(usize),
+    /// Show context menu for a specific word in a segment
     WordMenu(String, usize, usize, egui::Pos2),
+    /// Show context menu for a segment
     SentenceMenu(usize, egui::Pos2),
+    /// Apply a filter query to the segment list
     Filter(String),
 }
 
-/// Dictionary popup display mode.
+/// Type of dictionary popup to display
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DictionaryPopupType {
-    /// Show segments where the word is the first token.
+    /// Show the definition field
     Definition,
-    /// Show all segments containing the word.
+    /// Show the reference field
     Reference,
 }
 
-/// Popup window types that can be pinned to remain open independently.
-///
-/// Pinned popups allow users to keep multiple reference windows open simultaneously,
-/// which is useful for comparing segments or referring to multiple dictionary entries.
-/// Each variant caches its title string to avoid repeated allocations during rendering.
+/// A popup that persists across updates (pinned to the screen)
 #[derive(Debug, Clone)]
 pub enum PinnedPopup {
-    /// Similar segments popup: (`target_idx`, `similarity_scores`, `popup_id`, `cached_title`)
+    /// Pinned similarity search results: (segment_index, similar_segments, popup_id, display_text)
     Similar(usize, Vec<(usize, f64)>, u64, String),
-    /// Dictionary popup: (word, mode, `popup_id`, `cached_title`)
+    /// Pinned dictionary popup: (word, popup_type, popup_id, display_text)
     Dictionary(String, DictionaryPopupType, u64, String),
 }

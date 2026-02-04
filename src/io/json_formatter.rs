@@ -1,27 +1,22 @@
-//! Custom JSON formatter for compact array output.
-//!
-//! Provides a `serde_json` formatter that keeps arrays on a single line
-//! while maintaining readable pretty-printing for objects.
-
 use std::io;
 
-/// Custom JSON formatter that keeps arrays compact on a single line.
-///
-/// This formatter produces JSON output where:
-/// - Arrays are written on a single line: `[1, 2, 3]`
-/// - Objects are pretty-printed with proper indentation
-/// - 4-space indentation is used for nested structures
 pub struct Formatter {
     indent: Vec<u8>,
     current_indent: usize,
 }
 
-impl Formatter {
-    pub fn new() -> Self {
+impl Default for Formatter {
+    fn default() -> Self {
         Self {
             indent: b"  ".to_vec(),
             current_indent: 0,
         }
+    }
+}
+
+impl Formatter {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 

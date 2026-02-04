@@ -1,40 +1,14 @@
-//! Main application update loop and eframe integration.
-//!
-//! Implements the rendering loop (`eframe::App` trait) that orchestrates:
-//! - **Input handling**: Keyboard shortcuts, menu selections, mouse interactions
-//! - **UI rendering**: Panels (filter, segments, vocabulary), dialogs, and popups
-//! - **State updates**: Cache validation and invalidation
-//! - **Window management**: Title updates, file dialogs
-//!
-//! The update cycle is carefully ordered to maintain consistency:
-//! 1. Process pending async operations (WASM file I/O)
-//! 2. Handle keyboard shortcuts and UI interactions
-//! 3. Render UI components
-//! 4. Validate and update caches as needed
-//!
-//! This is the **application/orchestration layer** that coordinates
-//! the domain logic, presentation, and I/O subsystems.
-
 use std::collections::{HashMap, HashSet};
 
 use eframe::egui;
 
 use crate::enums::{AppAction, DictionaryPopupType, FormationType, PopupRequest};
-use crate::io;
-use crate::libs::models::SavedProject;
+use crate::libs::project::load_project_from_json;
 use crate::ui;
 
 use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
-    /// Creates a new application instance and initializes fonts.
-    ///
-    /// This is called once by eframe during application startup. It sets up
-    /// the custom "`SentenceFont`" family and returns a default application state.
-    ///
-    /// # Arguments
-    ///
-    /// * `cc` - The eframe creation context providing access to egui
     pub fn new(cc: &eframe::CreationContext<'_>) -> Box<dyn eframe::App> {
         Self::initialize_fonts(&cc.egui_ctx);
         Box::new(Self::default())
@@ -43,7 +17,6 @@ impl DecryptionApp {
 
 impl eframe::App for DecryptionApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Process pending file operations from async callbacks
         self.process_pending_file_operations(ctx);
 
         let mut do_import = false;
@@ -201,18 +174,6 @@ impl eframe::App for DecryptionApp {
 }
 
 impl DecryptionApp {
-    /// Processes keyboard shortcuts and sets action flags.
-    ///
-    /// Checks for standard application shortcuts (Cmd/Ctrl + key combinations)
-    /// and sets the corresponding boolean flags to trigger actions.
-    ///
-    /// # Keyboard Shortcuts
-    ///
-    /// - `Cmd/Ctrl + I` - Import text file
-    /// - `Cmd/Ctrl + O` - Open project
-    /// - `Cmd/Ctrl + S` - Save project
-    /// - `Cmd/Ctrl + E` - Export to Typst
-    /// - `Cmd/Ctrl + Q` - Quit application
     fn handle_keyboard_shortcuts(
         &self,
         ctx: &egui::Context,
@@ -239,18 +200,6 @@ impl DecryptionApp {
         }
     }
 
-    /// Calculates the total number of pages for pagination.
-    ///
-    /// Uses ceiling division to ensure all items are included even if
-    /// the last page is not full.
-    ///
-    /// # Arguments
-    ///
-    /// * `total_items` - Total number of items to paginate
-    ///
-    /// # Returns
-    ///
-    /// The number of pages required, or 0 if there are no items.
     fn calculate_total_pages(&self, total_items: usize) -> usize {
         if total_items > 0 {
             total_items.div_ceil(self.page_size)
@@ -259,15 +208,6 @@ impl DecryptionApp {
         }
     }
 
-    /// Executes pending actions based on the provided flags.
-    ///
-    /// Processes all action flags in a specific order to ensure proper
-    /// sequencing of operations (e.g., loading before saving).
-    ///
-    /// # Arguments
-    ///
-    /// * `ctx` - The egui context
-    /// * `do_import` through `do_load_font` - Boolean flags indicating which actions to execute
     fn process_actions(
         &mut self,
         ctx: &egui::Context,
@@ -308,14 +248,6 @@ impl DecryptionApp {
         }
     }
 
-    /// Rebuilds the headword and usage lookup indices.
-    ///
-    /// Creates two inverted indices:
-    /// - **Headword lookup**: Maps each vocabulary word to segment indices where it appears
-    /// - **Usage lookup**: Maps each token to segment indices where it's actually used
-    ///
-    /// These indices enable efficient dictionary popup rendering showing where
-    /// words appear and how they're used in context.
     fn recalculate_lookup_maps(&mut self) {
         if self.project.segments.is_empty() {
             self.lookup_cache.invalidate();
@@ -344,13 +276,7 @@ impl DecryptionApp {
         self.lookup_cache.restore(Some(headmap), Some(usagemap));
     }
 
-    /// Process pending file operations from async callbacks (all platforms).
-    ///
-    /// This function checks for completed async file operations and processes them,
-    /// updating the application state accordingly. It handles both text file imports
-    /// and project file loading.
     fn process_pending_file_operations(&mut self, ctx: &egui::Context) {
-        // Process pending text file
         if let Ok(mut guard) = self.pending_text_file.try_lock()
             && let Some(result) = guard.take()
         {
@@ -364,7 +290,6 @@ impl DecryptionApp {
             }
         }
 
-        // Process pending project file
         let project_result = if let Ok(mut guard) = self.pending_project_file.try_lock() {
             guard.take()
         } else {
@@ -374,38 +299,29 @@ impl DecryptionApp {
         if let Some(result) = project_result {
             match result {
                 Ok((content, name, full_path)) => {
-                    match serde_json::from_str::<SavedProject>(&content) {
-                        Ok(saved_project) => {
-                            if saved_project.version > crate::consts::domain::PROJECT_VERSION {
-                                self.error_message = Some(format!(
-                                    "Unsupported project version: {} (expected <= {})",
-                                    saved_project.version,
-                                    crate::consts::domain::PROJECT_VERSION
-                                ));
-                                return;
-                            }
-                            // Convert from SavedProject to Project
-                            match io::convert_from_saved_project(saved_project) {
-                                Some(project) => {
-                                    self.project = project;
-                                    self.current_path = None; // No path in browser
-                                    // Use full path if available (desktop), otherwise just the filename (WASM)
-                                    self.project_filename = full_path.or(Some(name));
-                                    self.filter_dirty = true;
-                                    self.lookups_dirty = true;
-                                    self.tfidf_dirty = true;
-                                    self.filter_text.clear();
-                                    self.clear_popups();
-                                    self.update_dirty_status(false, ctx);
-                                }
-                                None => {
-                                    self.error_message =
-                                        Some("Failed to convert project format".to_string());
-                                }
-                            }
-                        }
+                    let value: serde_json::Value = match serde_json::from_str(&content) {
+                        Ok(parsed) => parsed,
                         Err(e) => {
                             self.error_message = Some(format!("Failed to parse project file: {e}"));
+                            return;
+                        }
+                    };
+
+                    match load_project_from_json(value) {
+                        Ok(project) => {
+                            self.project = project;
+                            self.current_path = None;
+
+                            self.project_filename = full_path.or(Some(name));
+                            self.filter_dirty = true;
+                            self.lookups_dirty = true;
+                            self.tfidf_dirty = true;
+                            self.filter_text.clear();
+                            self.clear_popups();
+                            self.update_dirty_status(false, ctx);
+                        }
+                        Err(e) => {
+                            self.error_message = Some(e);
                         }
                     }
                 }
@@ -415,7 +331,6 @@ impl DecryptionApp {
             }
         }
 
-        // Process pending save result
         let save_result = if let Ok(mut guard) = self.pending_save_result.try_lock() {
             guard.take()
         } else {
@@ -425,12 +340,9 @@ impl DecryptionApp {
         if let Some(result) = save_result {
             match result {
                 Ok(()) => {
-                    // Save succeeded, clear dirty flag
                     self.update_dirty_status(false, ctx);
                 }
                 Err(e) => {
-                    // Save failed or was cancelled, keep dirty flag unchanged
-                    // Only show error if it's not a cancellation
                     if !e.contains("cancelled") && !e.contains("Cancelled") {
                         self.error_message = Some(format!("Failed to save project: {e}"));
                     }
@@ -438,7 +350,6 @@ impl DecryptionApp {
             }
         }
 
-        // Process pending font file
         let font_result = if let Ok(mut guard) = self.pending_font_file.try_lock() {
             guard.take()
         } else {

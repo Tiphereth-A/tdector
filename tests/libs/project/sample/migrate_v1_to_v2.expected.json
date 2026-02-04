@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "project_name": "example: formation",
+  "formation": [{
+    "description": "Verb-to-adjective: -able",
+    "type": "derivation",
+    "command": "fn transform(word) { word + \"able\" }"
+  }, {
+    "description": "Number: plural",
+    "type": "inflection",
+    "command": "fn transform(word) { word + \"s\" }"
+  }, {
+    "description": "Verb: pp",
+    "type": "inflection",
+    "command": "fn transform(word) { word + \"ed\" }"
+  }, {
+    "description": "To upper",
+    "type": "nonmorphological",
+    "command": "fn transform(word) { word.to_upper() }"
+  }],
+  "vocabulary": {
+    "orignal": [{
+      "word": "apple",
+      "meaning": "yyy",
+      "comment": "comment for word 0"
+    }, {
+      "word": "eat",
+      "meaning": "yyy2",
+      "comment": "comment for word 1"
+    }, {
+      "word": "i",
+      "meaning": "yyy3",
+      "comment": "comment for word 2"
+    }, {
+      "word": "three",
+      "meaning": "yyy4",
+      "comment": "comment for word 3"
+    }, {
+      "word": "two",
+      "meaning": "yyy5",
+      "comment": "comment for word 4"
+    }, {
+      "word": "want",
+      "meaning": "yyy6",
+      "comment": "comment for word 5"
+    }, {
+      "word": "wanted",
+      "meaning": "yyy7",
+      "comment": "should set formation rule"
+    }],
+    "formatted": [{
+      "word": [0, 1],
+      "comment": ""
+    }, {
+      "word": [1, 0],
+      "comment": ""
+    }, {
+      "word": [2, 3],
+      "comment": "uppercase of i"
+    }]
+  },
+  "sentences": [{
+    "words": [-3, 6, 3, -2, -1],
+    "meaning": "I wanted three eatable apples",
+    "comment": "comment for sentence 0"
+  }, {
+    "words": [-3, 6, 4, -2, -1],
+    "meaning": "I wanted two eatable apples",
+    "comment": "comment for sentence 1"
+  }, {
+    "words": [-3, 1, 3, 0],
+    "meaning": "I eat three apples",
+    "comment": "comment for sentence 2"
+  }]
+}

@@ -1,10 +1,3 @@
-//! Word formation rules and Rhai script execution.
-//!
-//! This module handles word formation transformations using Rhai scripting:
-//! - **`FormationRule`**: Represents derivation, inflection, and other morphological rules
-//! - **Rhai Engine**: Thread-local script execution engine with security constraints
-//! - **Script Caching**: Compiled AST caching for performance optimization
-
 use serde::{Deserialize, Serialize};
 use std::cell::{OnceCell, RefCell};
 use std::sync::Arc;
@@ -13,25 +6,21 @@ use crate::consts::domain::{MAX_SCRIPT_DEPTH, MAX_SCRIPT_OPERATIONS};
 use crate::enums::{AppError, AppResult, FormationType};
 
 thread_local! {
+    /// Thread-local Rhai script engine for executing word formation rules.
+    /// Rhai provides a safe scripting language for transforming words based on rules.
     static ENGINE: RefCell<rhai::Engine> = RefCell::new(build_engine());
 }
 
-/// Creates a configured Rhai engine with security constraints.
-///
-/// The engine is configured with:
-/// - Expression depth limits to prevent deeply nested code
-/// - Operation limits to prevent infinite loops
-/// - Disabled I/O, network, and system operations for security
-///
-/// # Returns
-///
-/// A configured Rhai engine ready for script execution
+/// Build a Rhai script engine with security constraints.
+/// Disables dangerous operations like file I/O, network access, and system commands.
 fn build_engine() -> rhai::Engine {
     let mut engine = rhai::Engine::new();
 
+    // Set maximum expression depth and operation count to prevent infinite loops
     engine.set_max_expr_depths(MAX_SCRIPT_DEPTH, MAX_SCRIPT_DEPTH);
     engine.set_max_operations(MAX_SCRIPT_OPERATIONS);
 
+    // Disable dangerous file I/O operations
     engine.disable_symbol("eval");
     engine.disable_symbol("load");
     engine.disable_symbol("save");
@@ -41,6 +30,7 @@ fn build_engine() -> rhai::Engine {
     engine.disable_symbol("delete");
     engine.disable_symbol("copy");
 
+    // Disable network operations
     engine.disable_symbol("http");
     engine.disable_symbol("request");
     engine.disable_symbol("fetch");
@@ -48,6 +38,7 @@ fn build_engine() -> rhai::Engine {
     engine.disable_symbol("tcp");
     engine.disable_symbol("udp");
 
+    // Disable system commands
     engine.disable_symbol("system");
     engine.disable_symbol("exec");
     engine.disable_symbol("spawn");
@@ -56,63 +47,43 @@ fn build_engine() -> rhai::Engine {
     engine
 }
 
-/// Executes a function with access to the thread-local Rhai engine.
-///
-/// This provides safe access to the engine while maintaining thread-local isolation.
-///
-/// # Arguments
-///
-/// * `f` - A closure that receives a reference to the Rhai engine
-///
-/// # Returns
-///
-/// The result of the closure
+/// Execute a closure with access to the shared Rhai engine
 pub fn with_engine<R>(f: impl FnOnce(&rhai::Engine) -> R) -> R {
     ENGINE.with(|engine| f(&engine.borrow()))
 }
 
-/// Creates a default cached AST cell for `FormationRule`.
-///
-/// This is used as the default value for the `cached_ast` field when deserializing.
+/// Create a new empty cached AST (Abstract Syntax Tree) placeholder
 pub fn default_cached_ast() -> Arc<OnceCell<rhai::AST>> {
     Arc::new(OnceCell::new())
 }
 
-/// A word formation rule describing how to transform a word.
+/// A word formation rule that transforms base words using a Rhai script.
+/// Rules can be categorized as derivational, inflectional, or non-morphological transformations.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormationRule {
-    /// Human-readable description of the formation rule
+    /// Human-readable description of what this rule does
     pub description: String,
-    /// Type of formation (derivation, inflection, or nonmorphological)
+
+    /// Category of rule: Derivation, Inflection, or NonMorphological
     #[serde(rename = "type")]
     pub rule_type: FormationType,
-    /// Rhai script command to apply the transformation
+
+    /// Rhai script that implements the transformation.
+    /// Must define a `transform(word: String) -> String` function.
     pub command: String,
-    /// Cached AST for the compiled Rhai script
+
+    /// Compiled AST of the Rhai script, cached for performance.
+    /// Lazily compiled on first execution and reused thereafter.
     #[serde(skip, default = "default_cached_ast")]
     pub cached_ast: Arc<OnceCell<rhai::AST>>,
 }
 
 impl FormationRule {
-    /// Execute the formation rule on a word using Rhai script engine.
-    ///
-    /// The Rhai script should define a `transform(word)` function that takes
-    /// a string and returns the transformed word.
-    ///
-    /// # Arguments
-    ///
-    /// * `word` - The word to transform
-    ///
-    /// # Returns
-    ///
-    /// The transformed word if successful, or an error if execution fails
-    ///
-    /// # Example
-    ///
-    /// For a rule with command: `fn transform(word) { word + "s" }`
-    /// Calling `rule.apply("apple")` would return `Ok("apples".to_string())`
+    /// Apply this rule to a word, returning the transformed result or an error.
+    /// The first call will compile and cache the Rhai script; subsequent calls reuse it.
     pub fn apply(&self, word: &str) -> AppResult<String> {
         with_engine(|engine| {
+            // Compile and cache the script if not already done
             if self.cached_ast.get().is_none() {
                 let ast = engine.compile(&self.command).map_err(|e| {
                     AppError::ScriptExecutionError(format!("Rhai compilation error: {e}"))
@@ -124,6 +95,7 @@ impl FormationRule {
                 AppError::ScriptExecutionError("Failed to cache Rhai AST".to_string())
             })?;
 
+            // Execute the transform function with the word as parameter
             let result: String = engine
                 .call_fn(
                     &mut rhai::Scope::new(),

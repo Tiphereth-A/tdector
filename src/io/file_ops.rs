@@ -1,14 +1,3 @@
-//! File operations for project and font management.
-//!
-//! This module handles all file I/O operations including:
-//!
-//! - Loading and saving projects
-//! - Importing text files for tokenization
-//! - Exporting translated documents to Typst format
-//! - Loading and registering custom fonts
-//!
-//! Uses unified async rfd API to eliminate duplication between desktop and WASM
-
 use eframe::egui;
 
 use crate::consts::domain::DEFAULT_RELATED_WORDS_COUNT;
@@ -17,11 +6,6 @@ use crate::io;
 use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
-    /// Opens a file picker dialog to select a text file for import.
-    ///
-    /// Reads the text content asynchronously and prepares it for tokenization by storing it
-    /// in the pending import state. The user will then be prompted to select
-    /// a tokenization strategy (word-based or character-based).
     pub(crate) fn load_text_file(&mut self, _ctx: &egui::Context) {
         let pending = self.pending_text_file.clone();
         io::FileIO::spawn(async move {
@@ -40,14 +24,6 @@ impl DecryptionApp {
         });
     }
 
-    /// Opens a file picker dialog to select and load a project file.
-    ///
-    /// Loads the project from JSON asynchronously, automatically handling format migration
-    /// from legacy formats. If the project includes a custom font, it's loaded
-    /// and registered with the UI framework.
-    ///
-    /// On successful load, all caches are invalidated and the UI is reset to
-    /// display the newly loaded project.
     pub(crate) fn load_project(&mut self, _ctx: &egui::Context) {
         let pending = self.pending_project_file.clone();
         io::FileIO::spawn(async move {
@@ -66,13 +42,8 @@ impl DecryptionApp {
         });
     }
 
-    /// Saves the current project to disk or downloads in browser.
-    ///
-    /// Converts the project to JSON format and uses async file dialog to save.
-    /// On desktop, if the project was loaded from a file, saves directly to that file.
-    /// Otherwise, shows a save dialog. On successful save, clears the dirty flag and updates the window title.
     pub(crate) fn save_project(&mut self, _ctx: &egui::Context) {
-        match io::convert_to_saved_project(&self.project) {
+        match crate::libs::project::convert_to_saved_project(&self.project) {
             Ok(saved_project) => {
                 let formatter = io::json_formatter::Formatter::new();
                 let mut buf = Vec::new();
@@ -83,7 +54,6 @@ impl DecryptionApp {
                             String::from_utf8(buf).unwrap_or_else(|_| String::from("{}"));
                         let json_bytes = json_content.into_bytes();
 
-                        // Desktop: If we have a stored filename, save directly to that file
                         #[cfg(not(target_arch = "wasm32"))]
                         if let Some(ref filename) = self.project_filename {
                             use std::path::PathBuf;
@@ -99,7 +69,6 @@ impl DecryptionApp {
                             return;
                         }
 
-                        // Use stored filename if available, otherwise generate from project name
                         let filename = if let Some(ref stored_filename) = self.project_filename {
                             stored_filename.clone()
                         } else if self.project.project_name.is_empty() {
@@ -128,10 +97,6 @@ impl DecryptionApp {
         }
     }
 
-    /// Opens a file picker dialog to select and load a custom font.
-    ///
-    /// Allows the user to manually load a font file for the project. The font
-    /// is immediately registered with the UI framework asynchronously.
     pub(crate) fn load_font_file(&mut self, _ctx: &egui::Context) {
         let pending = self.pending_font_file.clone();
         io::FileIO::spawn(async move {
@@ -146,7 +111,6 @@ impl DecryptionApp {
         });
     }
 
-    /// Loads a custom font from binary data.
     pub(crate) fn load_custom_font_from_bytes(
         &mut self,
         ctx: &egui::Context,
@@ -155,31 +119,14 @@ impl DecryptionApp {
     ) {
         io::register_custom_font(ctx, data);
 
-        // Store font name in project (not the full data, just a reference)
         self.project.font_path = Some(font_name.to_string());
         self.update_title(ctx);
     }
 
-    /// Initializes the "`SentenceFont`" family with default fallbacks.
-    ///
-    /// Called during application startup to register the "`SentenceFont`" family.
-    /// Initially, this family contains the default proportional fonts. When a
-    /// custom font is loaded, it's added to the front of this family.
-    ///
-    /// This approach ensures that:
-    /// 1. The "`SentenceFont`" family always exists (preventing lookup errors)
-    /// 2. Missing glyphs fall back to default fonts gracefully
     pub fn initialize_fonts(ctx: &egui::Context) {
         io::initialize_fonts(ctx);
     }
 
-    /// Opens a file picker and exports the project to Typst format.
-    ///
-    /// Converts the project to Typst markup suitable for professional typesetting
-    /// of interlinear glossed text asynchronously. The exported file includes:
-    /// - Project title
-    /// - Custom font specification (if present)
-    /// - All segments with aligned glosses and translations
     pub(crate) fn export_typst(&mut self) {
         let content = io::generate_typst_content(&self.project);
         let filename = format!(
@@ -203,13 +150,6 @@ impl DecryptionApp {
         });
     }
 
-    /// Updates the window title to reflect project state.
-    ///
-    /// The title shows:
-    /// - The project name (or "Text Decryption Helper" if unnamed)
-    /// - An asterisk (*) suffix if there are unsaved changes
-    ///
-    /// This provides immediate visual feedback about save state.
     pub(crate) fn update_title(&self, ctx: &egui::Context) {
         let dirty_mark = if self.is_dirty { "*" } else { "" };
         let title = if self.project.project_name.is_empty() {
@@ -223,19 +163,16 @@ impl DecryptionApp {
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));
     }
 
-    /// Reset dirty mark and updates the window title.
     pub(crate) fn update_dirty_status(&mut self, new_flag: bool, ctx: &egui::Context) {
         if self.is_dirty != new_flag {
             self.is_dirty = new_flag;
             self.update_title(ctx);
 
-            // Update WASM dirty flag for beforeunload handler
             #[cfg(target_arch = "wasm32")]
             crate::set_app_dirty(new_flag);
         }
     }
 
-    /// Triggers an action, prompting for confirmation if there are unsaved changes.
     pub(crate) fn trigger_action(&mut self, action: AppAction, ctx: &egui::Context) {
         if self.is_dirty {
             let msg = match action {
@@ -249,7 +186,6 @@ impl DecryptionApp {
         self.execute_action(action, ctx);
     }
 
-    /// Executes an action without confirmation checks.
     pub(crate) fn execute_action(&mut self, action: AppAction, ctx: &egui::Context) {
         match action {
             AppAction::Import => self.load_text_file(ctx),
@@ -262,7 +198,6 @@ impl DecryptionApp {
         }
     }
 
-    /// Find top 5 words from vocabulary that start with or contain the given prefix.
     pub(crate) fn find_related_words(&self, prefix: &str) -> Vec<String> {
         if prefix.is_empty() {
             return Vec::new();
@@ -298,7 +233,6 @@ impl DecryptionApp {
     }
 }
 
-/// Common font loading logic shared between platforms
 pub fn register_custom_font(ctx: &egui::Context, data: Vec<u8>) {
     use std::sync::Arc;
 
@@ -325,7 +259,6 @@ pub fn register_custom_font(ctx: &egui::Context, data: Vec<u8>) {
     ctx.set_fonts(fonts);
 }
 
-/// Initialize the `SentenceFont` family with default fallbacks
 pub fn initialize_fonts(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
 

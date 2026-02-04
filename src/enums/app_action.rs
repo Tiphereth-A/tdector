@@ -1,15 +1,15 @@
-/// High-level application actions triggered by menu items or keyboard shortcuts.
-///
-/// These actions represent user intentions that may require confirmation
-/// dialogs (e.g., if there are unsaved changes) before execution.
+/// High-level application actions triggered by menu commands or keyboard shortcuts
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppAction {
-    /// Import a text file.
+    /// Trigger text import dialog to add new content to the project
     Import,
-    /// Open a project file.
+
+    /// Trigger project open dialog to load a saved project from disk
     Open,
-    /// Export to Typst.
+
+    /// Save the current project to disk
     Export,
-    /// Quit the application.
+
+    /// Close the application
     Quit,
 }
