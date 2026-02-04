@@ -11,19 +11,10 @@ mod io;
 mod libs;
 mod ui;
 
+#[cfg(target_arch = "wasm32")]
+pub use tdector::set_app_dirty;
+
 use ui::DecryptionApp;
-
-#[cfg(target_arch = "wasm32")]
-thread_local! {
-    // Flag to track if the app has unsaved changes for WASM beforeunload handler
-    static IS_APP_DIRTY: std::cell::Cell<bool> = std::cell::Cell::new(false);
-}
-
-#[cfg(target_arch = "wasm32")]
-// Mark the app as dirty (modified) to trigger unsaved changes warning on page unload
-pub fn set_app_dirty(dirty: bool) {
-    IS_APP_DIRTY.with(|flag| flag.set(dirty));
-}
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
@@ -83,7 +74,7 @@ fn setup_beforeunload_handler() {
 
     let closure: Closure<dyn Fn(web_sys::Event)> = Closure::new(move |event: web_sys::Event| {
         // If app has unsaved changes, prompt the user before leaving
-        if is_app_dirty() {
+        if tdector::is_app_dirty() {
             event.prevent_default();
 
             use js_sys::Reflect;
@@ -105,12 +96,6 @@ fn setup_beforeunload_handler() {
 
     // Prevent the closure from being garbage collected
     closure.forget();
-}
-
-#[cfg(target_arch = "wasm32")]
-fn is_app_dirty() -> bool {
-    // Check if the app has unsaved changes
-    IS_APP_DIRTY.with(|flag| flag.get())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
