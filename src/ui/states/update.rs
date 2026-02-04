@@ -376,6 +376,14 @@ impl DecryptionApp {
                 Ok((content, name, full_path)) => {
                     match serde_json::from_str::<SavedProject>(&content) {
                         Ok(saved_project) => {
+                            if saved_project.version > crate::consts::domain::PROJECT_VERSION {
+                                self.error_message = Some(format!(
+                                    "Unsupported project version: {} (expected <= {})",
+                                    saved_project.version,
+                                    crate::consts::domain::PROJECT_VERSION
+                                ));
+                                return;
+                            }
                             // Convert from SavedProject to Project
                             match io::convert_from_saved_project(saved_project) {
                                 Some(project) => {
