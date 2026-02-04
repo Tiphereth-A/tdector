@@ -19,7 +19,7 @@
     "command": "fn transform(word) { word.to_upper() }"
   }],
   "vocabulary": {
-    "orignal": [{
+    "original": [{
       "word": "apple",
       "meaning": "yyy",
       "comment": "comment for word 0"

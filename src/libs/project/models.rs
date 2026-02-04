@@ -95,8 +95,7 @@ pub struct FormattedWordEntry {
 /// Separates original vocabulary from derived/formatted words for efficient storage.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedVocabularyV2 {
-    /// Collection of base vocabulary words (note: field named 'orignal' in JSON for historical reasons)
-    #[serde(rename = "orignal")]
+    /// Collection of base vocabulary words
     pub original: Vec<VocabEntry>,
 
     /// Collection of derived words created by applying formation rules

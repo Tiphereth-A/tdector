@@ -31,7 +31,7 @@
     "command": "fn transform(word) { word + \"󰀀\" }"
   }],
   "vocabulary": {
-    "orignal": [{
+    "original": [{
       "word": "󰀇󰀖󰀳󰀬",
       "meaning": "Bakuzhati",
       "comment": ""

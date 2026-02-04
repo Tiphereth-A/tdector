@@ -9,7 +9,6 @@
 ## Project model + serialization conventions
 - Runtime model is `Project`/`Segment`/`Token` in [../src/libs/project/models.rs](../src/libs/project/models.rs).
 - Saved format is v2 JSON (`SavedProjectV2`), with vocabulary compressed and referenced by indices; derived words use *negative* indices and an index chain for formation rules.
-- The saved vocabulary field name is historically misspelled as `orignal` (see `SavedVocabularyV2` in [../src/libs/project/models.rs](../src/libs/project/models.rs)); preserve this in any JSON changes.
 - Version migration is centralized in `load_project_from_json()` and `migrate_to_latest()` in [../src/libs/project/importer.rs](../src/libs/project/importer.rs). Add new migrations here and update `PROJECT_VERSION` in [../src/consts/domain.rs](../src/consts/domain.rs).
 - Formation rules are Rhai scripts (`FormationRule`) applied to base words; derived word reconstruction happens in [../src/libs/project/importer.rs](../src/libs/project/importer.rs) and export mapping in [../src/libs/project/exporter.rs](../src/libs/project/exporter.rs).
 

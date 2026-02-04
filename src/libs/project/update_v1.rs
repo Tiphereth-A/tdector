@@ -103,7 +103,7 @@ pub fn migrate_v1_to_v2(mut value: Value) -> AppResult<Value> {
         .remove("formatted_word");
 
     value["vocabulary"] = json!({
-        "orignal": vocabulary,
+        "original": vocabulary,
         "formatted": formatted_entries,
     });
 
