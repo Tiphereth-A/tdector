@@ -8,6 +8,8 @@ pub enum PopupRequest {
     WordMenu(String, usize, usize, egui::Pos2),
     /// Show context menu for a segment
     SentenceMenu(usize, egui::Pos2),
+    /// Show word formation (formatting) chain for a word in a segment
+    FormattingChain(usize, usize),
     /// Apply a filter query to the segment list
     Filter(String),
 }

@@ -5,7 +5,6 @@
 /// - file_ops: Font loading and registration
 /// - json_formatter: Custom JSON serialization formatting
 /// - typst: Export to Typst markup for academic publications
-
 pub mod file_io;
 mod file_ops;
 pub mod json_formatter;

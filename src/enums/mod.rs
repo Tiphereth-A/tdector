@@ -9,7 +9,6 @@
 /// - SortMode: Segment sorting options
 /// - UiAction: UI element actions
 /// - CommentTarget: Comment attachment targets
-
 pub mod app_action;
 pub mod app_error;
 pub mod file_type;

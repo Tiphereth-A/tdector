@@ -14,7 +14,6 @@
 /// - Similarity: TF-IDF based semantic search (native only)
 /// - Formation: Safe script execution for word transformations
 /// - Project I/O: Serialization with version migration support
-
 pub mod cache;
 pub mod filtering;
 pub mod formation;

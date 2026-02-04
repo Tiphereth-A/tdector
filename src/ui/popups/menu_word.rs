@@ -72,6 +72,15 @@ impl DecryptionApp {
                             should_close = true;
                         }
 
+                        if ui
+                            .add(egui::Button::new("Show Formatting Chain").frame(false))
+                            .clicked()
+                        {
+                            *popup_request =
+                                Some(PopupRequest::FormattingChain(sentence_idx, word_idx));
+                            should_close = true;
+                        }
+
                         self.render_update_comment_menu_item(
                             ui,
                             &word,

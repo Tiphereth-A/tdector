@@ -41,6 +41,15 @@ pub struct WordFormationDialog {
     pub rule_search_text: String,
 }
 
+/// Dialog for viewing the word formation (formatting) chain
+#[derive(Debug, Clone)]
+pub struct FormattingChainDialog {
+    /// Index of the segment containing the word
+    pub sentence_idx: usize,
+    /// Index of the word within the segment
+    pub word_idx: usize,
+}
+
 /// Dialog for editing comments on words
 #[derive(Debug, Clone)]
 pub struct UpdateCommentDialog {
@@ -107,6 +116,8 @@ pub struct DecryptionApp {
     pub(crate) sentence_menu_popup: Option<(usize, egui::Pos2)>,
     /// Word formation rule application dialog
     pub(crate) word_formation_popup: Option<WordFormationDialog>,
+    /// Word formation chain inspection dialog
+    pub(crate) formatting_chain_popup: Option<FormattingChainDialog>,
     /// New formation rule creation dialog
     pub(crate) new_formation_rule_popup: Option<NewFormationRuleDialog>,
     /// Word comment editing dialog
@@ -229,6 +240,7 @@ impl Default for DecryptionApp {
             word_menu_popup: None,
             sentence_menu_popup: None,
             word_formation_popup: None,
+            formatting_chain_popup: None,
             new_formation_rule_popup: None,
             update_comment_popup: None,
             update_sentence_comment_popup: None,

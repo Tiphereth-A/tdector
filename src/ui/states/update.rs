@@ -125,6 +125,13 @@ impl eframe::App for DecryptionApp {
                 PopupRequest::SentenceMenu(sentence_idx, cursor_pos) => {
                     self.sentence_menu_popup = Some((sentence_idx, cursor_pos));
                 }
+                PopupRequest::FormattingChain(sentence_idx, word_idx) => {
+                    self.formatting_chain_popup =
+                        Some(crate::ui::states::state::FormattingChainDialog {
+                            sentence_idx,
+                            word_idx,
+                        });
+                }
                 PopupRequest::Filter(text) => {
                     self.filter_text = text;
                     self.current_page = 0;
@@ -153,6 +160,13 @@ impl eframe::App for DecryptionApp {
                 }
                 PopupRequest::SentenceMenu(sentence_idx, cursor_pos) => {
                     self.sentence_menu_popup = Some((sentence_idx, cursor_pos));
+                }
+                PopupRequest::FormattingChain(sentence_idx, word_idx) => {
+                    self.formatting_chain_popup =
+                        Some(crate::ui::states::state::FormattingChainDialog {
+                            sentence_idx,
+                            word_idx,
+                        });
                 }
                 PopupRequest::Filter(text) => {
                     self.filter_text = text;

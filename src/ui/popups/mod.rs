@@ -1,6 +1,7 @@
 pub(crate) mod comments;
 pub(crate) mod coordinator;
 pub(crate) mod dictionary;
+pub(crate) mod formatting_chain;
 pub(crate) mod menu_sentence;
 pub(crate) mod menu_word;
 pub(crate) mod pinned;

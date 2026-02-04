@@ -13,7 +13,7 @@ impl SortOperation {
 
         // Apply the primary sort based on selected field
         match sort_mode.field {
-            Index => {}  // Index order is default; no sorting needed
+            Index => {} // Index order is default; no sorting needed
             Original => {
                 Self::sort_by_original_text(project, indices);
             }

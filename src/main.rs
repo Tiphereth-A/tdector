@@ -6,9 +6,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod consts;
-mod libs;
 mod enums;
 mod io;
+mod libs;
 mod ui;
 
 use ui::DecryptionApp;
@@ -41,14 +41,14 @@ fn main() {
             .expect("no window exists")
             .document()
             .expect("no document exists");
-        
+
         // Find the HTML canvas element where the app will be rendered
         let canvas = document
             .get_element_by_id("the_canvas_id")
             .expect("failed to find the canvas element")
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .expect("canvas element has wrong type");
-        
+
         // Create and start the eframe web runner
         let runner = eframe::WebRunner::new();
         runner
@@ -116,8 +116,8 @@ fn is_app_dirty() -> bool {
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
     // Native desktop entry point: Initialize and run the native application
-    use eframe::egui;
     use crate::consts::ui::{WINDOW_HEIGHT, WINDOW_WIDTH};
+    use eframe::egui;
 
     // Initialize the logging system
     env_logger::init();
