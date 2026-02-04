@@ -297,7 +297,9 @@ fn render_token_column(
         egui::vec2(width + GLOSS_BOX_LAYOUT_EXTRA, 0.0),
         egui::Layout::top_down(egui::Align::LEFT),
         |ui| {
-            let box_color = if has_rule {
+            let box_color = if gloss.is_empty() {
+                ui.visuals().text_color()
+            } else if has_rule {
                 GLOSSBOX_BYFORMATION
             } else {
                 GLOSSBOX
