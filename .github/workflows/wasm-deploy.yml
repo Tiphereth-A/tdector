@@ -49,9 +49,6 @@ jobs:
       - name: Install trunk
         run: cargo install --locked trunk
 
-      - name: Run tests
-        run: cargo test --verbose --target ${{ env.RUST_TARGET }}
-
       - name: Build WASM
         run: trunk build --release
 

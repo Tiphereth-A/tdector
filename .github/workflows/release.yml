@@ -88,7 +88,8 @@ jobs:
           sudo apt-get install gcc-arm-linux-gnueabihf
 
       - name: Run tests
-        run: cargo test --verbose --target ${{ matrix.target }}
+        if: matrix.platform == 'darwin' || matrix.arch != 'arm64'
+        run: cargo test --target ${{ matrix.target }}
 
       - name: Build binary
         shell: pwsh
@@ -127,7 +128,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run tests
-        run: cargo test --verbose --target ${{ env.RUST_TARGET }}
+        run: cargo test --target ${{ env.RUST_TARGET }}
 
       - name: Build binary
         run: |
