@@ -6,5 +6,6 @@ pub(crate) mod formatting_chain;
 pub(crate) mod menu_sentence;
 pub(crate) mod menu_word;
 pub(crate) mod pinned;
-pub(crate) mod similar;
+pub(crate) mod similar_sentence;
+pub(crate) mod similar_token;
 pub(crate) mod word_formation;

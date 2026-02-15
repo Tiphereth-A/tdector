@@ -4,6 +4,7 @@ use eframe::egui;
 
 use crate::enums::{AppAction, DictionaryPopupType, FormationType, PopupRequest};
 use crate::libs::project::load_project_from_json;
+use crate::libs::similarity_token::find_similar_tokens;
 use crate::ui;
 
 use crate::ui::states::state::DecryptionApp;
@@ -120,6 +121,10 @@ impl eframe::App for DecryptionApp {
                 PopupRequest::Similar(idx) => {
                     self.compute_similar_segments(idx);
                 }
+                PopupRequest::SimilarTokens(word) => {
+                    let similar_indices = find_similar_tokens(&self.project, &word);
+                    self.similar_tokens_popup = Some((word, similar_indices));
+                }
                 PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
                     self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));
                 }
@@ -155,6 +160,10 @@ impl eframe::App for DecryptionApp {
                 },
                 PopupRequest::Similar(idx) => {
                     self.compute_similar_segments(idx);
+                }
+                PopupRequest::SimilarTokens(word) => {
+                    let similar_indices = find_similar_tokens(&self.project, &word);
+                    self.similar_tokens_popup = Some((word, similar_indices));
                 }
                 PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
                     self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));

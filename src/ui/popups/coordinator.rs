@@ -10,6 +10,7 @@ impl DecryptionApp {
         self.definition_popup = None;
         self.reference_popup = None;
         self.similar_popup = None;
+        self.similar_tokens_popup = None;
         self.word_menu_popup = None;
         self.sentence_menu_popup = None;
         self.word_formation_popup = None;
@@ -30,6 +31,7 @@ impl DecryptionApp {
         self.render_definition_popup(ctx, headword_lookup, popup_request);
         self.render_reference_popup(ctx, usage_lookup, popup_request);
         self.render_similar_popup(ctx, popup_request);
+        self.render_similar_tokens_popup(ctx, popup_request);
         self.render_word_menu_popup(ctx, popup_request);
         self.render_sentence_menu_popup(ctx, popup_request);
         self.render_formatting_chain_popup(ctx);

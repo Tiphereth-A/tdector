@@ -123,6 +123,9 @@ pub struct DecryptionApp {
     pub(crate) reference_popup: Option<String>,
     /// Currently open similarity search popup
     pub(crate) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
+    /// Currently open similar tokens popup
+    pub(crate) similar_tokens_popup:
+        Option<(String, Vec<crate::libs::similarity_token::SimilarToken>)>,
     /// Currently open word context menu
     pub(crate) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>,
     /// Currently open segment context menu
@@ -173,7 +176,7 @@ impl DecryptionApp {
     /// Ensure the TF-IDF matrix cache is up-to-date (native only)
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn ensure_tfidf_cache_impl(&mut self) {
-        use crate::libs::similarity::SimilarityEngine;
+        use crate::libs::similarity_sentence::SimilarityEngine;
 
         if !self.tfidf_dirty && !self.tfidf_cache.is_dirty() {
             return;
@@ -195,7 +198,7 @@ impl DecryptionApp {
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn compute_similar_segments(&mut self, target_idx: usize) {
         use crate::consts::domain::DEFAULT_SIMILARITY_RESULTS;
-        use crate::libs::similarity::SimilarityEngine;
+        use crate::libs::similarity_sentence::SimilarityEngine;
 
         if target_idx >= self.project.segments.len() {
             return;
@@ -252,6 +255,7 @@ impl Default for DecryptionApp {
             definition_popup: None,
             reference_popup: None,
             similar_popup: None,
+            similar_tokens_popup: None,
             word_menu_popup: None,
             sentence_menu_popup: None,
             word_formation_popup: None,

@@ -4,6 +4,8 @@ pub enum PopupRequest {
     Dictionary(String, DictionaryPopupType),
     /// Show segments similar to a given segment (by index)
     Similar(usize),
+    /// Show tokens similar to a given word (morphologically related)
+    SimilarTokens(String),
     /// Show context menu for a specific word in a segment
     WordMenu(String, usize, usize, egui::Pos2),
     /// Show context menu for a segment

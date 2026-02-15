@@ -58,6 +58,14 @@ impl DecryptionApp {
                         }
 
                         if ui
+                            .add(egui::Button::new("Show Similar Tokens").frame(false))
+                            .clicked()
+                        {
+                            *popup_request = Some(PopupRequest::SimilarTokens(word.clone()));
+                            should_close = true;
+                        }
+
+                        if ui
                             .add(egui::Button::new("Set Word Formation Rule").frame(false))
                             .clicked()
                         {
