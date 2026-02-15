@@ -1,3 +1,13 @@
+# v0.1.3
+
+## Features
+- Add support of custom tokenization with Rhai scripts.
+- Add similar token popup and related functionality.
+
+## CI/Deps
+- Improve CI configuration.
+- Bump dependencies in the cargo group.
+
 # v0.1.2
 
 ## Breaking changes
