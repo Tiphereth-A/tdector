@@ -97,6 +97,7 @@ impl eframe::App for DecryptionApp {
         self.render_error_dialog(ctx);
         self.render_confirmation_dialog(ctx);
         self.render_import_dialog(ctx);
+        self.render_custom_tokenization_popup(ctx);
 
         if self.lookups_dirty {
             self.recalculate_lookup_maps();

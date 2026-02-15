@@ -1,14 +1,14 @@
 /// Enumeration types for the application
 ///
 /// Includes:
-/// - AppAction: High-level menu actions
-/// - AppError: Error types
-/// - FileType: Supported file types for I/O
-/// - FormationType: Word formation rule categories
-/// - PopupRequest: Popup window requests
-/// - SortMode: Segment sorting options
-/// - UiAction: UI element actions
-/// - CommentTarget: Comment attachment targets
+/// - `AppAction`: High-level menu actions
+/// - `AppError`: Error types
+/// - `FileType`: Supported file types for I/O
+/// - `FormationType`: Word formation rule categories
+/// - `PopupRequest`: Popup window requests
+/// - `SortMode`: Segment sorting options
+/// - `UiAction`: UI element actions
+/// - `CommentTarget`: Comment attachment targets
 pub mod app_action;
 pub mod app_error;
 pub mod file_type;

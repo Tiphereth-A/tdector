@@ -6,7 +6,7 @@ use super::models::{
 use crate::consts::domain::PROJECT_VERSION;
 use crate::enums::{AppError, AppResult};
 
-/// Convert a runtime Project to its serializable SavedProjectV2 format for JSON export.
+/// Convert a runtime Project to its serializable `SavedProjectV2` format for JSON export.
 /// This handles:
 /// 1. Deduplicating vocabulary across all segments
 /// 2. Mapping token references to vocabulary indices
@@ -102,8 +102,9 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
                 continue;
             }
 
+            let indices_clone = indices.clone();
             // Avoid duplicate formatted word entries
-            if !seen_formatted_words.contains_key(&indices) {
+            seen_formatted_words.entry(indices).or_insert_with(|| {
                 let comment = project
                     .formatted_word_comments
                     .get(&token.original)
@@ -111,11 +112,11 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
                     .unwrap_or_default();
 
                 formatted_word_entries.push(FormattedWordEntry {
-                    word: indices.clone(),
+                    word: indices_clone.clone(),
                     comment,
                 });
-                seen_formatted_words.insert(indices, true);
-            }
+                true
+            });
         }
     }
 

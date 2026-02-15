@@ -29,7 +29,7 @@ pub struct NewFormationRuleDialog {
 pub struct WordFormationDialog {
     /// The base word to apply rules to
     pub selected_word: String,
-    /// The base word (may differ from selected_word for derived forms)
+    /// The base word (may differ from `selected_word` for derived forms)
     pub base_word: String,
     /// Preview of the final derived form after all rules are applied
     pub preview: String,
@@ -68,6 +68,19 @@ pub struct UpdateSentenceCommentDialog {
     pub segment_idx: usize,
     /// The comment text
     pub comment: String,
+}
+
+/// Dialog for creating a custom tokenization rule during import
+#[derive(Debug, Clone)]
+pub struct CustomTokenizationDialog {
+    /// Pending import data (content, name)
+    pub import_data: (String, String),
+    /// Rhai script implementing the tokenization logic
+    pub command: String,
+    /// Test text to preview the rule's effect
+    pub test_text: String,
+    /// Preview of tokens generated from test text
+    pub preview: Vec<String>,
 }
 
 /// Main application state for the decryption UI
@@ -124,6 +137,8 @@ pub struct DecryptionApp {
     pub(crate) update_comment_popup: Option<UpdateCommentDialog>,
     /// Segment comment editing dialog
     pub(crate) update_sentence_comment_popup: Option<UpdateSentenceCommentDialog>,
+    /// Custom tokenization rule creation dialog during import
+    pub(crate) custom_tokenization_popup: Option<CustomTokenizationDialog>,
     /// Popups pinned to remain visible (not auto-closing)
     pub(crate) pinned_popups: Vec<PinnedPopup>,
     /// Counter for generating unique popup IDs
@@ -244,6 +259,7 @@ impl Default for DecryptionApp {
             new_formation_rule_popup: None,
             update_comment_popup: None,
             update_sentence_comment_popup: None,
+            custom_tokenization_popup: None,
             pinned_popups: Vec::new(),
             next_popup_id: 0,
             cached_filtered_indices: Vec::new(),

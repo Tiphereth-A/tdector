@@ -4,7 +4,7 @@ pub enum FileType {
     /// Plain text files containing segments to be translated
     Text,
 
-    /// JSON project files (see SavedProjectV2 format)
+    /// JSON project files (see `SavedProjectV2` format)
     Json,
 
     /// Font files for rendering special scripts and writing systems

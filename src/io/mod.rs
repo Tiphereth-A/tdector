@@ -1,9 +1,9 @@
 /// File I/O, formatting, and export functionality
 ///
 /// Handles:
-/// - file_io: Cross-platform file operations with async support
-/// - file_ops: Font loading and registration
-/// - json_formatter: Custom JSON serialization formatting
+/// - `file_io`: Cross-platform file operations with async support
+/// - `file_ops`: Font loading and registration
+/// - `json_formatter`: Custom JSON serialization formatting
 /// - typst: Export to Typst markup for academic publications
 pub mod file_io;
 mod file_ops;

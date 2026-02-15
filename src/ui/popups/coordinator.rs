@@ -16,6 +16,7 @@ impl DecryptionApp {
         self.formatting_chain_popup = None;
         self.update_comment_popup = None;
         self.update_sentence_comment_popup = None;
+        self.custom_tokenization_popup = None;
         self.pinned_popups.clear();
     }
 

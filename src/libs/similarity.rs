@@ -44,7 +44,7 @@ impl SimilarityEngine {
     }
 
     /// Find the most similar segments to a target segment using cosine similarity.
-    /// Returns a vector of (segment_index, similarity_score) sorted by score in descending order.
+    /// Returns a vector of (`segment_index`, `similarity_score`) sorted by score in descending order.
     /// Scores are clamped to be > 0.0 to avoid near-zero or negative similarities.
     pub fn find_similar(
         matrix: &Array2<f64>,

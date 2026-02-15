@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub use crate::libs::formation::FormationRule;
+pub use crate::libs::eval::FormationRule;
 
 /// Represents a single token (word or character) within a segment.
 /// Tokens track their original form and can reference word formation rules for derived words.
@@ -10,12 +10,12 @@ pub struct Token {
     /// The actual text representation of the token as it appears in the source
     pub original: String,
 
-    /// If this token is a derived form, base_word stores the root word.
+    /// If this token is a derived form, `base_word` stores the root word.
     /// Skipped during serialization since it can be reconstructed from formation rules.
     #[serde(skip)]
     pub base_word: Option<String>,
 
-    /// Indices into the Project's formation_rules that were applied to base_word to create original.
+    /// Indices into the Project's `formation_rules` that were applied to `base_word` to create original.
     /// Empty if this is an original vocabulary token (not derived).
     #[serde(skip)]
     pub formation_rule_indices: Vec<usize>,
@@ -64,7 +64,7 @@ pub struct Project {
 }
 
 /// Serialization format for a single vocabulary entry.
-/// Used when saving projects to JSON in the compressed SavedVocabularyV2 format.
+/// Used when saving projects to JSON in the compressed `SavedVocabularyV2` format.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VocabEntry {
     /// The vocabulary word
@@ -79,7 +79,7 @@ pub struct VocabEntry {
 }
 
 /// Serialization format for a word created by applying formation rules.
-/// Represents a derived form as an index chain: [base_word_idx, rule_idx_1, rule_idx_2, ...]
+/// Represents a derived form as an index chain: [`base_word_idx`, `rule_idx_1`, `rule_idx_2`, ...]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FormattedWordEntry {
     /// First element is base word vocabulary index; subsequent elements are formation rule indices.
@@ -109,7 +109,7 @@ pub struct SavedVocabularyV2 {
 pub struct SavedSentenceV2 {
     /// Array of word references:
     /// - Positive i64: index into vocabulary.original array
-    /// - Negative i64: -(formatted_word_index + 1) for derived words
+    /// - Negative i64: -(`formatted_word_index` + 1) for derived words
     pub words: Vec<i64>,
 
     /// The target language translation for this segment

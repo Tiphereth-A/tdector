@@ -1,14 +1,17 @@
 use crate::enums::AppResult;
+use crate::libs::eval::TokenizationRule;
 use crate::libs::{Project, Segment, Token};
 
 /// Text processing utility for tokenizing and analyzing text content.
 pub struct TextProcessor;
 
 impl TextProcessor {
-    /// Split text into segments, where each segment contains tokens.
-    /// Tokenization mode is determined by tokenize_by_word parameter.
+    /// Split text into segments using the provided tokenization rule.
     /// Empty lines are skipped; other lines become separate segments.
-    pub fn segment_text(text: &str, tokenize_by_word: bool) -> AppResult<Vec<Segment>> {
+    pub fn segment_text_with_rule(
+        text: &str,
+        tokenization_rule: Option<&TokenizationRule>,
+    ) -> AppResult<Vec<Segment>> {
         let lines: Vec<&str> = text.lines().collect();
         let mut segments = Vec::new();
 
@@ -18,11 +21,31 @@ impl TextProcessor {
                 continue;
             }
 
-            // Create a segment by tokenizing this line
-            let segment = if tokenize_by_word {
-                Self::segment_by_word(line)
-            } else {
-                Self::segment_by_character(line)
+            // Get tokenization rule (fail if none provided)
+            let rule = tokenization_rule.ok_or_else(|| {
+                crate::enums::AppError::InvalidProjectFormat(
+                    "No tokenization rule provided".to_string(),
+                )
+            })?;
+
+            // Tokenize the line using the Rhai script
+            let token_strings = rule.tokenize(line)?;
+
+            // Convert token strings to Token objects
+            let tokens = token_strings
+                .into_iter()
+                .map(|text| Token {
+                    original: text,
+                    base_word: None,
+                    formation_rule_indices: Vec::new(),
+                })
+                .collect();
+
+            // Create and add segment if it has tokens
+            let segment = Segment {
+                tokens,
+                translation: String::new(),
+                comment: String::new(),
             };
 
             if !segment.tokens.is_empty() {
@@ -31,42 +54,6 @@ impl TextProcessor {
         }
 
         Ok(segments)
-    }
-
-    /// Split a line into word tokens using whitespace as delimiter
-    fn segment_by_word(line: &str) -> Segment {
-        let tokens = line
-            .split_whitespace()
-            .map(|word| Token {
-                original: word.to_string(),
-                base_word: None,
-                formation_rule_indices: Vec::new(),
-            })
-            .collect();
-
-        Segment {
-            tokens,
-            translation: String::new(),
-            comment: String::new(),
-        }
-    }
-
-    /// Split a line into character tokens, preserving each character as an individual token
-    fn segment_by_character(line: &str) -> Segment {
-        let tokens = line
-            .chars()
-            .map(|ch| Token {
-                original: ch.to_string(),
-                base_word: None,
-                formation_rule_indices: Vec::new(),
-            })
-            .collect();
-
-        Segment {
-            tokens,
-            translation: String::new(),
-            comment: String::new(),
-        }
     }
 
     /// Calculate what percentage of a segment has been translated.

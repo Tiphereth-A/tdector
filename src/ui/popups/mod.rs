@@ -1,5 +1,6 @@
 pub(crate) mod comments;
 pub(crate) mod coordinator;
+pub(crate) mod custom_tokenization;
 pub(crate) mod dictionary;
 pub(crate) mod formatting_chain;
 pub(crate) mod menu_sentence;

@@ -8,19 +8,12 @@ use super::models::{Project, SavedProjectV2, Segment, Token};
 
 use super::update_v1::migrate_v1_to_v2;
 
-/// Segment raw text content into logical units (segments) and tokens.
-/// Tokens can be split by whitespace (words) or by character depending on use_whitespace_split.
-pub fn segment_content(content: &str, use_whitespace_split: bool) -> Vec<Segment> {
-    crate::libs::text_analysis::TextProcessor::segment_text(content, use_whitespace_split)
-        .unwrap_or_else(|_| Vec::new())
-}
-
-/// Migrate a JSON value from any supported version to the current PROJECT_VERSION.
+/// Migrate a JSON value from any supported version to the current `PROJECT_VERSION`.
 /// Currently supports v1 -> v2 migration. Returns an error if version is unsupported.
 pub fn migrate_to_latest(mut value: Value) -> Result<SavedProjectV2, String> {
     let mut version = value.get("version").and_then(|v| v.as_u64()).unwrap_or(0);
 
-    if version < 1 || version > PROJECT_VERSION {
+    if !(1..=PROJECT_VERSION).contains(&version) {
         return Err(format!("Unsupported project version: {version}"));
     }
 
@@ -57,7 +50,7 @@ pub fn load_project_from_json(value: Value) -> Result<Project, String> {
 pub fn convert_from_saved_project_v2(mut saved: SavedProjectV2) -> Option<Project> {
     // Initialize cached ASTs for all formation rules (needed for script execution)
     for rule in &mut saved.formation {
-        rule.cached_ast = crate::libs::formation::default_cached_ast();
+        rule.cached_ast = crate::libs::eval::default_cached_ast();
     }
 
     // Build a map of formatted words (derived words created by applying rules) to their comments

@@ -74,7 +74,7 @@ impl FileIO {
         spawn_local(future);
     }
 
-    /// Platform-specific async spawning: WASM uses spawn_local, native uses pollster::block_on
+    /// Platform-specific async spawning: WASM uses `spawn_local`, native uses `pollster::block_on`
     #[cfg(not(target_arch = "wasm32"))]
     pub fn spawn<F>(future: F)
     where

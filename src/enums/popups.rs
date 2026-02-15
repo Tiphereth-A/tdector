@@ -26,8 +26,8 @@ pub enum DictionaryPopupType {
 /// A popup that persists across updates (pinned to the screen)
 #[derive(Debug, Clone)]
 pub enum PinnedPopup {
-    /// Pinned similarity search results: (segment_index, similar_segments, popup_id, display_text)
+    /// Pinned similarity search results: (`segment_index`, `similar_segments`, `popup_id`, `display_text`)
     Similar(usize, Vec<(usize, f64)>, u64, String),
-    /// Pinned dictionary popup: (word, popup_type, popup_id, display_text)
+    /// Pinned dictionary popup: (word, `popup_type`, `popup_id`, `display_text`)
     Dictionary(String, DictionaryPopupType, u64, String),
 }

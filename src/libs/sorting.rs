@@ -6,7 +6,7 @@ pub struct SortOperation;
 
 impl SortOperation {
     /// Sort segment indices in-place according to the specified sort mode.
-    /// Handles multiple sort fields (Index, Original text, Length, Count, TranslatedRatio, TranslatedCount)
+    /// Handles multiple sort fields (Index, Original text, Length, Count, `TranslatedRatio`, `TranslatedCount`)
     /// and sort directions (Ascending/Descending).
     pub fn apply_sort(project: &Project, indices: &mut [usize], sort_mode: SortMode) {
         use SortField::*;

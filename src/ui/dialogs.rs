@@ -69,6 +69,7 @@ impl DecryptionApp {
     pub(crate) fn render_import_dialog(&mut self, ctx: &egui::Context) {
         if self.pending_import.is_some() {
             let mut choice = None;
+            let mut use_custom = false;
             let mut open = true;
             egui::Window::new("Import Options")
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -99,25 +100,61 @@ impl DecryptionApp {
                             choice = Some(false);
                         }
                     });
+
+                    ui.add_space(8.0);
+                    if ui
+                        .button("Custom Script...")
+                        .on_hover_text("Write your own Rhai tokenization script")
+                        .clicked()
+                    {
+                        use_custom = true;
+                    }
                 });
 
             if !open {
                 self.pending_import = None;
-            } else if let Some(use_whitespace) = choice
-                && let Some((content, name)) = self.pending_import.take()
-            {
-                let segments = crate::libs::project::segment_content(&content, use_whitespace);
-                self.project.segments = segments;
-                self.project.project_name = name;
-                self.project.font_path = None;
-                self.current_path = None;
-                self.project_filename = None;
-                self.filter_dirty = true;
-                self.lookups_dirty = true;
-                self.tfidf_dirty = true;
-                self.filter_text.clear();
-                self.clear_popups();
-                self.update_dirty_status(true, ctx);
+            } else if let Some(use_whitespace) = choice {
+                if let Some((content, name)) = self.pending_import.take() {
+                    // Create the tokenization rule to use for import
+                    let rule = if use_whitespace {
+                        crate::libs::eval::TokenizationRule::default_whitespace()
+                    } else {
+                        crate::libs::eval::TokenizationRule::default_character()
+                    };
+
+                    // Use the tokenization rule to segment text
+                    let segments =
+                        crate::libs::text_analysis::TextProcessor::segment_text_with_rule(
+                            &content,
+                            Some(&rule),
+                        )
+                        .unwrap_or_else(|_| Vec::new());
+
+                    self.project.segments = segments;
+                    self.project.project_name = name;
+                    self.project.font_path = None;
+                    self.current_path = None;
+                    self.project_filename = None;
+                    self.filter_dirty = true;
+                    self.lookups_dirty = true;
+                    self.tfidf_dirty = true;
+                    self.filter_text.clear();
+                    self.clear_popups();
+                    self.update_dirty_status(true, ctx);
+                }
+            } else if use_custom && let Some((content, name)) = self.pending_import.take() {
+                self.custom_tokenization_popup =
+                    Some(crate::ui::states::state::CustomTokenizationDialog {
+                        import_data: (content, name),
+                        command: r#"fn tokenize(line) {
+    let tokens = [];
+    // Add your tokenization logic here
+    tokens
+}"#
+                        .to_string(),
+                        test_text: String::new(),
+                        preview: Vec::new(),
+                    });
             }
         }
     }

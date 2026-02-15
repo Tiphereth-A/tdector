@@ -2,7 +2,6 @@ use eframe::egui;
 
 use crate::consts::ui::WORD_FORMATION_SCRIPT_ROWS;
 use crate::enums::FormationType;
-use crate::libs::formation;
 use crate::ui::popup_utils::create_popup_title;
 use crate::ui::states::state::DecryptionApp;
 
@@ -376,7 +375,7 @@ impl DecryptionApp {
                     }
 
                     if !dialog.test_word.is_empty() && !dialog.command.is_empty() {
-                        let result = formation::with_engine(|engine| {
+                        let result = crate::libs::eval::with_engine(|engine| {
                             engine.eval::<String>(&format!(
                                 "{}\nlet result = transform(\"{}\");\nresult",
                                 dialog.command, dialog.test_word
@@ -408,12 +407,14 @@ impl DecryptionApp {
                         )
                         .clicked()
                     {
-                        self.project.formation_rules.push(formation::FormationRule {
-                            description: dialog.description.clone(),
-                            rule_type: dialog.rule_type,
-                            command: dialog.command.clone(),
-                            cached_ast: formation::default_cached_ast(),
-                        });
+                        self.project
+                            .formation_rules
+                            .push(crate::libs::eval::FormationRule {
+                                description: dialog.description.clone(),
+                                rule_type: dialog.rule_type,
+                                command: dialog.command.clone(),
+                                cached_ast: crate::libs::eval::default_cached_ast(),
+                            });
                         self.update_dirty_status(true, ctx);
                         should_close = true;
                     }
