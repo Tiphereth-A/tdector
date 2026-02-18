@@ -24,7 +24,7 @@ textdistance = "1.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11.9"
-scirs2-text = "0.1.5"
+scirs2-text = "0.2"
 image = "0.25"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
