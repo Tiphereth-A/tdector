@@ -28,7 +28,7 @@ scirs2-text = "0.2"
 image = "0.25"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen-futures = "0.4.50"
+wasm-bindgen-futures = "0.4.61"
 wasm-bindgen = "0.2"
 js-sys = "0.3"
 getrandom = { version = "0.3", features = ["wasm_js"] }
