@@ -1,7 +1,7 @@
 use eframe::egui;
 
 use crate::enums::{DictionaryPopupType, PopupRequest};
-use crate::ui::states::state::{DecryptionApp, WordFormationDialog};
+use crate::ui::states::state::{DecryptionApp, RemoveFormationRuleDialog, WordFormationDialog};
 
 impl DecryptionApp {
     pub(super) fn render_word_menu_popup(
@@ -71,7 +71,7 @@ impl DecryptionApp {
                         {
                             self.word_formation_popup = Some(WordFormationDialog {
                                 selected_word: word.clone(),
-                                base_word: existing_base_word.unwrap_or_default(),
+                                base_word: existing_base_word.clone().unwrap_or_default(),
                                 preview: String::new(),
                                 selected_rule: existing_rule_idx,
                                 related_words: Vec::new(),
@@ -79,6 +79,24 @@ impl DecryptionApp {
                             });
                             should_close = true;
                         }
+
+                        if let Some(rule_idx) = existing_rule_idx
+                            && ui
+                                .add(egui::Button::new("Remove Formation Rule").frame(false))
+                                .clicked()
+                            && let Some(rule) = self.project.formation_rules.get(rule_idx) {
+                                self.remove_formation_rule_popup =
+                                    Some(RemoveFormationRuleDialog {
+                                        sentence_idx,
+                                        word_idx,
+                                        formatted_word: word.clone(),
+                                        base_word: existing_base_word
+                                            .clone()
+                                            .unwrap_or_else(|| word.clone()),
+                                        rule_description: rule.description.clone(),
+                                    });
+                                should_close = true;
+                            }
 
                         if ui
                             .add(egui::Button::new("Show Formatting Chain").frame(false))

@@ -15,6 +15,7 @@ impl DecryptionApp {
         self.sentence_menu_popup = None;
         self.word_formation_popup = None;
         self.formatting_chain_popup = None;
+        self.remove_formation_rule_popup = None;
         self.update_comment_popup = None;
         self.update_sentence_comment_popup = None;
         self.custom_tokenization_popup = None;
@@ -35,6 +36,7 @@ impl DecryptionApp {
         self.render_word_menu_popup(ctx, popup_request);
         self.render_sentence_menu_popup(ctx, popup_request);
         self.render_formatting_chain_popup(ctx);
+        self.render_remove_formation_rule_popup(ctx);
         self.render_word_formation_popup(ctx);
         self.render_new_formation_rule_popup(ctx);
         self.render_update_comment_popup(ctx);

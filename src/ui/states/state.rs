@@ -50,6 +50,21 @@ pub struct FormattingChainDialog {
     pub word_idx: usize,
 }
 
+/// Dialog for removing an applied formation rule from a formatted word
+#[derive(Debug, Clone)]
+pub struct RemoveFormationRuleDialog {
+    /// Index of the segment containing the formatted word
+    pub sentence_idx: usize,
+    /// Index of the token within the segment
+    pub word_idx: usize,
+    /// Current formatted word text
+    pub formatted_word: String,
+    /// Root/base word for the formatted chain
+    pub base_word: String,
+    /// Description of the rule that will be removed
+    pub rule_description: String,
+}
+
 /// Dialog for editing comments on words
 #[derive(Debug, Clone)]
 pub struct UpdateCommentDialog {
@@ -134,6 +149,8 @@ pub struct DecryptionApp {
     pub(crate) word_formation_popup: Option<WordFormationDialog>,
     /// Word formation chain inspection dialog
     pub(crate) formatting_chain_popup: Option<FormattingChainDialog>,
+    /// Remove formation rule confirmation dialog
+    pub(crate) remove_formation_rule_popup: Option<RemoveFormationRuleDialog>,
     /// New formation rule creation dialog
     pub(crate) new_formation_rule_popup: Option<NewFormationRuleDialog>,
     /// Word comment editing dialog
@@ -260,6 +277,7 @@ impl Default for DecryptionApp {
             sentence_menu_popup: None,
             word_formation_popup: None,
             formatting_chain_popup: None,
+            remove_formation_rule_popup: None,
             new_formation_rule_popup: None,
             update_comment_popup: None,
             update_sentence_comment_popup: None,
