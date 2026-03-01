@@ -117,7 +117,7 @@ jobs:
         run: |
           cp "target/${{ matrix.target }}/release/tdector${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}" "tdector-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}"
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: matrix.profile != 'test'
         with:
           name: tdector-${{ matrix.target }}-${{ matrix.profile }}
@@ -161,7 +161,7 @@ jobs:
         run: |
           cp "target/${{ env.RUST_TARGET }}/release/tdector" "tdector-${{ env.RUST_TARGET }}"
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: matrix.profile != 'test'
         with:
           name: tdector-${{ env.RUST_TARGET }}-${{ matrix.profile }}
