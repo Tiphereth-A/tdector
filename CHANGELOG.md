@@ -1,3 +1,11 @@
+# v0.1.4
+
+## Features
+- Add support of removing formation rule.
+
+## CI/Deps
+- Bump scirs2-text to 0.2.
+
 # v0.1.3
 
 ## Features
