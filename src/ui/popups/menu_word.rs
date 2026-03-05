@@ -84,19 +84,19 @@ impl DecryptionApp {
                             && ui
                                 .add(egui::Button::new("Remove Formation Rule").frame(false))
                                 .clicked()
-                            && let Some(rule) = self.project.formation_rules.get(rule_idx) {
-                                self.remove_formation_rule_popup =
-                                    Some(RemoveFormationRuleDialog {
-                                        sentence_idx,
-                                        word_idx,
-                                        formatted_word: word.clone(),
-                                        base_word: existing_base_word
-                                            .clone()
-                                            .unwrap_or_else(|| word.clone()),
-                                        rule_description: rule.description.clone(),
-                                    });
-                                should_close = true;
-                            }
+                            && let Some(rule) = self.project.formation_rules.get(rule_idx)
+                        {
+                            self.remove_formation_rule_popup = Some(RemoveFormationRuleDialog {
+                                sentence_idx,
+                                word_idx,
+                                formatted_word: word.clone(),
+                                base_word: existing_base_word
+                                    .clone()
+                                    .unwrap_or_else(|| word.clone()),
+                                rule_description: rule.description.clone(),
+                            });
+                            should_close = true;
+                        }
 
                         if ui
                             .add(egui::Button::new("Show Formatting Chain").frame(false))

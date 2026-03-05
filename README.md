@@ -20,7 +20,6 @@ A GUI tool for assisted text decryption and translation.
 
 ### Advanced Analysis
 - **TF-IDF Similarity Search**: Find similar tokens and text segments using TF-IDF analysis with incremental caching for performance.
-  - **Note**: Similarity search is currently disabled in the web version and requires the desktop application. Support is pending SciRS2 v0.3.0 WASM compatibility.
 - **Full-Text Filtering**: Filter and search segments with real-time updates and multiple sort modes (by index or frequency).
 - **Word Formation Rules**: Create and apply custom word formation rules (derivation, inflection, nonmorphological) using Rhai scripting:
   - Transform words based on pattern rules

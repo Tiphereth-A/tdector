@@ -190,8 +190,7 @@ impl DecryptionApp {
         self.cached_filtered_indices = indices;
     }
 
-    /// Ensure the TF-IDF matrix cache is up-to-date (native only)
-    #[cfg(not(target_arch = "wasm32"))]
+    /// Ensure the TF-IDF matrix cache is up-to-date
     pub(crate) fn ensure_tfidf_cache_impl(&mut self) {
         use crate::libs::similarity_sentence::SimilarityEngine;
 
@@ -212,7 +211,6 @@ impl DecryptionApp {
     }
 
     /// Compute similar segments to a target segment and update the UI
-    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn compute_similar_segments(&mut self, target_idx: usize) {
         use crate::consts::domain::DEFAULT_SIMILARITY_RESULTS;
         use crate::libs::similarity_sentence::SimilarityEngine;
@@ -234,19 +232,6 @@ impl DecryptionApp {
         let scores: Vec<(usize, f64)> = similarities.into_iter().collect();
 
         self.similar_popup = Some((target_idx, scores));
-    }
-
-    /// WASM stub: similarity search not supported in web version
-    /// WASM stub: similarity search not supported in web version
-    #[cfg(target_arch = "wasm32")]
-    pub(crate) fn compute_similar_segments(&mut self, _target_idx: usize) {
-        self.error_message = Some(
-            "Similarity search is not yet supported in the web version. \
-            This feature requires the SciRS2 library which depends on SIMD instructions. \
-            Support will be added once SciRS2 v0.3.0 is released with WASM compatibility. \
-            Please use the desktop application for similarity features."
-                .to_string(),
-        );
     }
 }
 

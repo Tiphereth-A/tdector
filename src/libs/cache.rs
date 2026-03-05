@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-#[cfg(not(target_arch = "wasm32"))]
 use ndarray::Array2;
 
 /// Caches lookup maps for quick token searches across the project.
@@ -52,7 +51,6 @@ impl LookupCache {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 /// Caches the TF-IDF (Term Frequency-Inverse Document Frequency) matrix computed from project segments.
 /// Used for similarity search to find semantically similar segments.
 #[derive(Clone)]
@@ -61,7 +59,6 @@ pub struct CachedTfidf {
     matrix: Option<Array2<f64>>,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl CachedTfidf {
     /// Create a new empty TF-IDF cache
     pub fn new() -> Self {
@@ -89,38 +86,16 @@ impl CachedTfidf {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl Default for CachedTfidf {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl std::fmt::Debug for CachedTfidf {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CachedTfidf")
             .field("matrix_valid", &self.matrix.is_some())
             .finish()
     }
-}
-
-#[cfg(target_arch = "wasm32")]
-#[derive(Debug, Clone, Default)]
-pub struct CachedTfidf;
-
-#[cfg(target_arch = "wasm32")]
-#[allow(dead_code)]
-impl CachedTfidf {
-    #[allow(dead_code)]
-    pub fn new() -> Self {
-        Self
-    }
-
-    #[allow(dead_code)]
-    pub fn is_dirty(&self) -> bool {
-        true
-    }
-
-    pub fn invalidate(&mut self) {}
 }

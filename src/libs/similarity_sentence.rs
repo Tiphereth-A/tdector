@@ -1,15 +1,11 @@
-#[cfg(not(target_arch = "wasm32"))]
 use ndarray::Array2;
-#[cfg(not(target_arch = "wasm32"))]
 use scirs2_text::{TfidfVectorizer, Vectorizer, WhitespaceTokenizer, cosine_similarity};
 
 use crate::libs::Project;
 
 /// Similarity search engine for finding semantically related segments using TF-IDF vectors.
-/// Only available on native platforms; WASM version returns empty results.
 pub struct SimilarityEngine;
 
-#[cfg(not(target_arch = "wasm32"))]
 impl SimilarityEngine {
     /// Compute the TF-IDF matrix from all segments in the project.
     /// Each segment is treated as a document with tokens separated by whitespace.
@@ -78,19 +74,5 @@ impl SimilarityEngine {
         similarities.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         similarities.truncate(limit);
         similarities
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-#[allow(dead_code)]
-impl SimilarityEngine {
-    #[allow(dead_code)]
-    pub fn compute_tfidf_matrix(_project: &Project) -> Option<()> {
-        None
-    }
-
-    #[allow(dead_code)]
-    pub fn find_similar(_matrix: &(), _target_idx: usize, _limit: usize) -> Vec<(usize, f32)> {
-        Vec::new()
     }
 }
