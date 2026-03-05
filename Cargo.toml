@@ -31,7 +31,8 @@ image = "0.25"
 wasm-bindgen-futures = "0.4.64"
 wasm-bindgen = "0.2"
 js-sys = "0.3"
-getrandom = { version = "0.3", features = ["wasm_js"] }
+getrandom-v04 = { package = "getrandom", version = "0.4", features = ["wasm_js"] }
+getrandom-v03 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
 getrandom-v02 = { package = "getrandom", version = "0.2", features = ["js"] }
 uuid = { version = "*", features = ["js"] }
 web-sys = { version = "0.3.70", features = [
@@ -50,13 +51,10 @@ web-sys = { version = "0.3.70", features = [
 ] }
 
 [profile.release]
-opt-level = 3
-
-[profile.release.wasm32-unknown-unknown]
 opt-level = 2
 
 [profile.dev.package."*"]
-opt-level = 3
+opt-level = 2
 
 
 [lints]
