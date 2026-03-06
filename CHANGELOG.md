@@ -1,3 +1,11 @@
+# v0.1.5
+
+## Features
+- Similarity-related feature now enabled on WASM builds.
+
+## CI/Deps
+- Bump scirs2-text to 0.3.
+
 # v0.1.4
 
 ## Features
