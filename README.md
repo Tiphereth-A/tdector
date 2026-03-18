@@ -1,5 +1,7 @@
 # tdector
 
+[Try online](https://tdector.tifa-233.com/)
+
 A GUI tool for assisted text decryption and translation.
 
 [![Epigraph](sample/epigraph.png)](https://store.steampowered.com/app/2789770/Epigraph/)
