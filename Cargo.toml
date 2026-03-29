@@ -4,7 +4,7 @@ version = "0.1.5"
 edition = "2024"
 
 [dependencies]
-egui = "0.33.0"
+egui = "0.34.1"
 eframe = { version = "0.33.0", default-features = false, features = [
     "accesskit",
     "default_fonts",
