@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
-use std::sync::Arc;
+use std::rc::Rc;
 
 use super::engine::with_engine;
 use crate::enums::{AppError, AppResult, FormationType};
 
 /// Create a new empty cached AST (Abstract Syntax Tree) placeholder
-pub fn default_cached_ast() -> Arc<OnceCell<rhai::AST>> {
-    Arc::new(OnceCell::new())
+pub fn default_cached_ast() -> Rc<OnceCell<rhai::AST>> {
+    Rc::new(OnceCell::new())
 }
 
 /// A word formation rule that transforms base words using a Rhai script.
@@ -28,7 +28,7 @@ pub struct FormationRule {
     /// Compiled AST of the Rhai script, cached for performance.
     /// Lazily compiled on first execution and reused thereafter.
     #[serde(skip, default = "default_cached_ast")]
-    pub cached_ast: Arc<OnceCell<rhai::AST>>,
+    pub cached_ast: Rc<OnceCell<rhai::AST>>,
 }
 
 impl FormationRule {

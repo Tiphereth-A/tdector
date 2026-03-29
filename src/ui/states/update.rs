@@ -10,6 +10,7 @@ use crate::ui;
 use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(cc: &eframe::CreationContext<'_>) -> Box<dyn eframe::App> {
         Self::initialize_fonts(&cc.egui_ctx);
         Box::new(Self::default())
@@ -17,8 +18,9 @@ impl DecryptionApp {
 }
 
 impl eframe::App for DecryptionApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.process_pending_file_operations(ctx);
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = ui.ctx().clone();
+        self.process_pending_file_operations(&ctx);
 
         let mut do_import = false;
         let mut do_open = false;
@@ -29,7 +31,7 @@ impl eframe::App for DecryptionApp {
         let mut do_add_word_formation_rule = false;
 
         self.handle_keyboard_shortcuts(
-            ctx,
+            &ctx,
             &mut do_import,
             &mut do_open,
             &mut do_save,
@@ -38,7 +40,7 @@ impl eframe::App for DecryptionApp {
         );
 
         ui::render_menu_bar(
-            ctx,
+            ui,
             !self.project.segments.is_empty(),
             || do_import = true,
             || do_open = true,
@@ -50,7 +52,7 @@ impl eframe::App for DecryptionApp {
         );
 
         if !self.project.segments.is_empty() {
-            self.render_filter_panel(ctx);
+            self.render_filter_panel(ui);
         }
 
         if !self.project.segments.is_empty()
@@ -74,7 +76,7 @@ impl eframe::App for DecryptionApp {
         }
 
         self.process_actions(
-            ctx,
+            &ctx,
             do_import,
             do_open,
             do_save,
@@ -86,19 +88,19 @@ impl eframe::App for DecryptionApp {
 
         if ctx.input(|i| i.viewport().close_requested()) && self.is_dirty {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-            self.trigger_action(AppAction::Quit, ctx);
+            self.trigger_action(AppAction::Quit, &ctx);
         }
 
         if let Some(new_page) =
-            ui::render_pagination(ctx, self.current_page, total_pages, &mut self.page_size)
+            ui::render_pagination(ui, self.current_page, total_pages, &mut self.page_size)
         {
             self.current_page = new_page;
         }
 
-        self.render_error_dialog(ctx);
-        self.render_confirmation_dialog(ctx);
-        self.render_import_dialog(ctx);
-        self.render_custom_tokenization_popup(ctx);
+        self.render_error_dialog(&ctx);
+        self.render_confirmation_dialog(&ctx);
+        self.render_import_dialog(&ctx);
+        self.render_custom_tokenization_popup(&ctx);
 
         if self.lookups_dirty {
             self.recalculate_lookup_maps();
@@ -110,7 +112,7 @@ impl eframe::App for DecryptionApp {
         let mut any_changed = false;
         let mut popup_request = None;
 
-        self.render_central_panel(ctx, &mut any_changed, &mut popup_request);
+        self.render_central_panel(ui, &mut any_changed, &mut popup_request);
 
         if let Some(req) = popup_request.take() {
             match req {
@@ -146,9 +148,9 @@ impl eframe::App for DecryptionApp {
             }
         }
 
-        self.render_popups(ctx, &headword_lookup, &usage_lookup, &mut popup_request);
+        self.render_popups(&ctx, &headword_lookup, &usage_lookup, &mut popup_request);
 
-        self.render_pinned_popups(ctx, &headword_lookup, &usage_lookup, &mut popup_request);
+        self.render_pinned_popups(&ctx, &headword_lookup, &usage_lookup, &mut popup_request);
 
         self.lookup_cache.restore(headword_lookup, usage_lookup);
 
@@ -187,7 +189,7 @@ impl eframe::App for DecryptionApp {
         }
 
         if any_changed {
-            self.update_dirty_status(true, ctx);
+            self.update_dirty_status(true, &ctx);
             self.filter_dirty = true;
             self.lookups_dirty = true;
             self.tfidf_dirty = true;
@@ -232,6 +234,7 @@ impl DecryptionApp {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn process_actions(
         &mut self,
         ctx: &egui::Context,

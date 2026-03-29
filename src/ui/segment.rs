@@ -21,6 +21,7 @@ use crate::enums::UiAction;
 use crate::libs::{Segment, Token};
 use crate::ui::highlight::create_highlighted_layout;
 
+#[allow(clippy::too_many_arguments)]
 pub fn render_clickable_tokens(
     ui: &mut egui::Ui,
     tokens: &[Token],
@@ -133,6 +134,7 @@ pub fn render_clickable_tokens(
     clicked_action
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn render_segment(
     ui: &mut egui::Ui,
     segment: &mut Segment,
@@ -202,6 +204,7 @@ pub fn render_segment(
     action
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_token_column(
     ui: &mut egui::Ui,
     token: &mut Token,
@@ -329,7 +332,7 @@ fn render_token_column(
                             egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
                             egui::TextEdit::singleline(&mut current_gloss)
                                 .text_color(text_color)
-                                .frame(false),
+                                .frame(egui::Frame::NONE),
                         );
 
                         if edit_resp.changed() {
@@ -389,7 +392,7 @@ fn render_translation_box(
                 egui::TextEdit::multiline(&mut segment.translation)
                     .desired_width(f32::INFINITY)
                     .desired_rows(TRANSLATION_BOX_ROWS)
-                    .frame(false)
+                    .frame(egui::Frame::NONE)
                     .layouter(&mut layouter),
             )
             .changed()

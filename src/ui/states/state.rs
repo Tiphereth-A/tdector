@@ -9,6 +9,12 @@ use crate::libs::{
     cache::{CachedTfidf, LookupCache},
 };
 
+type AsyncFileResult<T> = Arc<Mutex<Option<Result<T, String>>>>;
+type PendingTextFile = AsyncFileResult<(String, String)>;
+type PendingProjectFile = AsyncFileResult<(String, String, Option<String>)>;
+type PendingFontFile = AsyncFileResult<(Vec<u8>, String)>;
+type PendingSaveResult = AsyncFileResult<()>;
+
 /// Dialog for creating a new word formation rule
 #[derive(Debug, Clone)]
 pub struct NewFormationRuleDialog {
@@ -115,14 +121,13 @@ pub struct DecryptionApp {
     /// Pending text content to import (text content, tokenization flag)
     pub(crate) pending_import: Option<(String, String)>,
     /// Result of async text file load operation
-    pub(crate) pending_text_file: Arc<Mutex<Option<Result<(String, String), String>>>>,
+    pub(crate) pending_text_file: PendingTextFile,
     /// Result of async project file load operation
-    pub(crate) pending_project_file:
-        Arc<Mutex<Option<Result<(String, String, Option<String>), String>>>>,
+    pub(crate) pending_project_file: PendingProjectFile,
     /// Result of async font file load operation
-    pub(crate) pending_font_file: Arc<Mutex<Option<Result<(Vec<u8>, String), String>>>>,
+    pub(crate) pending_font_file: PendingFontFile,
     /// Result of async save operation
-    pub(crate) pending_save_result: Arc<Mutex<Option<Result<(), String>>>>,
+    pub(crate) pending_save_result: PendingSaveResult,
     /// Current filter query text
     pub(crate) filter_text: String,
     /// Current sort mode

@@ -133,6 +133,7 @@ impl DecryptionApp {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn render_dictionary_content(
         &self,
         ui: &mut egui::Ui,

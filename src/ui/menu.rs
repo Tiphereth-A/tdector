@@ -1,7 +1,8 @@
 use eframe::egui;
 
+#[allow(clippy::too_many_arguments)]
 pub fn render_menu_bar(
-    ctx: &egui::Context,
+    ui: &mut egui::Ui,
     project_loaded: bool,
     on_import: impl FnOnce(),
     on_open: impl FnOnce(),
@@ -17,7 +18,7 @@ pub fn render_menu_bar(
         "Ctrl"
     };
 
-    egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+    egui::Panel::top("top_panel").show_inside(ui, |ui| {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui
@@ -78,11 +79,11 @@ pub fn render_menu_bar(
             });
             ui.menu_button("Theme", |ui| {
                 if ui.button("Light").clicked() {
-                    ctx.set_visuals(egui::Visuals::light());
+                    ui.ctx().set_visuals(egui::Visuals::light());
                     ui.close();
                 }
                 if ui.button("Dark").clicked() {
-                    ctx.set_visuals(egui::Visuals::dark());
+                    ui.ctx().set_visuals(egui::Visuals::dark());
                     ui.close();
                 }
             });

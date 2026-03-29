@@ -2,15 +2,19 @@ use std::collections::HashMap;
 
 use ndarray::Array2;
 
+pub type LookupMap = HashMap<String, Vec<usize>>;
+pub type OptionalLookupMap = Option<LookupMap>;
+pub type LookupMapPair = (OptionalLookupMap, OptionalLookupMap);
+
 /// Caches lookup maps for quick token searches across the project.
 /// Stores two separate lookup indices: one for headword (base word) lookups
 /// and one for usage (all occurrences) lookups.
 #[derive(Debug, Clone, Default)]
 pub struct LookupCache {
     /// Maps headwords to the segment+token indices where they appear as base words
-    headword_lookup: Option<HashMap<String, Vec<usize>>>,
+    headword_lookup: OptionalLookupMap,
     /// Maps words to all segment+token indices where they appear (including derived forms)
-    usage_lookup: Option<HashMap<String, Vec<usize>>>,
+    usage_lookup: OptionalLookupMap,
 }
 
 impl LookupCache {
@@ -25,20 +29,15 @@ impl LookupCache {
 
     /// Extract both lookup maps from the cache (ownership transfer).
     /// After calling this, the cache is empty until restored.
-    pub fn take(
-        &mut self,
-    ) -> (
-        Option<HashMap<String, Vec<usize>>>,
-        Option<HashMap<String, Vec<usize>>>,
-    ) {
+    pub fn take(&mut self) -> LookupMapPair {
         (self.headword_lookup.take(), self.usage_lookup.take())
     }
 
     /// Restore lookup maps to the cache
     pub fn restore(
         &mut self,
-        headword: Option<HashMap<String, Vec<usize>>>,
-        usage: Option<HashMap<String, Vec<usize>>>,
+        headword: OptionalLookupMap,
+        usage: OptionalLookupMap,
     ) {
         self.headword_lookup = headword;
         self.usage_lookup = usage;

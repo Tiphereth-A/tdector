@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
-use std::sync::Arc;
+use std::rc::Rc;
 
 use super::engine::with_engine;
 use super::formation::default_cached_ast;
@@ -20,7 +20,7 @@ pub struct TokenizationRule {
     /// Compiled AST of the Rhai script, cached for performance.
     /// Lazily compiled on first execution and reused thereafter.
     #[serde(skip, default = "default_cached_ast")]
-    pub cached_ast: Arc<OnceCell<rhai::AST>>,
+    pub cached_ast: Rc<OnceCell<rhai::AST>>,
 }
 
 impl TokenizationRule {

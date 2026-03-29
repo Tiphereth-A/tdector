@@ -11,7 +11,7 @@ use crate::consts::{
 };
 
 pub fn render_pagination(
-    ctx: &egui::Context,
+    ui: &mut egui::Ui,
     current_page: usize,
     total_pages: usize,
     page_size: &mut usize,
@@ -22,7 +22,7 @@ pub fn render_pagination(
 
     let mut new_page = None;
 
-    egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+    egui::Panel::bottom("bottom_panel").show_inside(ui, |ui| {
         let text_color = if ui.visuals().dark_mode {
             FONT_DARK
         } else {

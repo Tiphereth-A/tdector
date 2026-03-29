@@ -19,7 +19,9 @@ impl DecryptionApp {
                         .map_err(|e| AppError::IoError(format!("Failed to decode file: {e}")))
                 })
                 .map_err(|e| e.to_string());
-            let mut guard = pending.lock().unwrap();
+            let mut guard = pending
+                .lock()
+                .expect("pending_text_file mutex poisoned while loading text file");
             *guard = Some(decoded);
         });
     }
@@ -37,7 +39,9 @@ impl DecryptionApp {
                         .map_err(|e| AppError::IoError(format!("Failed to decode file: {e}")))
                 })
                 .map_err(|e| e.to_string());
-            let mut guard = pending.lock().unwrap();
+            let mut guard = pending
+                .lock()
+                .expect("pending_project_file mutex poisoned while loading project");
             *guard = Some(decoded);
         });
     }
@@ -63,7 +67,9 @@ impl DecryptionApp {
                                 let result = io::FileIO::save_file_to_path(&json_bytes, &path)
                                     .await
                                     .map_err(|e| e.to_string());
-                                let mut guard = pending.lock().unwrap();
+                                let mut guard = pending
+                                    .lock()
+                                    .expect("pending_save_result mutex poisoned while saving project to path");
                                 *guard = Some(result);
                             });
                             return;
@@ -82,7 +88,9 @@ impl DecryptionApp {
                                 io::FileIO::save_file(&json_bytes, &filename, "JSON", &["json"])
                                     .await
                                     .map_err(|e| e.to_string());
-                            let mut guard = pending.lock().unwrap();
+                            let mut guard = pending
+                                .lock()
+                                .expect("pending_save_result mutex poisoned while saving project");
                             *guard = Some(result);
                         });
                     }
@@ -106,7 +114,9 @@ impl DecryptionApp {
             let converted = result
                 .map(|(bytes, filename, _path)| (bytes, filename))
                 .map_err(|e| e.to_string());
-            let mut guard = pending.lock().unwrap();
+            let mut guard = pending
+                .lock()
+                .expect("pending_font_file mutex poisoned while loading font file");
             *guard = Some(converted);
         });
     }

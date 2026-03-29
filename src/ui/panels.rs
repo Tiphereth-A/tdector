@@ -10,8 +10,8 @@ use crate::ui;
 use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
-    pub(crate) fn render_filter_panel(&mut self, ctx: &egui::Context) {
-        egui::TopBottomPanel::top("filter_panel").show(ctx, |ui| {
+    pub(crate) fn render_filter_panel(&mut self, ui: &mut egui::Ui) {
+        egui::Panel::top("filter_panel").show_inside(ui, |ui| {
             ui.horizontal(|ui| {
                 let text_color = if ui.visuals().dark_mode {
                     FONT_DARK
@@ -76,7 +76,7 @@ impl DecryptionApp {
 
     pub(crate) fn render_central_panel(
         &mut self,
-        ctx: &egui::Context,
+        ui: &mut egui::Ui,
         any_changed: &mut bool,
         popup_request: &mut Option<PopupRequest>,
     ) {
@@ -103,7 +103,7 @@ impl DecryptionApp {
 
         let mut new_filter = None;
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().show_inside(ui, |ui| {
             if current_page_indices.is_empty() {
                 Self::render_empty_state(ui, filter_text);
             } else {
@@ -133,8 +133,10 @@ impl DecryptionApp {
                                     new_filter = Some(text.to_string());
                                 }
                                 UiAction::ShowWordMenu(word, word_idx) => {
-                                    let cursor_pos =
-                                        ctx.input(|i| i.pointer.interact_pos()).unwrap_or_default();
+                                    let cursor_pos = ui
+                                        .ctx()
+                                        .input(|i| i.pointer.interact_pos())
+                                        .unwrap_or_default();
                                     *popup_request = Some(PopupRequest::WordMenu(
                                         word.to_string(),
                                         seg_idx,
@@ -143,8 +145,10 @@ impl DecryptionApp {
                                     ));
                                 }
                                 UiAction::ShowSentenceMenu(segment_idx) => {
-                                    let cursor_pos =
-                                        ctx.input(|i| i.pointer.interact_pos()).unwrap_or_default();
+                                    let cursor_pos = ui
+                                        .ctx()
+                                        .input(|i| i.pointer.interact_pos())
+                                        .unwrap_or_default();
                                     *popup_request =
                                         Some(PopupRequest::SentenceMenu(segment_idx, cursor_pos));
                                 }
