@@ -1,3 +1,8 @@
+# v0.1.6
+
+## CI/Deps
+- Bump dependencies.
+
 # v0.1.5
 
 ## Features
