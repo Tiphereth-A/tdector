@@ -21,7 +21,7 @@ log = "0.4.27"
 rfd = "0.17"
 pollster = "0.4"
 textdistance = "1.1"
-scirs2-text = "0.3"
+scirs2-text = "0.4"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11.10"
