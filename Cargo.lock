@@ -698,9 +698,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.60"
+version = "1.2.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43c5703da9466b66a946814e1adf53ea2c90f10063b86290cc9eb67ce3478a20"
+checksum = "a1dce859f0832a7d088c4f1119888ab94ef4b5d6795d1ce05afb7fe159d79f98"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -1683,6 +1683,7 @@ dependencies = [
  "cfg-if",
  "crunchy",
  "num-traits",
+ "serde",
  "zerocopy",
 ]
 
@@ -2414,6 +2415,7 @@ version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
 dependencies = [
+ "bytemuck",
  "num-traits",
 ]
 
@@ -2808,6 +2810,93 @@ checksum = "9aa2b01e1d916879f73a53d01d1d6cee68adbb31d6d9177a8cfce093cced1d50"
 dependencies = [
  "futures-core",
  "pin-project-lite",
+]
+
+[[package]]
+name = "oxiblas-blas"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b20733edf8bd497233628af75afdb7c5f29157d8dc82e9fdc6c0e862e6e6957"
+dependencies = [
+ "bytemuck",
+ "num-complex",
+ "num-traits",
+ "oxiblas-core",
+ "oxiblas-matrix",
+]
+
+[[package]]
+name = "oxiblas-core"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2d36abb8c720acdb430c810434582b558f0dfdfcc34b73b64e7cd4f641b1ea1"
+dependencies = [
+ "bytemuck",
+ "libc",
+ "num-complex",
+ "num-traits",
+]
+
+[[package]]
+name = "oxiblas-lapack"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d69ba187daaf0d0e38d331c6fba35f5584296160e78d832b8e39c8e6c93b46f"
+dependencies = [
+ "bytemuck",
+ "num-complex",
+ "num-traits",
+ "oxiblas-blas",
+ "oxiblas-core",
+ "oxiblas-matrix",
+]
+
+[[package]]
+name = "oxiblas-matrix"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75bf5ed8ca26065e07b83f98009447302cd01926c88e829d7b5bc50e97d0ff19"
+dependencies = [
+ "bytemuck",
+ "num-complex",
+ "num-traits",
+ "oxiblas-core",
+]
+
+[[package]]
+name = "oxiblas-ndarray"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee20cc93be5eefffa6ee2ba283047cf0558ee1fdf5c73507859a9a6dc36df70f"
+dependencies = [
+ "bytemuck",
+ "ndarray",
+ "num-complex",
+ "oxiblas-blas",
+ "oxiblas-core",
+ "oxiblas-lapack",
+ "oxiblas-matrix",
+]
+
+[[package]]
+name = "oxicode"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3df1649f1e500894e21dd64342c8552778e8a67e7e615bb47e2bc1cf8551d28e"
+dependencies = [
+ "oxicode_derive",
+ "serde",
+]
+
+[[package]]
+name = "oxicode_derive"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86a4428bee8b874c8039349693554ff0035f3d0adf504958ab4225c9e811d992"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -3563,9 +3652,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-core"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65b4a81e71b212846633ad62ef252f13ab511a2f1d55336d9f37adb3c081165f"
+checksum = "8663bee81d22f9c272f37e9b72add1a6811fcb407cfb0e91e0a7ead6bdbe2c94"
 dependencies = [
  "cc",
  "chrono",
@@ -3582,6 +3671,9 @@ dependencies = [
  "num-traits",
  "num_cpus",
  "once_cell",
+ "oxiblas-blas",
+ "oxiblas-lapack",
+ "oxiblas-ndarray",
  "parking_lot",
  "rand 0.10.1",
  "rand_chacha 0.10.0",
@@ -3594,10 +3686,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "scirs2-text"
-version = "0.4.2"
+name = "scirs2-linalg"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bf183ac6c9cb204d62ceb1a2d69bdc1d9701054b0ef93488c6791580f193d16"
+checksum = "64964d7a63a4741e61815c127dc65c66ab245fbd1f7af1854ddd760ff0ed0900"
+dependencies = [
+ "approx",
+ "half",
+ "num_cpus",
+ "oxicode",
+ "scirs2-core",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "scirs2-text"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "303b4ad1e16b1f49779bd33feead45ceb968739b9bab6e65c55c5920cf224068"
 dependencies = [
  "approx",
  "chrono",
@@ -3606,6 +3713,7 @@ dependencies = [
  "num_cpus",
  "regex",
  "scirs2-core",
+ "scirs2-linalg",
  "statrs",
  "tempfile",
  "thiserror 2.0.18",
