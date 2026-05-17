@@ -3652,9 +3652,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-core"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8663bee81d22f9c272f37e9b72add1a6811fcb407cfb0e91e0a7ead6bdbe2c94"
+checksum = "1752aacbc47e36e4cf43d47238ac20694c4d5fd9980c472324f07e1c30a35fb7"
 dependencies = [
  "cc",
  "chrono",
@@ -3687,9 +3687,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-linalg"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64964d7a63a4741e61815c127dc65c66ab245fbd1f7af1854ddd760ff0ed0900"
+checksum = "0079a04139f3b839c0a79372bc7063a6de10c47889e44275a958550e4e84bac5"
 dependencies = [
  "approx",
  "half",
@@ -3702,9 +3702,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-text"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "303b4ad1e16b1f49779bd33feead45ceb968739b9bab6e65c55c5920cf224068"
+checksum = "c0f3af33c5be2ff2bfcd21c8117cfab11be7ac7c1e840b771cacf10d4043d93c"
 dependencies = [
  "approx",
  "chrono",
