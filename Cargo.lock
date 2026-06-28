@@ -2877,9 +2877,9 @@ dependencies = [
 
 [[package]]
 name = "oxicode"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3df1649f1e500894e21dd64342c8552778e8a67e7e615bb47e2bc1cf8551d28e"
+checksum = "84bec9e5cb5e96ebc96f80ccd9d7670764f5a7371827884a1f4fc7eb844762c3"
 dependencies = [
  "oxicode_derive",
  "serde",
@@ -2887,9 +2887,9 @@ dependencies = [
 
 [[package]]
 name = "oxicode_derive"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86a4428bee8b874c8039349693554ff0035f3d0adf504958ab4225c9e811d992"
+checksum = "886dc0e3827c07f80b335680f9cbc2cde267544d82e607b2cfd8fd463ff0fbf7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3649,9 +3649,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-core"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3c866cb58a961e8df3aab16d29ecec91c6867d97b5c007f8d4a60a01eec3af2"
+checksum = "a4b0d90e4183cf6757a52f6ab5bcc979a41c0f3b44613aaf432d18cdda49b650"
 dependencies = [
  "chrono",
  "crc32fast",
@@ -3683,9 +3683,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-linalg"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bed189326c254b16d88a581bb54d78142252a449108c7a61eaad12ea00988910"
+checksum = "acb2814f26cdfda582861fde208f2913716a8b0bbffac0d91994fa3bd4fe81be"
 dependencies = [
  "approx",
  "half",
@@ -3698,9 +3698,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-text"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdeafb6796188015e0e575b830df38488716586f10c33f27918d4b399bcef5b6"
+checksum = "d96212cf2521d5ed60c849bbf8ee00ccfba53553322ad19d274ae4cc93e3f5be"
 dependencies = [
  "approx",
  "chrono",
