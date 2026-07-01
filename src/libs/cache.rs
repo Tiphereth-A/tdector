@@ -34,11 +34,7 @@ impl LookupCache {
     }
 
     /// Restore lookup maps to the cache
-    pub fn restore(
-        &mut self,
-        headword: OptionalLookupMap,
-        usage: OptionalLookupMap,
-    ) {
+    pub fn restore(&mut self, headword: OptionalLookupMap, usage: OptionalLookupMap) {
         self.headword_lookup = headword;
         self.usage_lookup = usage;
     }

@@ -22,7 +22,7 @@ pub fn render_pagination(
 
     let mut new_page = None;
 
-    egui::Panel::bottom("bottom_panel").show_inside(ui, |ui| {
+    egui::Panel::bottom("bottom_panel").show(ui, |ui| {
         let text_color = if ui.visuals().dark_mode {
             FONT_DARK
         } else {

@@ -11,7 +11,7 @@ use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
     pub(crate) fn render_filter_panel(&mut self, ui: &mut egui::Ui) {
-        egui::Panel::top("filter_panel").show_inside(ui, |ui| {
+        egui::Panel::top("filter_panel").show(ui, |ui| {
             ui.horizontal(|ui| {
                 let text_color = if ui.visuals().dark_mode {
                     FONT_DARK
@@ -103,7 +103,7 @@ impl DecryptionApp {
 
         let mut new_filter = None;
 
-        egui::CentralPanel::default().show_inside(ui, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             if current_page_indices.is_empty() {
                 Self::render_empty_state(ui, filter_text);
             } else {

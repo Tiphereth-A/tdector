@@ -18,7 +18,7 @@ pub fn render_menu_bar(
         "Ctrl"
     };
 
-    egui::Panel::top("top_panel").show_inside(ui, |ui| {
+    egui::Panel::top("top_panel").show(ui, |ui| {
         egui::MenuBar::new().ui(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui
