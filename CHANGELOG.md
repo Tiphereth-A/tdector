@@ -1,3 +1,8 @@
+# v0.1.8
+
+## CI/Deps
+- Bump dependencies.
+
 # v0.1.7
 
 ## CI/Deps
