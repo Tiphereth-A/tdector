@@ -5,16 +5,10 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod consts;
-mod enums;
-mod io;
-mod libs;
-mod ui;
-
 #[cfg(target_arch = "wasm32")]
-pub use tdector::set_app_dirty;
+pub use tdector_gui::set_app_dirty;
 
-use ui::DecryptionApp;
+use tdector_gui::ui::DecryptionApp;
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
@@ -74,7 +68,7 @@ fn setup_beforeunload_handler() {
 
     let closure: Closure<dyn Fn(web_sys::Event)> = Closure::new(move |event: web_sys::Event| {
         // If app has unsaved changes, prompt the user before leaving
-        if tdector::is_app_dirty() {
+        if tdector_gui::is_app_dirty() {
             event.prevent_default();
 
             use js_sys::Reflect;
@@ -101,8 +95,8 @@ fn setup_beforeunload_handler() {
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
     // Native desktop entry point: Initialize and run the native application
-    use crate::consts::ui::{WINDOW_HEIGHT, WINDOW_WIDTH};
     use eframe::egui;
+    use tdector_gui::consts::ui::{WINDOW_HEIGHT, WINDOW_WIDTH};
 
     // Initialize the logging system
     env_logger::init();

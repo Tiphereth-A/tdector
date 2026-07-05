@@ -3,9 +3,9 @@ use std::collections::{HashMap, HashSet};
 use eframe::egui;
 
 use crate::enums::{AppAction, DictionaryPopupType, FormationType, PopupRequest};
-use crate::libs::project::load_project_from_json;
-use crate::libs::similarity_token::find_similar_tokens;
 use crate::ui;
+use tdector_core::libs::project::load_project_from_json;
+use tdector_core::libs::similarity_token::find_similar_tokens;
 
 use crate::ui::states::state::DecryptionApp;
 

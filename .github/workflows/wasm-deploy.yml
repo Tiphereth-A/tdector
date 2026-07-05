@@ -6,10 +6,8 @@ on:
       - master
     paths:
       - '.github/**'
-      - 'src/**'
-      - 'assets/**'
-      - '*.html'
-      - '*.js'
+      - 'tdector-gui/**'
+      - 'tdector-core/**'
       - '*.toml'
       - 'Cargo.lock'
   pull_request:
@@ -17,10 +15,8 @@ on:
       - master
     paths:
       - '.github/**'
-      - 'src/**'
-      - 'assets/**'
-      - '*.html'
-      - '*.js'
+      - 'tdector-gui/**'
+      - 'tdector-core/**'
       - '*.toml'
       - 'Cargo.lock'
   workflow_dispatch:
@@ -50,12 +46,13 @@ jobs:
         run: cargo install --locked trunk
 
       - name: Build WASM
+        working-directory: tdector-gui
         run: trunk build --release
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: dist/
+          path: tdector-gui/dist/
 
   deploy:
     name: Deploy to GitHub Pages

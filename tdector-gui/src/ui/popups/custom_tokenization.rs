@@ -67,10 +67,10 @@ impl DecryptionApp {
         }
 
         if should_test && let Some(dialog) = &mut self.custom_tokenization_popup {
-            let test_rule = crate::libs::eval::TokenizationRule {
+            let test_rule = tdector_core::libs::eval::TokenizationRule {
                 description: "Custom tokenization".to_string(),
                 command: dialog.command.clone(),
-                cached_ast: crate::libs::eval::default_cached_ast(),
+                cached_ast: tdector_core::libs::eval::default_cached_ast(),
             };
 
             match test_rule.tokenize(&dialog.test_text) {
@@ -86,19 +86,20 @@ impl DecryptionApp {
 
         if should_apply {
             if let Some(dialog) = self.custom_tokenization_popup.take() {
-                let rule = crate::libs::eval::TokenizationRule {
+                let rule = tdector_core::libs::eval::TokenizationRule {
                     description: "Custom tokenization".to_string(),
                     command: dialog.command,
-                    cached_ast: crate::libs::eval::default_cached_ast(),
+                    cached_ast: tdector_core::libs::eval::default_cached_ast(),
                 };
 
                 // Apply tokenization with the custom rule
                 let (content, name) = dialog.import_data;
-                let segments = crate::libs::text_analysis::TextProcessor::segment_text_with_rule(
-                    &content,
-                    Some(&rule),
-                )
-                .unwrap_or_else(|_| Vec::new());
+                let segments =
+                    tdector_core::libs::text_analysis::TextProcessor::segment_text_with_rule(
+                        &content,
+                        Some(&rule),
+                    )
+                    .unwrap_or_else(|_| Vec::new());
 
                 self.project.segments = segments;
                 self.project.project_name = name;

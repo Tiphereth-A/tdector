@@ -5,9 +5,9 @@ use crate::consts::{
     ui::PANEL_SPACING,
 };
 use crate::enums::{DictionaryPopupType, PopupRequest, SortMode, UiAction};
-use crate::libs::Project;
 use crate::ui;
 use crate::ui::states::state::DecryptionApp;
+use tdector_core::libs::Project;
 
 impl DecryptionApp {
     pub(crate) fn render_filter_panel(&mut self, ui: &mut egui::Ui) {

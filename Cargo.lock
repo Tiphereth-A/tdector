@@ -4081,7 +4081,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "tdector"
+name = "tdector-core"
+version = "0.1.8"
+dependencies = [
+ "log",
+ "ndarray",
+ "rhai",
+ "scirs2-text",
+ "serde",
+ "serde_json",
+ "textdistance",
+]
+
+[[package]]
+name = "tdector-gui"
 version = "0.1.8"
 dependencies = [
  "eframe",
@@ -4093,14 +4106,11 @@ dependencies = [
  "image",
  "js-sys",
  "log",
- "ndarray",
  "pollster",
  "rfd",
- "rhai",
- "scirs2-text",
  "serde",
  "serde_json",
- "textdistance",
+ "tdector-core",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",

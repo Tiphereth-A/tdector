@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use eframe::egui;
 
 use crate::enums::{AppAction, CommentTarget, FormationType, PinnedPopup, SortMode};
-use crate::libs::{
+use tdector_core::libs::{
     Project,
     cache::{CachedTfidf, LookupCache},
 };
@@ -144,8 +144,10 @@ pub struct DecryptionApp {
     /// Currently open similarity search popup
     pub(crate) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
     /// Currently open similar tokens popup
-    pub(crate) similar_tokens_popup:
-        Option<(String, Vec<crate::libs::similarity_token::SimilarToken>)>,
+    pub(crate) similar_tokens_popup: Option<(
+        String,
+        Vec<tdector_core::libs::similarity_token::SimilarToken>,
+    )>,
     /// Currently open word context menu
     pub(crate) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>,
     /// Currently open segment context menu
@@ -187,8 +189,8 @@ pub struct DecryptionApp {
 impl DecryptionApp {
     /// Recalculate the cached list of segment indices based on current filter and sort settings
     pub(crate) fn recalculate_filtered_indices(&mut self) {
-        use crate::libs::filtering::FilterOperation;
-        use crate::libs::sorting::SortOperation;
+        use tdector_core::libs::filtering::FilterOperation;
+        use tdector_core::libs::sorting::SortOperation;
 
         let mut indices = FilterOperation::apply_filter(&self.project, &self.filter_text);
         SortOperation::apply_sort(&self.project, &mut indices, self.sort_mode);
@@ -197,7 +199,7 @@ impl DecryptionApp {
 
     /// Ensure the TF-IDF matrix cache is up-to-date
     pub(crate) fn ensure_tfidf_cache_impl(&mut self) {
-        use crate::libs::similarity_sentence::SimilarityEngine;
+        use tdector_core::libs::similarity_sentence::SimilarityEngine;
 
         if !self.tfidf_dirty && !self.tfidf_cache.is_dirty() {
             return;
@@ -218,7 +220,7 @@ impl DecryptionApp {
     /// Compute similar segments to a target segment and update the UI
     pub(crate) fn compute_similar_segments(&mut self, target_idx: usize) {
         use crate::consts::domain::DEFAULT_SIMILARITY_RESULTS;
-        use crate::libs::similarity_sentence::SimilarityEngine;
+        use tdector_core::libs::similarity_sentence::SimilarityEngine;
 
         if target_idx >= self.project.segments.len() {
             return;

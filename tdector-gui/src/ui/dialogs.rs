@@ -117,14 +117,14 @@ impl DecryptionApp {
                 if let Some((content, name)) = self.pending_import.take() {
                     // Create the tokenization rule to use for import
                     let rule = if use_whitespace {
-                        crate::libs::eval::TokenizationRule::default_whitespace()
+                        tdector_core::libs::eval::TokenizationRule::default_whitespace()
                     } else {
-                        crate::libs::eval::TokenizationRule::default_character()
+                        tdector_core::libs::eval::TokenizationRule::default_character()
                     };
 
                     // Use the tokenization rule to segment text
                     let segments =
-                        crate::libs::text_analysis::TextProcessor::segment_text_with_rule(
+                        tdector_core::libs::text_analysis::TextProcessor::segment_text_with_rule(
                             &content,
                             Some(&rule),
                         )

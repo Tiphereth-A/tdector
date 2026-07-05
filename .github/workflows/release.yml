@@ -8,23 +8,19 @@ on:
       - master
     paths:
       - '.github/**'
-      - 'assets/**'
-      - 'src/**'
-      - 'test/**'
+      - 'tdector-core/**'
+      - 'tdector-gui/**'
       - '*.toml'
       - 'Cargo.lock'
-      - 'index.html'
   pull_request:
     branches:
       - master
     paths:
       - '.github/**'
-      - 'assets/**'
-      - 'src/**'
-      - 'test/**'
+      - 'tdector-core/**'
+      - 'tdector-gui/**'
       - '*.toml'
       - 'Cargo.lock'
-      - 'index.html'
   workflow_dispatch:
 
 
@@ -115,13 +111,13 @@ jobs:
         if: matrix.profile != 'test'
         shell: pwsh
         run: |
-          cp "target/${{ matrix.target }}/release/tdector${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}" "tdector-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}"
+          cp "target/${{ matrix.target }}/release/tdector-gui${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}" "tdector-gui-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}"
 
       - uses: actions/upload-artifact@v7
         if: matrix.profile != 'test'
         with:
-          name: tdector-${{ matrix.target }}-${{ matrix.profile }}
-          path: tdector-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+          name: tdector-gui-${{ matrix.target }}-${{ matrix.profile }}
+          path: tdector-gui-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
 
   build_alpine:
     name: build (x86_64-unknown-linux-musl-${{ matrix.profile }})
@@ -159,13 +155,13 @@ jobs:
       - name: Copy binary to output directory
         if: matrix.profile != 'test'
         run: |
-          cp "target/${{ env.RUST_TARGET }}/release/tdector" "tdector-${{ env.RUST_TARGET }}"
+          cp "target/${{ env.RUST_TARGET }}/release/tdector-gui" "tdector-gui-${{ env.RUST_TARGET }}"
 
       - uses: actions/upload-artifact@v7
         if: matrix.profile != 'test'
         with:
-          name: tdector-${{ env.RUST_TARGET }}-${{ matrix.profile }}
-          path: tdector-${{ env.RUST_TARGET }}
+          name: tdector-gui-${{ env.RUST_TARGET }}-${{ matrix.profile }}
+          path: tdector-gui-${{ env.RUST_TARGET }}
 
   release:
     name: Create Release

@@ -1,6 +1,6 @@
-use crate::libs::eval::FormationRule;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tdector_core::libs::eval::FormationRule;
 
 use eframe::egui;
 
@@ -18,8 +18,8 @@ use crate::consts::{
     },
 };
 use crate::enums::UiAction;
-use crate::libs::{Segment, Token};
 use crate::ui::highlight::create_highlighted_layout;
+use tdector_core::libs::{Segment, Token};
 
 #[allow(clippy::too_many_arguments)]
 pub fn render_clickable_tokens(

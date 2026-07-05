@@ -2,9 +2,9 @@ use eframe::egui;
 
 use crate::consts::ui::{POPUP_SIMILAR_HEIGHT, POPUP_WIDTH};
 use crate::enums::PopupRequest;
-use crate::libs::similarity_token::SimilarToken;
 use crate::ui::popup_utils::create_popup_title;
 use crate::ui::states::state::DecryptionApp;
+use tdector_core::libs::similarity_token::SimilarToken;
 
 impl DecryptionApp {
     pub(super) fn render_similar_tokens_popup(

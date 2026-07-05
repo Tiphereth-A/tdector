@@ -47,9 +47,9 @@ impl DecryptionApp {
     }
 
     pub(crate) fn save_project(&mut self, _ctx: &egui::Context) {
-        match crate::libs::project::convert_to_saved_project(&self.project) {
+        match tdector_core::libs::project::convert_to_saved_project(&self.project) {
             Ok(saved_project) => {
-                let formatter = io::json_formatter::Formatter::new();
+                let formatter = tdector_core::io::json_formatter::Formatter::new();
                 let mut buf = Vec::new();
                 let mut serializer = serde_json::Serializer::with_formatter(&mut buf, formatter);
                 match serde::Serialize::serialize(&saved_project, &mut serializer) {
@@ -138,7 +138,7 @@ impl DecryptionApp {
     }
 
     pub(crate) fn export_typst(&mut self) {
-        let content = io::generate_typst_content(&self.project);
+        let content = tdector_core::io::generate_typst_content(&self.project);
         let filename = format!(
             "{}.typ",
             if self.project.project_name.is_empty() {
