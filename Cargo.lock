@@ -1055,7 +1055,7 @@ version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab8ecd87370524b461f8557c119c405552c396ed91fc0a8eec68679eab26f94a"
 dependencies = [
- "libloading",
+ "libloading 0.8.9",
 ]
 
 [[package]]
@@ -1666,7 +1666,7 @@ dependencies = [
  "glutin_egl_sys",
  "glutin_glx_sys",
  "glutin_wgl_sys",
- "libloading",
+ "libloading 0.8.9",
  "objc2 0.6.4",
  "objc2-app-kit 0.3.2",
  "objc2-core-foundation",
@@ -2162,6 +2162,16 @@ name = "libloading"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link",
+]
+
+[[package]]
+name = "libloading"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "754ca22de805bb5744484a5b151a9e1a8e837d5dc232c2d7d8c2e3492edc8b60"
 dependencies = [
  "cfg-if",
  "windows-link",
@@ -3711,9 +3721,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-core"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c212b8f57346fa3fe01400d9a2d9a96caea711e15ca663cee4e2e445b76c9d4"
+checksum = "0d3aac3f9896b55e888a20f50103d49d5bcc6f3dd1e89c05f438bed587c79c1a"
 dependencies = [
  "chrono",
  "crc32fast",
@@ -3722,6 +3732,7 @@ dependencies = [
  "crossbeam-utils",
  "getrandom 0.3.4",
  "getrandom 0.4.3",
+ "libloading 0.9.0",
  "ndarray",
  "ndarray-rand",
  "num-complex",
@@ -3745,9 +3756,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-linalg"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ab8f2defe212205e1fc83e3b922b55b7c3416ec485150b9c97997c9a3b358c3"
+checksum = "3636be3e075119eab0741a0476fe2b782548db6e895194c0b619f1485f056803"
 dependencies = [
  "approx",
  "half",
@@ -3760,9 +3771,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-text"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cec9f954fea3ef4fe40106f173839bbbf3a5476eec222cbd49198cf5cbeb69f6"
+checksum = "bd4f4602e2fec38df8096b833832c6cecb0b466acb866158b8abef1e759a06e1"
 dependencies = [
  "approx",
  "chrono",
@@ -4778,7 +4789,7 @@ dependencies = [
  "bitflags 2.13.0",
  "cfg-if",
  "cfg_aliases",
- "libloading",
+ "libloading 0.8.9",
  "log",
  "naga",
  "portable-atomic",
@@ -5210,7 +5221,7 @@ dependencies = [
  "as-raw-xcb-connection",
  "gethostname",
  "libc",
- "libloading",
+ "libloading 0.8.9",
  "once_cell",
  "rustix 1.1.4",
  "x11rb-protocol",
