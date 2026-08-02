@@ -2942,19 +2942,20 @@ dependencies = [
 
 [[package]]
 name = "oxicode"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84bec9e5cb5e96ebc96f80ccd9d7670764f5a7371827884a1f4fc7eb844762c3"
+checksum = "aeef0f9ddb2d33bdcd020ec0535e6e2f911469d346cdc6184b455a9130345b26"
 dependencies = [
  "oxicode_derive",
  "serde",
+ "unty",
 ]
 
 [[package]]
 name = "oxicode_derive"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "886dc0e3827c07f80b335680f9cbc2cde267544d82e607b2cfd8fd463ff0fbf7"
+checksum = "2a521211eb349a86052e255a36d33d38932bd0ec63b6d2e179be5141efba3125"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3747,9 +3748,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-core"
-version = "0.6.3"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "725c4da6d2a425f1cf502976dbe73fa06ee6992516c84293cd46a19a9e09cf5d"
+checksum = "f7d5e6d0c09bd4a0307e073f6526d8b7b534e0fd9cd9ee644a73e169e08b45bd"
 dependencies = [
  "chrono",
  "crc32fast",
@@ -3782,9 +3783,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-linalg"
-version = "0.6.3"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af382297a79816c855c706ad703b468ceaf1ed0b7f0a8a46d650fc731f5000e2"
+checksum = "63cb568d47f1323c4c55b60386d78775a73f98692403e27ab00772d9355cc49c"
 dependencies = [
  "approx",
  "half",
@@ -3797,9 +3798,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-text"
-version = "0.6.3"
+version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d461e4077fb68b6054cf502368fdcbfc34e8c6e0e319c8e5121e5ca41e336196"
+checksum = "13639c2fee7a3dc6f8fa89e379ba2f42db06e9a5e8f098a89b3e3fab5ad76f20"
 dependencies = [
  "approx",
  "chrono",
@@ -4410,6 +4411,12 @@ name = "unicode-width"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4ac048d71ede7ee76d585517add45da530660ef4390e49b098733c6e897f254"
+
+[[package]]
+name = "unty"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7dbe8d477efbc6c70a1dea1f9f1e0482168983a9147dee6b3a619f666f3aeac6"
 
 [[package]]
 name = "url"
