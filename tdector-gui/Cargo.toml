@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 tdector-core = { path = "../tdector-core" }
-egui = "0.35"
+egui = "0.36"
 eframe = { version = "0.35", default-features = false, features = [
     "accesskit",
     "default_fonts",
