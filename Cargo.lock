@@ -3798,9 +3798,9 @@ dependencies = [
 
 [[package]]
 name = "scirs2-text"
-version = "0.6.4"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13639c2fee7a3dc6f8fa89e379ba2f42db06e9a5e8f098a89b3e3fab5ad76f20"
+checksum = "c7b622351a0ae374457851945a260e0fdc901ad9d5351a6c5bb2232445cb13da"
 dependencies = [
  "approx",
  "chrono",
