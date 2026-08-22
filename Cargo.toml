@@ -1,5 +1,12 @@
 [workspace]
-members = ["tdector-core", "tdector-gui"]
+members = [
+    "tdector-core",
+    "tdector-eval",
+    "tdector-file",
+    "tdector-gui",
+    "tdector-text",
+    "tdector-wasm",
+]
 resolver = "3"
 
 [profile.release]

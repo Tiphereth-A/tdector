@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub use crate::libs::eval::FormationRule;
+pub use tdector_eval::FormationRule;
 
 /// Represents a single token (word or character) within a segment.
 /// Tokens track their original form and can reference word formation rules for derived words.

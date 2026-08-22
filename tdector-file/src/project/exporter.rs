@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use super::models::{
     FormattedWordEntry, Project, SavedProjectV2, SavedSentenceV2, SavedVocabularyV2, VocabEntry,
 };
-use crate::consts::domain::PROJECT_VERSION;
-use crate::enums::{AppError, AppResult};
+use tdector_eval::{AppError, AppResult};
+
+const PROJECT_VERSION: u64 = 2;
 
 /// Convert a runtime Project to its serializable `SavedProjectV2` format for JSON export.
 /// This handles:

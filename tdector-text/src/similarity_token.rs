@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
-use crate::consts::domain::MAX_SIMILAR_TOKENS_RESULTS;
-use crate::libs::Project;
+use tdector_core::consts::domain::MAX_SIMILAR_TOKENS_RESULTS;
+use tdector_core::libs::Project;
 
 /// Represents a similar token with its similarity metrics
 #[derive(Debug, Clone)]

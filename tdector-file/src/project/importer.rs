@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-use crate::consts::domain::PROJECT_VERSION;
+const PROJECT_VERSION: u64 = 2;
 
 use super::models::{Project, SavedProjectV2, Segment, Token};
 
@@ -50,7 +50,7 @@ pub fn load_project_from_json(value: Value) -> Result<Project, String> {
 pub fn convert_from_saved_project_v2(mut saved: SavedProjectV2) -> Option<Project> {
     // Initialize cached ASTs for all formation rules (needed for script execution)
     for rule in &mut saved.formation {
-        rule.cached_ast = crate::libs::eval::default_cached_ast();
+        rule.cached_ast = tdector_eval::default_cached_ast();
     }
 
     // Build a map of formatted words (derived words created by applying rules) to their comments

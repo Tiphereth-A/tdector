@@ -8,21 +8,17 @@
 /// - `TokenizationRule`: Rhai script that splits text into tokens
 ///
 /// The library provides:
-/// - Text analysis: Tokenization and translation ratio calculations
+/// - Text analysis: Tokenization and translation ratio calculations (provided by `tdector-text`)
 /// - Caching: Lookup maps and TF-IDF matrices for performance
 /// - Filtering: Full-text search across segments and translations
 /// - Sorting: Multiple sort criteria for segment ordering
-/// - Similarity: TF-IDF based semantic search (native only)
+/// - Similarity: TF-IDF based semantic search (provided by `tdector-text`)
 /// - Script evaluation: Safe Rhai-based execution for word transformations and tokenization
 /// - Project I/O: Serialization with version migration support
 pub mod cache;
-pub mod eval;
 pub mod filtering;
-pub mod project;
-pub mod similarity_sentence;
-pub mod similarity_token;
 pub mod sorting;
-pub mod text_analysis;
 pub mod types;
 
-pub use project::{Project, Segment, Token};
+pub use tdector_file::project;
+pub use tdector_file::project::{Project, Segment, Token};

@@ -13,7 +13,7 @@ type AsyncFileResult<T> = Arc<Mutex<Option<Result<T, String>>>>;
 type PendingTextFile = AsyncFileResult<(String, String)>;
 type PendingProjectFile = AsyncFileResult<(String, String, Option<String>)>;
 type PendingFontFile = AsyncFileResult<(Vec<u8>, String)>;
-type PendingSaveResult = AsyncFileResult<()>;
+type PendingSaveResult = AsyncFileResult<(u64, ())>;
 
 /// Dialog for creating a new word formation rule
 #[derive(Debug, Clone)]
@@ -116,8 +116,8 @@ pub struct DecryptionApp {
     pub(crate) current_page: usize,
     /// Number of segments per page
     pub(crate) page_size: usize,
-    /// Whether the project has unsaved changes
-    pub(crate) is_dirty: bool,
+    /// Revision of project changes used to validate asynchronous saves
+    pub(crate) change_revision: u64,
     /// Pending text content to import (text content, tokenization flag)
     pub(crate) pending_import: Option<(String, String)>,
     /// Result of async text file load operation
@@ -144,10 +144,8 @@ pub struct DecryptionApp {
     /// Currently open similarity search popup
     pub(crate) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
     /// Currently open similar tokens popup
-    pub(crate) similar_tokens_popup: Option<(
-        String,
-        Vec<tdector_core::libs::similarity_token::SimilarToken>,
-    )>,
+    pub(crate) similar_tokens_popup:
+        Option<(String, Vec<tdector_text::similarity_token::SimilarToken>)>,
     /// Currently open word context menu
     pub(crate) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>,
     /// Currently open segment context menu
@@ -199,7 +197,7 @@ impl DecryptionApp {
 
     /// Ensure the TF-IDF matrix cache is up-to-date
     pub(crate) fn ensure_tfidf_cache_impl(&mut self) {
-        use tdector_core::libs::similarity_sentence::SimilarityEngine;
+        use tdector_text::similarity_sentence::SimilarityEngine;
 
         if !self.tfidf_dirty && !self.tfidf_cache.is_dirty() {
             return;
@@ -220,7 +218,7 @@ impl DecryptionApp {
     /// Compute similar segments to a target segment and update the UI
     pub(crate) fn compute_similar_segments(&mut self, target_idx: usize) {
         use crate::consts::domain::DEFAULT_SIMILARITY_RESULTS;
-        use tdector_core::libs::similarity_sentence::SimilarityEngine;
+        use tdector_text::similarity_sentence::SimilarityEngine;
 
         if target_idx >= self.project.segments.len() {
             return;
@@ -251,7 +249,7 @@ impl Default for DecryptionApp {
             project_filename: None,
             current_page: 0,
             page_size: 10,
-            is_dirty: false,
+            change_revision: 0,
             pending_import: None,
             pending_text_file: Arc::new(Mutex::new(None)),
             pending_project_file: Arc::new(Mutex::new(None)),

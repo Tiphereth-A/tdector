@@ -1,6 +1,5 @@
-use crate::enums::AppResult;
-use crate::libs::eval::TokenizationRule;
-use crate::libs::{Project, Segment, Token};
+use tdector_core::libs::{Project, Segment, Token};
+use tdector_eval::{AppError, AppResult, TokenizationRule};
 
 /// Text processing utility for tokenizing and analyzing text content.
 pub struct TextProcessor;
@@ -23,9 +22,7 @@ impl TextProcessor {
 
             // Get tokenization rule (fail if none provided)
             let rule = tokenization_rule.ok_or_else(|| {
-                crate::enums::AppError::InvalidProjectFormat(
-                    "No tokenization rule provided".to_string(),
-                )
+                AppError::InvalidProjectFormat("No tokenization rule provided".to_string())
             })?;
 
             // Tokenize the line using the Rhai script

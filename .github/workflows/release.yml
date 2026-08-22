@@ -9,7 +9,11 @@ on:
     paths:
       - '.github/**'
       - 'tdector-core/**'
+      - 'tdector-eval/**'
+      - 'tdector-file/**'
       - 'tdector-gui/**'
+      - 'tdector-text/**'
+      - 'tdector-wasm/**'
       - '*.toml'
       - 'Cargo.lock'
   pull_request:
@@ -18,7 +22,11 @@ on:
     paths:
       - '.github/**'
       - 'tdector-core/**'
+      - 'tdector-eval/**'
+      - 'tdector-file/**'
       - 'tdector-gui/**'
+      - 'tdector-text/**'
+      - 'tdector-wasm/**'
       - '*.toml'
       - 'Cargo.lock'
   workflow_dispatch:

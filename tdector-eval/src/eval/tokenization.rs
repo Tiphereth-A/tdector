@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use super::engine::with_engine;
 use super::formation::default_cached_ast;
-use crate::enums::{AppError, AppResult};
+use crate::{AppError, AppResult};
 
 /// A tokenization rule that splits text into tokens using a Rhai script.
 /// The script receives a line of text and returns an array of token strings.

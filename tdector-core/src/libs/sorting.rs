@@ -1,5 +1,5 @@
 use crate::enums::{SortDirection, SortField, SortMode};
-use crate::libs::Project;
+use tdector_file::project::Project;
 
 /// Sorting operations to order segments by various criteria.
 pub struct SortOperation;
@@ -88,15 +88,19 @@ impl SortOperation {
 
     /// Sort by translation ratio (0.0 if no translation, 1.0 if translated)
     fn sort_by_translation_ratio(project: &Project, indices: &mut [usize]) {
-        use super::text_analysis::TextProcessor;
-
         let mut indexed: Vec<_> = indices
             .iter()
             .map(|&idx| {
                 let ratio = project
                     .segments
                     .get(idx)
-                    .map(TextProcessor::calculate_translation_ratio)
+                    .map(|segment| {
+                        if segment.tokens.is_empty() || segment.translation.is_empty() {
+                            0.0
+                        } else {
+                            1.0
+                        }
+                    })
                     .unwrap_or(0.0);
                 (idx, ratio)
             })
@@ -110,15 +114,24 @@ impl SortOperation {
     }
 
     fn sort_by_translated_count(project: &Project, indices: &mut [usize]) {
-        use super::text_analysis::TextProcessor;
-
         let mut indexed: Vec<_> = indices
             .iter()
             .map(|&idx| {
                 let count = project
                     .segments
                     .get(idx)
-                    .map(|seg| TextProcessor::count_segment_translated_tokens(seg, project))
+                    .map(|segment| {
+                        segment
+                            .tokens
+                            .iter()
+                            .filter(|token| {
+                                project
+                                    .vocabulary
+                                    .get(&token.original)
+                                    .is_some_and(|definition| !definition.trim().is_empty())
+                            })
+                            .count()
+                    })
                     .unwrap_or(0);
                 (idx, count)
             })

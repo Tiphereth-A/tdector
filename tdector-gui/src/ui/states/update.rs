@@ -4,8 +4,8 @@ use eframe::egui;
 
 use crate::enums::{AppAction, DictionaryPopupType, FormationType, PopupRequest};
 use crate::ui;
-use tdector_core::libs::project::load_project_from_json;
-use tdector_core::libs::similarity_token::find_similar_tokens;
+use tdector_file::project::load_project_from_json;
+use tdector_text::similarity_token::find_similar_tokens;
 
 use crate::ui::states::state::DecryptionApp;
 
@@ -86,7 +86,7 @@ impl eframe::App for DecryptionApp {
             do_add_word_formation_rule,
         );
 
-        if ctx.input(|i| i.viewport().close_requested()) && self.is_dirty {
+        if ctx.input(|i| i.viewport().close_requested()) && tdector_core::is_app_dirty() {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             self.trigger_action(AppAction::Quit, &ctx);
         }
@@ -366,8 +366,10 @@ impl DecryptionApp {
 
         if let Some(result) = save_result {
             match result {
-                Ok(()) => {
-                    self.update_dirty_status(false, ctx);
+                Ok((save_revision, ())) => {
+                    if self.change_revision == save_revision {
+                        self.update_dirty_status(false, ctx);
+                    }
                 }
                 Err(e) => {
                     if !e.contains("cancelled") && !e.contains("Cancelled") {

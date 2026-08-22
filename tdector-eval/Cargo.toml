@@ -1,12 +1,11 @@
 [package]
-name = "tdector-core"
+name = "tdector-eval"
 version = "0.1.8"
 edition = "2024"
 
 [dependencies]
-tdector-file = { path = "../tdector-file" }
 serde = { version = "1.0", features = ["derive"] }
-ndarray = "0.17"
+rhai = "1.25"
 
 [lints]
 workspace = true

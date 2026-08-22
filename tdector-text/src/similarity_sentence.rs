@@ -1,7 +1,7 @@
 use ndarray::Array2;
 use scirs2_text::{TfidfVectorizer, Vectorizer, WhitespaceTokenizer, cosine_similarity};
 
-use crate::libs::Project;
+use tdector_core::libs::Project;
 
 /// Similarity search engine for finding semantically related segments using TF-IDF vectors.
 pub struct SimilarityEngine;

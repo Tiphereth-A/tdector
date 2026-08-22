@@ -1,4 +1,4 @@
-use crate::libs::Project;
+use crate::project::Project;
 
 pub fn escape_typst(s: &str) -> String {
     let mut result = String::with_capacity(s.len());

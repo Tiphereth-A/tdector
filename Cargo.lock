@@ -3985,13 +3985,30 @@ dependencies = [
 name = "tdector-core"
 version = "0.1.8"
 dependencies = [
- "log",
  "ndarray",
+ "serde",
+ "tdector-file",
+]
+
+[[package]]
+name = "tdector-eval"
+version = "0.1.8"
+dependencies = [
  "rhai",
- "scirs2-text",
+ "serde",
+]
+
+[[package]]
+name = "tdector-file"
+version = "0.1.8"
+dependencies = [
+ "egui",
+ "pollster 1.0.1",
+ "rfd",
  "serde",
  "serde_json",
- "textdistance",
+ "tdector-eval",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]
@@ -4001,18 +4018,38 @@ dependencies = [
  "eframe",
  "egui",
  "env_logger",
- "getrandom 0.2.17",
- "getrandom 0.3.4",
- "getrandom 0.4.3",
  "image",
- "js-sys",
- "log",
- "pollster 1.0.1",
- "rfd",
  "serde",
  "serde_json",
  "tdector-core",
- "uuid",
+ "tdector-eval",
+ "tdector-file",
+ "tdector-text",
+]
+
+[[package]]
+name = "tdector-text"
+version = "0.1.8"
+dependencies = [
+ "ndarray",
+ "scirs2-text",
+ "tdector-core",
+ "tdector-eval",
+ "textdistance",
+]
+
+[[package]]
+name = "tdector-wasm"
+version = "0.1.8"
+dependencies = [
+ "eframe",
+ "getrandom 0.2.17",
+ "getrandom 0.3.4",
+ "getrandom 0.4.3",
+ "js-sys",
+ "log",
+ "tdector-core",
+ "tdector-gui",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",

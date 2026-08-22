@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 
-use crate::consts::domain::{MAX_SCRIPT_DEPTH, MAX_SCRIPT_OPERATIONS};
+const MAX_SCRIPT_DEPTH: usize = 500000;
+const MAX_SCRIPT_OPERATIONS: u64 = 10000000;
 
 thread_local! {
     /// Thread-local Rhai script engine for executing word formation rules and tokenization.

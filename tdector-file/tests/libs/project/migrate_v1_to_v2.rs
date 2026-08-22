@@ -9,10 +9,10 @@ fn test_roundtrip_v1_to_v2() {
     let v1_content = fs::read_to_string(INPUT).expect("Failed to read INPUT");
     let v1_value: Value = serde_json::from_str(&v1_content).expect("Failed to parse INPUT");
 
-    let project = tdector_core::libs::project::load_project_from_json(v1_value)
+    let project = tdector_file::project::load_project_from_json(v1_value)
         .expect("Failed to load and convert v1 JSON to Project");
 
-    let saved_project = tdector_core::libs::project::convert_to_saved_project(&project)
+    let saved_project = tdector_file::project::convert_to_saved_project(&project)
         .expect("Failed to convert Project back to SavedProjectV2");
 
     let saved_json =

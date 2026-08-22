@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use tdector_core::libs::eval::FormationRule;
+use tdector_eval::FormationRule;
 
 use eframe::egui;
 

@@ -1,4 +1,5 @@
 pub(crate) mod dialogs;
+mod file_ops;
 pub(crate) mod highlight;
 mod menu;
 mod pagination;

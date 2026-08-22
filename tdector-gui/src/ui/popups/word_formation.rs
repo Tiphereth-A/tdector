@@ -375,7 +375,7 @@ impl DecryptionApp {
                     }
 
                     if !dialog.test_word.is_empty() && !dialog.command.is_empty() {
-                        let result = tdector_core::libs::eval::with_engine(|engine| {
+                        let result = tdector_eval::with_engine(|engine| {
                             engine.eval::<String>(&format!(
                                 "{}\nlet result = transform(\"{}\");\nresult",
                                 dialog.command, dialog.test_word
@@ -407,14 +407,14 @@ impl DecryptionApp {
                         )
                         .clicked()
                     {
-                        self.project.formation_rules.push(
-                            tdector_core::libs::eval::FormationRule {
+                        self.project
+                            .formation_rules
+                            .push(tdector_eval::FormationRule {
                                 description: dialog.description.clone(),
                                 rule_type: dialog.rule_type,
                                 command: dialog.command.clone(),
-                                cached_ast: tdector_core::libs::eval::default_cached_ast(),
-                            },
-                        );
+                                cached_ast: tdector_eval::default_cached_ast(),
+                            });
                         self.update_dirty_status(true, ctx);
                         should_close = true;
                     }

@@ -1,0 +1,14 @@
+[package]
+name = "tdector-text"
+version = "0.1.8"
+edition = "2024"
+
+[dependencies]
+tdector-core = { path = "../tdector-core" }
+tdector-eval = { path = "../tdector-eval" }
+ndarray = "0.17"
+textdistance = "1.1"
+scirs2-text = "0.6"
+
+[lints]
+workspace = true

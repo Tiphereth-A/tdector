@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde_json::{Value, json};
 
-use crate::enums::{AppError, AppResult};
+use tdector_eval::{AppError, AppResult};
 
 pub fn migrate_v1_to_v2(mut value: Value) -> AppResult<Value> {
     let version = value

@@ -3,7 +3,7 @@ use std::cell::OnceCell;
 use std::rc::Rc;
 
 use super::engine::with_engine;
-use crate::enums::{AppError, AppResult, FormationType};
+use crate::{AppError, AppResult, FormationType};
 
 /// Create a new empty cached AST (Abstract Syntax Tree) placeholder
 pub fn default_cached_ast() -> Rc<OnceCell<rhai::AST>> {
