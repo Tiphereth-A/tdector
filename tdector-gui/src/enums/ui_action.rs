@@ -5,8 +5,6 @@ use std::sync::Arc;
 pub enum UiAction {
     /// No action occurred
     None,
-    /// Some data was modified
-    Changed,
     /// Apply text filter to segment list
     Filter(Arc<str>),
     /// Request to show similar segments (desktop only)

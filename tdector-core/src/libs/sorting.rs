@@ -1,5 +1,5 @@
 use crate::enums::{SortDirection, SortField, SortMode};
-use tdector_file::project::Project;
+use crate::project::Project;
 
 /// Sorting operations to order segments by various criteria.
 pub struct SortOperation;

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use tdector_app::LookupIndex;
 
 use eframe::egui;
 
@@ -16,6 +16,7 @@ impl DecryptionApp {
         self.word_formation_popup = None;
         self.formatting_chain_popup = None;
         self.remove_formation_rule_popup = None;
+        self.new_formation_rule_popup = None;
         self.update_comment_popup = None;
         self.update_sentence_comment_popup = None;
         self.custom_tokenization_popup = None;
@@ -25,8 +26,8 @@ impl DecryptionApp {
     pub(crate) fn render_popups(
         &mut self,
         ctx: &egui::Context,
-        headword_lookup: &Option<HashMap<String, Vec<usize>>>,
-        usage_lookup: &Option<HashMap<String, Vec<usize>>>,
+        headword_lookup: &LookupIndex,
+        usage_lookup: &LookupIndex,
         popup_request: &mut Option<PopupRequest>,
     ) {
         self.render_definition_popup(ctx, headword_lookup, popup_request);

@@ -122,25 +122,9 @@ impl DecryptionApp {
                         tdector_eval::TokenizationRule::default_character()
                     };
 
-                    // Use the tokenization rule to segment text
-                    let segments =
-                        tdector_text::text_analysis::TextProcessor::segment_text_with_rule(
-                            &content,
-                            Some(&rule),
-                        )
-                        .unwrap_or_else(|_| Vec::new());
-
-                    self.project.segments = segments;
-                    self.project.project_name = name;
-                    self.project.font_path = None;
-                    self.current_path = None;
-                    self.project_filename = None;
-                    self.filter_dirty = true;
-                    self.lookups_dirty = true;
-                    self.tfidf_dirty = true;
-                    self.filter_text.clear();
-                    self.clear_popups();
-                    self.update_dirty_status(true, ctx);
+                    if !self.import_text(&content, &name, &rule, ctx) {
+                        self.pending_import = Some((content, name));
+                    }
                 }
             } else if use_custom && let Some((content, name)) = self.pending_import.take() {
                 self.custom_tokenization_popup =

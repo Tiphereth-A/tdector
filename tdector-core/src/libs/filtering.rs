@@ -1,4 +1,4 @@
-use tdector_file::project::Project;
+use crate::project::Project;
 
 /// Text filtering and search operations for finding relevant segments.
 pub struct FilterOperation;

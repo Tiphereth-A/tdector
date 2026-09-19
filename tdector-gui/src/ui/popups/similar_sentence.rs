@@ -68,7 +68,7 @@ impl DecryptionApp {
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 for (idx, score) in similar_indices {
-                    if let Some(seg) = self.project.segments.get(*idx) {
+                    if let Some(seg) = self.session.project().segments.get(*idx) {
                         ui.group(|ui| {
                             ui.horizontal(|ui| {
                                 let mut label_resp = ui.add(
@@ -106,12 +106,9 @@ impl DecryptionApp {
                                     if let Some(action) = ui::render_clickable_tokens(
                                         ui,
                                         &seg.tokens,
-                                        &self.project.vocabulary,
-                                        &self.project.vocabulary_comments,
-                                        &self.project.formatted_word_comments,
+                                        self.session.project(),
                                         None,
-                                        self.project.font_path.is_some(),
-                                        &self.project.formation_rules,
+                                        self.custom_font_name.is_some(),
                                     ) {
                                         self.handle_ui_action(ui, action, popup_request, *idx);
                                     }

@@ -73,7 +73,7 @@ impl DecryptionApp {
                 cached_ast: tdector_eval::default_cached_ast(),
             };
 
-            match test_rule.tokenize(&dialog.test_text) {
+            match tdector_app::Session::preview_tokenization(&test_rule, &dialog.test_text) {
                 Ok(tokens) => {
                     dialog.preview = tokens;
                 }
@@ -88,31 +88,16 @@ impl DecryptionApp {
             if let Some(dialog) = self.custom_tokenization_popup.take() {
                 let rule = tdector_eval::TokenizationRule {
                     description: "Custom tokenization".to_string(),
-                    command: dialog.command,
+                    command: dialog.command.clone(),
                     cached_ast: tdector_eval::default_cached_ast(),
                 };
 
-                // Apply tokenization with the custom rule
-                let (content, name) = dialog.import_data;
-                let segments = tdector_text::text_analysis::TextProcessor::segment_text_with_rule(
-                    &content,
-                    Some(&rule),
-                )
-                .unwrap_or_else(|_| Vec::new());
-
-                self.project.segments = segments;
-                self.project.project_name = name;
-                self.project.font_path = None;
-                self.current_path = None;
-                self.project_filename = None;
-                self.filter_dirty = true;
-                self.lookups_dirty = true;
-                self.tfidf_dirty = true;
-                self.filter_text.clear();
-                self.clear_popups();
-                self.update_dirty_status(true, ctx);
+                let (content, name) = &dialog.import_data;
+                should_close = self.import_text(content, name, &rule, ctx);
+                if !should_close {
+                    self.custom_tokenization_popup = Some(dialog);
+                }
             }
-            should_close = true;
         }
 
         if should_close {

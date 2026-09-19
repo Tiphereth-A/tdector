@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use tdector_app::LookupIndex;
 
 use eframe::egui;
 
@@ -12,8 +12,8 @@ impl DecryptionApp {
     pub(crate) fn render_pinned_popups(
         &mut self,
         ctx: &egui::Context,
-        headword_lookup: &Option<HashMap<String, Vec<usize>>>,
-        usage_lookup: &Option<HashMap<String, Vec<usize>>>,
+        headword_lookup: &LookupIndex,
+        usage_lookup: &LookupIndex,
         popup_request: &mut Option<PopupRequest>,
     ) {
         let mut pinned_to_remove = Vec::new();

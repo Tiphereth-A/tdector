@@ -4,7 +4,7 @@ use crate::consts::ui::{POPUP_SIMILAR_HEIGHT, POPUP_WIDTH};
 use crate::enums::PopupRequest;
 use crate::ui::popup_utils::create_popup_title;
 use crate::ui::states::state::DecryptionApp;
-use tdector_text::similarity_token::SimilarToken;
+use tdector_app::SimilarToken;
 
 impl DecryptionApp {
     pub(super) fn render_similar_tokens_popup(
@@ -19,7 +19,7 @@ impl DecryptionApp {
             let title = create_popup_title(
                 "Similar tokens: ",
                 target_word,
-                self.project.font_path.is_some(),
+                self.custom_font_name.is_some(),
             );
             egui::Window::new(title)
                 .id(egui::Id::new("similar_tokens_popup"))
@@ -52,7 +52,7 @@ impl DecryptionApp {
             size: egui::TextStyle::Body.resolve(ui.style()).size,
             family: egui::FontFamily::Name("SentenceFont".into()),
         };
-        let has_custom_font = self.project.font_path.is_some();
+        let has_custom_font = self.custom_font_name.is_some();
 
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])

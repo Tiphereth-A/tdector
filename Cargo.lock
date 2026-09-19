@@ -3994,12 +3994,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "tdector-app"
+version = "0.1.8"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tdector-core",
+ "tdector-eval",
+ "tdector-file",
+ "tdector-text",
+]
+
+[[package]]
 name = "tdector-core"
 version = "0.1.8"
 dependencies = [
  "ndarray",
  "serde",
- "tdector-file",
+ "tdector-eval",
 ]
 
 [[package]]
@@ -4014,13 +4026,10 @@ dependencies = [
 name = "tdector-file"
 version = "0.1.8"
 dependencies = [
- "egui",
- "pollster 1.0.1",
- "rfd",
  "serde",
  "serde_json",
+ "tdector-core",
  "tdector-eval",
- "wasm-bindgen-futures",
 ]
 
 [[package]]
@@ -4031,12 +4040,12 @@ dependencies = [
  "egui",
  "env_logger",
  "image",
- "serde",
- "serde_json",
+ "pollster 1.0.1",
+ "rfd",
+ "tdector-app",
  "tdector-core",
  "tdector-eval",
- "tdector-file",
- "tdector-text",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]
@@ -4060,7 +4069,6 @@ dependencies = [
  "getrandom 0.4.3",
  "js-sys",
  "log",
- "tdector-core",
  "tdector-gui",
  "wasm-bindgen",
  "wasm-bindgen-futures",

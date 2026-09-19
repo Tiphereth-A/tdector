@@ -7,7 +7,6 @@ use crate::consts::{
 use crate::enums::{DictionaryPopupType, PopupRequest, SortMode, UiAction};
 use crate::ui;
 use crate::ui::states::state::DecryptionApp;
-use tdector_core::libs::Project;
 
 impl DecryptionApp {
     pub(crate) fn render_filter_panel(&mut self, ui: &mut egui::Ui) {
@@ -21,7 +20,7 @@ impl DecryptionApp {
 
                 ui.label(egui::RichText::new("Filter:").color(text_color));
 
-                let font_id = if self.project.font_path.is_some() {
+                let font_id = if self.custom_font_name.is_some() {
                     egui::FontId {
                         size: egui::TextStyle::Body.resolve(ui.style()).size,
                         family: egui::FontFamily::Name("SentenceFont".into()),
@@ -77,7 +76,6 @@ impl DecryptionApp {
     pub(crate) fn render_central_panel(
         &mut self,
         ui: &mut egui::Ui,
-        any_changed: &mut bool,
         popup_request: &mut Option<PopupRequest>,
     ) {
         let total_items = self.cached_filtered_indices.len();
@@ -89,19 +87,13 @@ impl DecryptionApp {
             &[]
         };
 
-        let use_custom_font = self.project.font_path.is_some();
+        let use_custom_font = self.custom_font_name.is_some();
         let filter_text = self.filter_text.as_str();
 
-        let Project {
-            segments,
-            vocabulary,
-            vocabulary_comments,
-            formatted_word_comments,
-            formation_rules,
-            ..
-        } = &mut self.project;
+        let project = self.session.project();
 
         let mut new_filter = None;
+        let mut commands = Vec::new();
 
         egui::CentralPanel::default().show(ui, |ui| {
             if current_page_indices.is_empty() {
@@ -109,7 +101,7 @@ impl DecryptionApp {
             } else {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     for &seg_idx in current_page_indices {
-                        if let Some(segment) = segments.get_mut(seg_idx) {
+                        if let Some(segment) = project.segments.get(seg_idx) {
                             let highlight = if filter_text.is_empty() {
                                 None
                             } else {
@@ -118,17 +110,14 @@ impl DecryptionApp {
                             let action = ui::render_segment(
                                 ui,
                                 segment,
-                                vocabulary,
-                                vocabulary_comments,
-                                formatted_word_comments,
+                                project,
                                 seg_idx + 1,
                                 highlight,
                                 use_custom_font,
-                                formation_rules,
+                                &mut commands,
                             );
 
                             match action {
-                                UiAction::Changed => *any_changed = true,
                                 UiAction::Filter(text) => {
                                     new_filter = Some(text.to_string());
                                 }
@@ -176,6 +165,11 @@ impl DecryptionApp {
                 });
             }
         });
+
+        let ctx = ui.ctx().clone();
+        for command in commands {
+            self.apply_command(command, &ctx);
+        }
 
         if let Some(text) = new_filter {
             self.filter_text = text;

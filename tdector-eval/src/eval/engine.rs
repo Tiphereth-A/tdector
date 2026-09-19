@@ -14,6 +14,21 @@ thread_local! {
 fn build_engine() -> rhai::Engine {
     let mut engine = rhai::Engine::new();
 
+    // Script output must not corrupt a CLI's JSON or a stdio protocol stream.
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        engine.on_print(|message| eprintln!("{message}"));
+        engine.on_debug(|message, source, position| {
+            eprintln!("{} @ {position:?} | {message}", source.unwrap_or("script"));
+        });
+    }
+    // Browser hosts have no stderr; scripts communicate through their return values.
+    #[cfg(target_arch = "wasm32")]
+    {
+        engine.on_print(|_| {});
+        engine.on_debug(|_, _, _| {});
+    }
+
     engine.set_max_expr_depths(MAX_SCRIPT_DEPTH, MAX_SCRIPT_DEPTH);
     engine.set_max_operations(MAX_SCRIPT_OPERATIONS);
 

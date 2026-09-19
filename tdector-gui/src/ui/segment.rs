@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 use std::sync::Arc;
-use tdector_eval::FormationRule;
+use tdector_app::{Command, annotate_token};
 
 use eframe::egui;
 
@@ -19,18 +18,14 @@ use crate::consts::{
 };
 use crate::enums::UiAction;
 use crate::ui::highlight::create_highlighted_layout;
-use tdector_core::libs::{Segment, Token};
+use tdector_core::libs::{Project, Segment, Token};
 
-#[allow(clippy::too_many_arguments)]
 pub fn render_clickable_tokens(
     ui: &mut egui::Ui,
     tokens: &[Token],
-    vocabulary: &HashMap<String, String>,
-    vocabulary_comments: &HashMap<String, String>,
-    formatted_word_comments: &HashMap<String, String>,
+    project: &Project,
     highlight_token: Option<&str>,
     use_custom_font: bool,
-    formation_rules: &[FormationRule],
 ) -> Option<UiAction> {
     let mut clicked_action = None;
 
@@ -53,41 +48,16 @@ pub fn render_clickable_tokens(
             let is_highlighted = highlight_token.is_some_and(|h| h == token.original);
             let text = &token.original;
 
-            let base_word = token.base_word.as_ref().unwrap_or(text);
-            let base_gloss = vocabulary.get(base_word).map(|s| s.as_str()).unwrap_or("");
-            let base_comment = vocabulary_comments
-                .get(base_word)
-                .map(|s| s.as_str())
-                .unwrap_or("");
-            let formatted_comment = if !token.formation_rule_indices.is_empty() {
-                formatted_word_comments
-                    .get(text)
-                    .map(|s| s.as_str())
-                    .unwrap_or("")
+            let annotation = annotate_token(project, token);
+            let comment = &annotation.display_comment;
+            let gloss_owned = if annotation.formation_descriptions.is_empty() {
+                annotation.base_gloss.clone()
             } else {
-                ""
-            };
-            let comment = if !formatted_comment.is_empty() {
-                formatted_comment
-            } else {
-                base_comment
-            };
-
-            let gloss_owned = if !token.formation_rule_indices.is_empty() {
-                let descriptions: Vec<String> = token
-                    .formation_rule_indices
-                    .iter()
-                    .filter_map(|idx| formation_rules.get(*idx))
-                    .map(|rule| rule.description.clone())
-                    .collect();
-
-                if descriptions.is_empty() {
-                    base_gloss.to_string()
-                } else {
-                    format!("{base_gloss} ({})", descriptions.join(" + "))
-                }
-            } else {
-                base_gloss.to_string()
+                format!(
+                    "{} ({})",
+                    annotation.base_gloss,
+                    annotation.formation_descriptions.join(" + ")
+                )
             };
 
             ui.vertical(|ui| {
@@ -134,17 +104,14 @@ pub fn render_clickable_tokens(
     clicked_action
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn render_segment(
     ui: &mut egui::Ui,
-    segment: &mut Segment,
-    vocabulary: &mut HashMap<String, String>,
-    vocabulary_comments: &HashMap<String, String>,
-    formatted_word_comments: &HashMap<String, String>,
+    segment: &Segment,
+    project: &Project,
     seg_num: usize,
     highlight: Option<&str>,
     use_custom_font: bool,
-    formation_rules: &[FormationRule],
+    commands: &mut Vec<Command>,
 ) -> UiAction {
     let mut action = UiAction::None;
     ui.group(|ui| {
@@ -164,21 +131,18 @@ pub fn render_segment(
             .show(ui, |ui| {
                 ui.horizontal_top(|ui| {
                     ui.spacing_mut().item_spacing.x = SEGMENT_SPACING_X;
-                    for (word_idx, token) in segment.tokens.iter_mut().enumerate() {
+                    for (word_idx, token) in segment.tokens.iter().enumerate() {
                         let token_action = render_token_column(
                             ui,
                             token,
-                            vocabulary,
-                            vocabulary_comments,
-                            formatted_word_comments,
+                            project,
                             highlight,
                             use_custom_font,
                             word_idx,
-                            formation_rules,
+                            commands,
                         );
 
                         match token_action {
-                            UiAction::Changed => action = UiAction::Changed,
                             UiAction::Filter(_) => action = token_action,
                             UiAction::ShowSimilar(_) => action = token_action,
                             UiAction::ShowDefinition(_) => action = token_action,
@@ -196,62 +160,37 @@ pub fn render_segment(
         ui.add_space(SEGMENT_VERTICAL_SPACING);
 
         let editbox_highlight = None;
-        if render_translation_box(ui, segment, editbox_highlight) && action == UiAction::None {
-            action = UiAction::Changed;
+        if let Some(translation) = render_translation_box(ui, segment, editbox_highlight) {
+            commands.push(Command::SetTranslation {
+                segment: seg_num - 1,
+                translation,
+            });
         }
     });
 
     action
 }
 
-#[allow(clippy::too_many_arguments)]
 fn render_token_column(
     ui: &mut egui::Ui,
-    token: &mut Token,
-    vocabulary: &mut HashMap<String, String>,
-    vocabulary_comments: &HashMap<String, String>,
-    formatted_word_comments: &HashMap<String, String>,
+    token: &Token,
+    project: &Project,
     highlight: Option<&str>,
     use_custom_font: bool,
     word_idx: usize,
-    formation_rules: &[FormationRule],
+    commands: &mut Vec<Command>,
 ) -> UiAction {
-    let base_word = token.base_word.as_ref().unwrap_or(&token.original);
-    let base_gloss = vocabulary.get(base_word).cloned().unwrap_or_default();
-    let base_comment = vocabulary_comments
-        .get(base_word)
-        .cloned()
-        .unwrap_or_default();
-    let formatted_comment = if !token.formation_rule_indices.is_empty() {
-        formatted_word_comments
-            .get(&token.original)
-            .cloned()
-            .unwrap_or_default()
+    let annotation = annotate_token(project, token);
+    let comment = &annotation.display_comment;
+    let has_rule = annotation.is_derived;
+    let gloss = if annotation.formation_descriptions.is_empty() {
+        annotation.base_gloss.clone()
     } else {
-        String::new()
-    };
-    let active_comment = if !formatted_comment.is_empty() {
-        formatted_comment
-    } else {
-        base_comment
-    };
-
-    let (gloss, comment, has_rule) = if !token.formation_rule_indices.is_empty() {
-        let descriptions: Vec<String> = token
-            .formation_rule_indices
-            .iter()
-            .filter_map(|idx| formation_rules.get(*idx))
-            .map(|rule| rule.description.clone())
-            .collect();
-
-        if descriptions.is_empty() {
-            (base_gloss, active_comment, false)
-        } else {
-            let combined_gloss = format!("{base_gloss} ({})", descriptions.join("; "));
-            (combined_gloss, active_comment, true)
-        }
-    } else {
-        (base_gloss, active_comment, false)
+        format!(
+            "{} ({})",
+            annotation.base_gloss,
+            annotation.formation_descriptions.join("; ")
+        )
     };
 
     let default_font_id = egui::TextStyle::Body.resolve(ui.style());
@@ -321,12 +260,10 @@ fn render_token_column(
                         );
 
                         if !comment.is_empty() {
-                            label_resp.on_hover_text(&comment);
+                            label_resp.on_hover_text(comment);
                         }
                     } else {
-                        let lookup_word = base_word.clone();
-                        let mut current_gloss =
-                            vocabulary.get(&lookup_word).cloned().unwrap_or_default();
+                        let mut current_gloss = annotation.base_gloss.clone();
 
                         let edit_resp = ui.add_sized(
                             egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
@@ -336,12 +273,14 @@ fn render_token_column(
                         );
 
                         if edit_resp.changed() {
-                            vocabulary.insert(lookup_word, current_gloss);
-                            action = UiAction::Changed;
+                            commands.push(Command::SetGloss {
+                                word: annotation.base_word.clone(),
+                                meaning: current_gloss,
+                            });
                         }
 
                         if !comment.is_empty() {
-                            edit_resp.on_hover_text(&comment);
+                            edit_resp.on_hover_text(comment);
                         }
                     }
                 });
@@ -351,7 +290,7 @@ fn render_token_column(
             let mut label_resp = ui.add(egui::Label::new(layout_job).sense(egui::Sense::click()));
 
             if !comment.is_empty() {
-                label_resp = label_resp.on_hover_text(&comment);
+                label_resp = label_resp.on_hover_text(comment);
             }
 
             if label_resp.clicked() {
@@ -366,10 +305,11 @@ fn render_token_column(
 
 fn render_translation_box(
     ui: &mut egui::Ui,
-    segment: &mut Segment,
+    segment: &Segment,
     highlight: Option<&str>,
-) -> bool {
-    egui::Frame::NONE
+) -> Option<String> {
+    let mut translation = segment.translation.clone();
+    let changed = egui::Frame::NONE
         .stroke(egui::Stroke::new(TRANSLATION_BOX_STROKE_WIDTH, SENTENCEBOX))
         .inner_margin(TRANSLATION_BOX_INNER_MARGIN)
         .corner_radius(TRANSLATION_BOX_ROUNDING)
@@ -389,7 +329,7 @@ fn render_translation_box(
             };
 
             ui.add(
-                egui::TextEdit::multiline(&mut segment.translation)
+                egui::TextEdit::multiline(&mut translation)
                     .desired_width(f32::INFINITY)
                     .desired_rows(TRANSLATION_BOX_ROWS)
                     .frame(egui::Frame::NONE)
@@ -397,5 +337,6 @@ fn render_translation_box(
             )
             .changed()
         })
-        .inner
+        .inner;
+    changed.then_some(translation)
 }

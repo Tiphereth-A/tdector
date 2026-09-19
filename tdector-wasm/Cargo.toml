@@ -4,7 +4,6 @@ version = "0.1.8"
 edition = "2024"
 
 [dependencies]
-tdector-core = { path = "../tdector-core" }
 tdector-gui = { path = "../tdector-gui" }
 eframe = { version = "0.36", default-features = false, features = [
     "accesskit",

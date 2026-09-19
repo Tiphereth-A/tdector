@@ -59,14 +59,9 @@ pub fn migrate_v1_to_v2(mut value: Value) -> AppResult<Value> {
         for word in words.iter() {
             match word {
                 Value::Number(num) => {
-                    let idx = num
-                        .as_i64()
-                        .or_else(|| num.as_u64().map(|v| v as i64))
-                        .ok_or_else(|| {
-                            AppError::InvalidProjectFormat(
-                                "Invalid word index in sentence".to_string(),
-                            )
-                        })?;
+                    let idx = num.as_i64().ok_or_else(|| {
+                        AppError::InvalidProjectFormat("Invalid word index in sentence".to_string())
+                    })?;
                     migrated_words.push(Value::Number(idx.into()));
                 }
                 Value::Array(_) => {
@@ -120,9 +115,11 @@ fn parse_word_indices(word_value: Option<&Value>) -> AppResult<Vec<usize>> {
     array
         .iter()
         .map(|v| {
-            v.as_u64().map(|idx| idx as usize).ok_or_else(|| {
-                AppError::InvalidProjectFormat("Invalid formatted word index".to_string())
-            })
+            v.as_u64()
+                .and_then(|idx| usize::try_from(idx).ok())
+                .ok_or_else(|| {
+                    AppError::InvalidProjectFormat("Invalid formatted word index".to_string())
+                })
         })
         .collect()
 }

@@ -15,7 +15,8 @@ impl DecryptionApp {
             let mut should_close = false;
 
             let (existing_base_word, existing_rule_idx) = self
-                .project
+                .session
+                .project()
                 .segments
                 .get(sentence_idx)
                 .and_then(|seg| seg.tokens.get(word_idx))
@@ -84,7 +85,7 @@ impl DecryptionApp {
                             && ui
                                 .add(egui::Button::new("Remove Formation Rule").frame(false))
                                 .clicked()
-                            && let Some(rule) = self.project.formation_rules.get(rule_idx)
+                            && let Some(rule) = self.session.project().formation_rules.get(rule_idx)
                         {
                             self.remove_formation_rule_popup = Some(RemoveFormationRuleDialog {
                                 sentence_idx,

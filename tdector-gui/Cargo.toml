@@ -4,10 +4,11 @@ version = "0.1.8"
 edition = "2024"
 
 [dependencies]
+tdector-app = { path = "../tdector-app" }
 tdector-core = { path = "../tdector-core" }
 tdector-eval = { path = "../tdector-eval" }
-tdector-file = { path = "../tdector-file" }
-tdector-text = { path = "../tdector-text" }
+rfd = "0.17"
+pollster = "1.0"
 egui = "0.36"
 eframe = { version = "0.36", default-features = false, features = [
     "accesskit",
@@ -17,8 +18,9 @@ eframe = { version = "0.36", default-features = false, features = [
     "wayland",
     "x11",
 ] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen-futures = "0.4"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11"

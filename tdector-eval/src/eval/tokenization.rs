@@ -52,8 +52,15 @@ impl TokenizationRule {
 
             let tokens: Vec<String> = result
                 .into_iter()
-                .filter_map(|item| item.into_string().ok())
-                .collect();
+                .enumerate()
+                .map(|(index, item)| {
+                    item.into_string().map_err(|_| {
+                        AppError::ScriptExecutionError(format!(
+                            "Tokenize function returned a non-string token at index {index}"
+                        ))
+                    })
+                })
+                .collect::<AppResult<_>>()?;
 
             Ok(tokens)
         })

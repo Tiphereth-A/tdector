@@ -7,7 +7,7 @@ pub enum AppAction {
     /// Trigger project open dialog to load a saved project from disk
     Open,
 
-    /// Save the current project to disk
+    /// Export the current project as Typst
     Export,
 
     /// Close the application

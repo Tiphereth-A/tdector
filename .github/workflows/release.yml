@@ -8,6 +8,7 @@ on:
       - master
     paths:
       - '.github/**'
+      - 'tdector-app/**'
       - 'tdector-core/**'
       - 'tdector-eval/**'
       - 'tdector-file/**'
@@ -21,6 +22,7 @@ on:
       - master
     paths:
       - '.github/**'
+      - 'tdector-app/**'
       - 'tdector-core/**'
       - 'tdector-eval/**'
       - 'tdector-file/**'
@@ -37,6 +39,31 @@ env:
   CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER: arm-linux-gnueabihf-gcc
 
 jobs:
+  headless:
+    name: Headless API tests and dependency boundary
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Verify headless dependency boundary
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          tree = subprocess.check_output([
+              "cargo", "tree", "--locked", "-p", "tdector-app", "--target", "all",
+              "--edges", "normal,build", "--prefix", "none", "--format", "{p}",
+          ], text=True)
+          forbidden = {"egui", "eframe", "rfd"}
+          leaked = sorted({line.split()[0] for line in tree.splitlines()} & forbidden)
+          if leaked:
+              raise SystemExit(f"GUI dependencies in tdector-app: {leaked}")
+          PY
+      - name: Test shared application and libraries
+        run: cargo test --locked -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
+
   build:
     name: build (${{ matrix.target }}-${{ matrix.profile }})
     runs-on: ${{ matrix.os }}

@@ -46,7 +46,41 @@ A GUI tool for assisted text decryption and translation.
 ### Export & Storage
 - **Typst Export**: Export annotated projects to Typst format for professional typesetting and interlinear glossing suitable for academic publications.
 - **JSON Project Files**: Projects saved with space-optimized format using indexed vocabulary references.
-- **Command Pattern**: Undo/redo support through command queue architecture.
+- **Shared Application API**: Validated editing commands, project sessions, and queries independent of the GUI.
+
+## Architecture
+
+The GUI is an adapter over `tdector-app`. The application crate owns project edits,
+validation, query caches, and save revisions; it has no `egui`, `eframe`, or native
+file-dialog dependencies. CLI and MCP adapters can use the same API in later changes.
+
+```rust
+use tdector_app::{Command, Session};
+use tdector_eval::TokenizationRule;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut session = Session::default();
+    session.import_text("cat dog", "Example", &TokenizationRule::default_whitespace())?;
+    session.execute(Command::SetTranslation {
+        segment: 0,
+        translation: "a cat and a dog".into(),
+    })?;
+
+    let snapshot = session.save_snapshot()?;
+    std::fs::write("project.json", &snapshot.bytes)?;
+    session.acknowledge_saved(snapshot.token);
+    Ok(())
+}
+```
+
+See [the architecture guide](docs/architecture.md) for crate boundaries, editing
+semantics, save acknowledgments, and adapter guidance.
+
+Run the shared API tests without building the GUI:
+
+```bash
+cargo test --locked -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
+```
 
 ## Usage
 

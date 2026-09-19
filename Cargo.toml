@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "tdector-app",
     "tdector-core",
     "tdector-eval",
     "tdector-file",

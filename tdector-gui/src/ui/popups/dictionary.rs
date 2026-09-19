@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use tdector_app::LookupIndex;
 
 use eframe::egui;
 
@@ -12,7 +12,7 @@ impl DecryptionApp {
     pub(super) fn render_definition_popup(
         &mut self,
         ctx: &egui::Context,
-        headword_lookup: &Option<HashMap<String, Vec<usize>>>,
+        headword_lookup: &LookupIndex,
         popup_request: &mut Option<PopupRequest>,
     ) {
         let mut should_close = false;
@@ -20,7 +20,7 @@ impl DecryptionApp {
 
         if let Some(word) = self.definition_popup.as_ref() {
             let mut open = true;
-            let title = create_popup_title("Definition: ", word, self.project.font_path.is_some());
+            let title = create_popup_title("Definition: ", word, self.custom_font_name.is_some());
             egui::Window::new(title)
                 .id(egui::Id::new("def_popup"))
                 .open(&mut open)
@@ -53,7 +53,7 @@ impl DecryptionApp {
                 let title = create_pinned_title_string(
                     "📌 Definition: ",
                     word,
-                    self.project.font_path.is_some(),
+                    self.custom_font_name.is_some(),
                 );
                 self.pinned_popups.push(PinnedPopup::Dictionary(
                     word.clone(),
@@ -74,7 +74,7 @@ impl DecryptionApp {
     pub(super) fn render_reference_popup(
         &mut self,
         ctx: &egui::Context,
-        usage_lookup: &Option<HashMap<String, Vec<usize>>>,
+        usage_lookup: &LookupIndex,
         popup_request: &mut Option<PopupRequest>,
     ) {
         let mut should_close = false;
@@ -82,7 +82,7 @@ impl DecryptionApp {
 
         if let Some(word) = self.reference_popup.as_ref() {
             let mut open = true;
-            let title = create_popup_title("References: ", word, self.project.font_path.is_some());
+            let title = create_popup_title("References: ", word, self.custom_font_name.is_some());
             egui::Window::new(title)
                 .id(egui::Id::new("ref_popup"))
                 .open(&mut open)
@@ -115,7 +115,7 @@ impl DecryptionApp {
                 let title = create_pinned_title_string(
                     "📌 References: ",
                     word,
-                    self.project.font_path.is_some(),
+                    self.custom_font_name.is_some(),
                 );
                 self.pinned_popups.push(PinnedPopup::Dictionary(
                     word.clone(),
@@ -139,8 +139,8 @@ impl DecryptionApp {
         ui: &mut egui::Ui,
         word: &str,
         mode: DictionaryPopupType,
-        headword_lookup: &Option<HashMap<String, Vec<usize>>>,
-        usage_lookup: &Option<HashMap<String, Vec<usize>>>,
+        headword_lookup: &LookupIndex,
+        usage_lookup: &LookupIndex,
         popup_request: &mut Option<PopupRequest>,
         popup_id: Option<u64>,
     ) {
@@ -174,7 +174,7 @@ impl DecryptionApp {
         &self,
         ui: &mut egui::Ui,
         word: &str,
-        lookup_map: &Option<HashMap<String, Vec<usize>>>,
+        lookup_map: &LookupIndex,
         popup_request: &mut Option<PopupRequest>,
         popup_id: Option<u64>,
         is_definition: bool,
@@ -182,7 +182,7 @@ impl DecryptionApp {
         if let Some(map) = lookup_map {
             if let Some(indices) = map.get(word) {
                 for &idx in indices {
-                    if let Some(seg) = self.project.segments.get(idx) {
+                    if let Some(seg) = self.session.project().segments.get(idx) {
                         ui.horizontal(|ui| {
                             let mut label_resp = ui.add(
                                 egui::Label::new(format!("[{}]", idx + 1))
@@ -213,12 +213,9 @@ impl DecryptionApp {
                                         if let Some(action) = ui::render_clickable_tokens(
                                             ui,
                                             &seg.tokens,
-                                            &self.project.vocabulary,
-                                            &self.project.vocabulary_comments,
-                                            &self.project.formatted_word_comments,
+                                            self.session.project(),
                                             highlight,
-                                            self.project.font_path.is_some(),
-                                            &self.project.formation_rules,
+                                            self.custom_font_name.is_some(),
                                         ) {
                                             self.handle_ui_action(ui, action, popup_request, idx);
                                         }

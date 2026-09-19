@@ -11,5 +11,5 @@ pub mod models;
 pub mod update_v1;
 
 pub use exporter::convert_to_saved_project;
-pub use importer::load_project_from_json;
+pub use importer::{load_project_from_json, try_convert_from_saved_project_v2};
 pub use models::{Project, Segment, Token};

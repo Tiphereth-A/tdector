@@ -33,7 +33,8 @@ impl DecryptionApp {
                             .clicked()
                         {
                             let current_comment = self
-                                .project
+                                .session
+                                .project()
                                 .segments
                                 .get(sentence_idx)
                                 .map(|segment| segment.comment.clone())

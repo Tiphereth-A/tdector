@@ -1,19 +1,18 @@
-use std::path::PathBuf;
+use std::cell::Cell;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use eframe::egui;
 
 use crate::enums::{AppAction, CommentTarget, FormationType, PinnedPopup, SortMode};
-use tdector_core::libs::{
-    Project,
-    cache::{CachedTfidf, LookupCache},
-};
+use tdector_app::{SaveToken, Session};
+use tdector_eval::AppError;
 
-type AsyncFileResult<T> = Arc<Mutex<Option<Result<T, String>>>>;
-type PendingTextFile = AsyncFileResult<(String, String)>;
-type PendingProjectFile = AsyncFileResult<(String, String, Option<String>)>;
+type AsyncFileResult<T> = Arc<Mutex<Option<Result<T, AppError>>>>;
+type PendingTextFile = AsyncFileResult<(u64, String, String)>;
+type PendingProjectFile = AsyncFileResult<(u64, String, String, Option<String>)>;
 type PendingFontFile = AsyncFileResult<(Vec<u8>, String)>;
-type PendingSaveResult = AsyncFileResult<(u64, ())>;
+type PendingSaveResult = AsyncFileResult<(SaveToken, Option<String>)>;
 
 /// Dialog for creating a new word formation rule
 #[derive(Debug, Clone)]
@@ -106,18 +105,20 @@ pub struct CustomTokenizationDialog {
 
 /// Main application state for the decryption UI
 pub struct DecryptionApp {
-    /// The loaded translation project
-    pub(crate) project: Project,
-    /// Path to the currently open project file (if saved to disk)
-    pub(crate) current_path: Option<PathBuf>,
+    /// Shared application session; views only receive immutable project data.
+    pub(crate) session: Session,
+    /// Font selection is presentation state and is never stored in the project.
+    pub(crate) custom_font_name: Option<String>,
+    /// Instance-local mirror for the browser's before-unload callback.
+    pub(crate) unsaved_changes: Rc<Cell<bool>>,
+    /// Avoid repeatedly prompting after a confirmed native window close.
+    pub(crate) closing: bool,
     /// Filename of the current project
     pub(crate) project_filename: Option<String>,
     /// Current page being displayed (0-indexed)
     pub(crate) current_page: usize,
     /// Number of segments per page
     pub(crate) page_size: usize,
-    /// Revision of project changes used to validate asynchronous saves
-    pub(crate) change_revision: u64,
     /// Pending text content to import (text content, tokenization flag)
     pub(crate) pending_import: Option<(String, String)>,
     /// Result of async text file load operation
@@ -128,6 +129,7 @@ pub struct DecryptionApp {
     pub(crate) pending_font_file: PendingFontFile,
     /// Result of async save operation
     pub(crate) pending_save_result: PendingSaveResult,
+    pub(crate) pending_export_result: AsyncFileResult<()>,
     /// Current filter query text
     pub(crate) filter_text: String,
     /// Current sort mode
@@ -144,8 +146,7 @@ pub struct DecryptionApp {
     /// Currently open similarity search popup
     pub(crate) similar_popup: Option<(usize, Vec<(usize, f64)>)>,
     /// Currently open similar tokens popup
-    pub(crate) similar_tokens_popup:
-        Option<(String, Vec<tdector_text::similarity_token::SimilarToken>)>,
+    pub(crate) similar_tokens_popup: Option<(String, Vec<tdector_app::SimilarToken>)>,
     /// Currently open word context menu
     pub(crate) word_menu_popup: Option<(String, usize, usize, egui::Pos2)>,
     /// Currently open segment context menu
@@ -171,72 +172,29 @@ pub struct DecryptionApp {
 
     /// Cached list of segment indices matching current filter
     pub(crate) cached_filtered_indices: Vec<usize>,
-    /// Cache for quick token lookups
-    pub(crate) lookup_cache: LookupCache,
-    /// Cache for TF-IDF matrix (similarity search)
-    pub(crate) tfidf_cache: CachedTfidf,
-
-    /// Whether filtered indices cache needs recalculation
+    /// Whether the displayed filter/sort result needs refreshing.
     pub(crate) filter_dirty: bool,
-    /// Whether lookup maps need recalculation
-    pub(crate) lookups_dirty: bool,
-    /// Whether TF-IDF matrix needs recalculation
-    pub(crate) tfidf_dirty: bool,
 }
 
 impl DecryptionApp {
-    /// Recalculate the cached list of segment indices based on current filter and sort settings
     pub(crate) fn recalculate_filtered_indices(&mut self) {
-        use tdector_core::libs::filtering::FilterOperation;
-        use tdector_core::libs::sorting::SortOperation;
-
-        let mut indices = FilterOperation::apply_filter(&self.project, &self.filter_text);
-        SortOperation::apply_sort(&self.project, &mut indices, self.sort_mode);
-        self.cached_filtered_indices = indices;
+        self.cached_filtered_indices = self
+            .session
+            .filtered_indices(&self.filter_text, self.sort_mode);
     }
 
-    /// Ensure the TF-IDF matrix cache is up-to-date
-    pub(crate) fn ensure_tfidf_cache_impl(&mut self) {
-        use tdector_text::similarity_sentence::SimilarityEngine;
-
-        if !self.tfidf_dirty && !self.tfidf_cache.is_dirty() {
-            return;
-        }
-
-        if self.project.segments.is_empty() {
-            self.tfidf_cache.invalidate();
-            self.tfidf_dirty = false;
-            return;
-        }
-
-        if let Some(matrix) = SimilarityEngine::compute_tfidf_matrix(&self.project) {
-            self.tfidf_cache.set_matrix(matrix);
-        }
-        self.tfidf_dirty = false;
-    }
-
-    /// Compute similar segments to a target segment and update the UI
     pub(crate) fn compute_similar_segments(&mut self, target_idx: usize) {
         use crate::consts::domain::DEFAULT_SIMILARITY_RESULTS;
-        use tdector_text::similarity_sentence::SimilarityEngine;
-
-        if target_idx >= self.project.segments.len() {
-            return;
+        match self
+            .session
+            .similar_segments(target_idx, DEFAULT_SIMILARITY_RESULTS)
+        {
+            Ok(scores) => self.similar_popup = Some((target_idx, scores)),
+            Err(error) => {
+                self.similar_popup = None;
+                self.error_message = Some(error.to_string());
+            }
         }
-
-        self.ensure_tfidf_cache_impl();
-
-        let matrix = match self.tfidf_cache.get_matrix() {
-            Some(m) => m,
-            None => return,
-        };
-
-        let similarities =
-            SimilarityEngine::find_similar(matrix, target_idx, DEFAULT_SIMILARITY_RESULTS);
-
-        let scores: Vec<(usize, f64)> = similarities.into_iter().collect();
-
-        self.similar_popup = Some((target_idx, scores));
     }
 }
 
@@ -244,17 +202,19 @@ impl Default for DecryptionApp {
     /// Create a new default app state with empty project and default UI settings
     fn default() -> Self {
         Self {
-            project: Project::default(),
-            current_path: None,
+            session: Session::default(),
+            custom_font_name: None,
+            unsaved_changes: Rc::new(Cell::new(false)),
+            closing: false,
             project_filename: None,
             current_page: 0,
             page_size: 10,
-            change_revision: 0,
             pending_import: None,
             pending_text_file: Arc::new(Mutex::new(None)),
             pending_project_file: Arc::new(Mutex::new(None)),
             pending_font_file: Arc::new(Mutex::new(None)),
             pending_save_result: Arc::new(Mutex::new(None)),
+            pending_export_result: Arc::new(Mutex::new(None)),
             filter_text: String::new(),
             sort_mode: SortMode::DEFAULT,
             error_message: None,
@@ -275,11 +235,7 @@ impl Default for DecryptionApp {
             pinned_popups: Vec::new(),
             next_popup_id: 0,
             cached_filtered_indices: Vec::new(),
-            lookup_cache: LookupCache::default(),
-            tfidf_cache: CachedTfidf::default(),
             filter_dirty: false,
-            lookups_dirty: false,
-            tfidf_dirty: false,
         }
     }
 }

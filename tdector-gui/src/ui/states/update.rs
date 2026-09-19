@@ -1,19 +1,30 @@
-use std::collections::{HashMap, HashSet};
+use std::cell::Cell;
+use std::rc::Rc;
 
 use eframe::egui;
 
 use crate::enums::{AppAction, DictionaryPopupType, FormationType, PopupRequest};
 use crate::ui;
-use tdector_file::project::load_project_from_json;
-use tdector_text::similarity_token::find_similar_tokens;
 
 use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(cc: &eframe::CreationContext<'_>) -> Box<dyn eframe::App> {
+        Self::new_with_dirty_flag(cc, Rc::new(Cell::new(false)))
+    }
+
+    /// Connect an instance-local dirty flag to a platform close/unload callback.
+    pub fn new_with_dirty_flag(
+        cc: &eframe::CreationContext<'_>,
+        unsaved_changes: Rc<Cell<bool>>,
+    ) -> Box<dyn eframe::App> {
         Self::initialize_fonts(&cc.egui_ctx);
-        Box::new(Self::default())
+        unsaved_changes.set(false);
+        Box::new(Self {
+            unsaved_changes,
+            ..Self::default()
+        })
     }
 }
 
@@ -41,7 +52,7 @@ impl eframe::App for DecryptionApp {
 
         ui::render_menu_bar(
             ui,
-            !self.project.segments.is_empty(),
+            !self.session.project().segments.is_empty(),
             || do_import = true,
             || do_open = true,
             || do_save = true,
@@ -51,11 +62,11 @@ impl eframe::App for DecryptionApp {
             || do_add_word_formation_rule = true,
         );
 
-        if !self.project.segments.is_empty() {
+        if !self.session.project().segments.is_empty() {
             self.render_filter_panel(ui);
         }
 
-        if !self.project.segments.is_empty()
+        if !self.session.project().segments.is_empty()
             && self.cached_filtered_indices.is_empty()
             && self.filter_text.is_empty()
             && !self.filter_dirty
@@ -86,7 +97,8 @@ impl eframe::App for DecryptionApp {
             do_add_word_formation_rule,
         );
 
-        if ctx.input(|i| i.viewport().close_requested()) && tdector_core::is_app_dirty() {
+        if ctx.input(|i| i.viewport().close_requested()) && self.session.is_dirty() && !self.closing
+        {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             self.trigger_action(AppAction::Quit, &ctx);
         }
@@ -102,17 +114,14 @@ impl eframe::App for DecryptionApp {
         self.render_import_dialog(&ctx);
         self.render_custom_tokenization_popup(&ctx);
 
-        if self.lookups_dirty {
-            self.recalculate_lookup_maps();
-            self.lookups_dirty = false;
+        if self.filter_dirty {
+            self.recalculate_filtered_indices();
+            self.filter_dirty = false;
         }
 
-        let (headword_lookup, usage_lookup) = self.lookup_cache.take();
-
-        let mut any_changed = false;
         let mut popup_request = None;
 
-        self.render_central_panel(ui, &mut any_changed, &mut popup_request);
+        self.render_central_panel(ui, &mut popup_request);
 
         if let Some(req) = popup_request.take() {
             match req {
@@ -124,7 +133,7 @@ impl eframe::App for DecryptionApp {
                     self.compute_similar_segments(idx);
                 }
                 PopupRequest::SimilarTokens(word) => {
-                    let similar_indices = find_similar_tokens(&self.project, &word);
+                    let similar_indices = self.session.similar_tokens(&word);
                     self.similar_tokens_popup = Some((word, similar_indices));
                 }
                 PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
@@ -148,11 +157,11 @@ impl eframe::App for DecryptionApp {
             }
         }
 
+        let (headword_lookup, usage_lookup) = self.session.lookup_maps();
+
         self.render_popups(&ctx, &headword_lookup, &usage_lookup, &mut popup_request);
 
         self.render_pinned_popups(&ctx, &headword_lookup, &usage_lookup, &mut popup_request);
-
-        self.lookup_cache.restore(headword_lookup, usage_lookup);
 
         if let Some(req) = popup_request {
             match req {
@@ -164,7 +173,7 @@ impl eframe::App for DecryptionApp {
                     self.compute_similar_segments(idx);
                 }
                 PopupRequest::SimilarTokens(word) => {
-                    let similar_indices = find_similar_tokens(&self.project, &word);
+                    let similar_indices = self.session.similar_tokens(&word);
                     self.similar_tokens_popup = Some((word, similar_indices));
                 }
                 PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
@@ -186,15 +195,6 @@ impl eframe::App for DecryptionApp {
                     self.filter_dirty = true;
                 }
             }
-        }
-
-        if any_changed {
-            self.update_dirty_status(true, &ctx);
-            self.filter_dirty = true;
-            self.lookups_dirty = true;
-            self.tfidf_dirty = true;
-            self.tfidf_cache.invalidate();
-            ctx.request_repaint();
         }
     }
 }
@@ -272,128 +272,6 @@ impl DecryptionApp {
                 test_word: String::new(),
                 preview: String::new(),
             });
-        }
-    }
-
-    fn recalculate_lookup_maps(&mut self) {
-        if self.project.segments.is_empty() {
-            self.lookup_cache.invalidate();
-            return;
-        }
-
-        let mut headmap: HashMap<String, Vec<usize>> = HashMap::new();
-        let mut usagemap: HashMap<String, Vec<usize>> = HashMap::new();
-
-        for (idx, segment) in self.project.segments.iter().enumerate() {
-            if let Some(first) = segment.tokens.first() {
-                headmap.entry(first.original.clone()).or_default().push(idx);
-            }
-
-            let mut seen = HashSet::new();
-            for token in &segment.tokens {
-                if seen.insert(&token.original) {
-                    usagemap
-                        .entry(token.original.clone())
-                        .or_default()
-                        .push(idx);
-                }
-            }
-        }
-
-        self.lookup_cache.restore(Some(headmap), Some(usagemap));
-    }
-
-    fn process_pending_file_operations(&mut self, ctx: &egui::Context) {
-        if let Ok(mut guard) = self.pending_text_file.try_lock()
-            && let Some(result) = guard.take()
-        {
-            match result {
-                Ok((content, name)) => {
-                    self.pending_import = Some((content, name));
-                }
-                Err(e) => {
-                    self.error_message = Some(format!("Failed to load text file: {e}"));
-                }
-            }
-        }
-
-        let project_result = if let Ok(mut guard) = self.pending_project_file.try_lock() {
-            guard.take()
-        } else {
-            None
-        };
-
-        if let Some(result) = project_result {
-            match result {
-                Ok((content, name, full_path)) => {
-                    let value: serde_json::Value = match serde_json::from_str(&content) {
-                        Ok(parsed) => parsed,
-                        Err(e) => {
-                            self.error_message = Some(format!("Failed to parse project file: {e}"));
-                            return;
-                        }
-                    };
-
-                    match load_project_from_json(value) {
-                        Ok(project) => {
-                            self.project = project;
-                            self.current_path = None;
-
-                            self.project_filename = full_path.or(Some(name));
-                            self.filter_dirty = true;
-                            self.lookups_dirty = true;
-                            self.tfidf_dirty = true;
-                            self.filter_text.clear();
-                            self.clear_popups();
-                            self.update_dirty_status(false, ctx);
-                        }
-                        Err(e) => {
-                            self.error_message = Some(e);
-                        }
-                    }
-                }
-                Err(e) => {
-                    self.error_message = Some(format!("Failed to load project file: {e}"));
-                }
-            }
-        }
-
-        let save_result = if let Ok(mut guard) = self.pending_save_result.try_lock() {
-            guard.take()
-        } else {
-            None
-        };
-
-        if let Some(result) = save_result {
-            match result {
-                Ok((save_revision, ())) => {
-                    if self.change_revision == save_revision {
-                        self.update_dirty_status(false, ctx);
-                    }
-                }
-                Err(e) => {
-                    if !e.contains("cancelled") && !e.contains("Cancelled") {
-                        self.error_message = Some(format!("Failed to save project: {e}"));
-                    }
-                }
-            }
-        }
-
-        let font_result = if let Ok(mut guard) = self.pending_font_file.try_lock() {
-            guard.take()
-        } else {
-            None
-        };
-
-        if let Some(result) = font_result {
-            match result {
-                Ok((data, name)) => {
-                    self.load_custom_font_from_bytes(ctx, data, &name);
-                }
-                Err(e) => {
-                    self.error_message = Some(format!("Failed to load font file: {e}"));
-                }
-            }
         }
     }
 }

@@ -7,18 +7,13 @@
 /// - `FormationRule`: Rhai script that transforms base words into derived forms
 /// - `TokenizationRule`: Rhai script that splits text into tokens
 ///
-/// The library provides:
-/// - Text analysis: Tokenization and translation ratio calculations (provided by `tdector-text`)
-/// - Caching: Lookup maps and TF-IDF matrices for performance
-/// - Filtering: Full-text search across segments and translations
-/// - Sorting: Multiple sort criteria for segment ordering
-/// - Similarity: TF-IDF based semantic search (provided by `tdector-text`)
-/// - Script evaluation: Safe Rhai-based execution for word transformations and tokenization
-/// - Project I/O: Serialization with version migration support
+/// This crate provides domain models, filtering, sorting, index types, and cache
+/// containers. Application use cases live in `tdector-app`; text analysis,
+/// script evaluation, and persistence live in their respective headless crates.
 pub mod cache;
 pub mod filtering;
 pub mod sorting;
 pub mod types;
 
-pub use tdector_file::project;
-pub use tdector_file::project::{Project, Segment, Token};
+pub use crate::project;
+pub use crate::project::{Project, Segment, Token};

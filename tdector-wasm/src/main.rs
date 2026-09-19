@@ -13,6 +13,9 @@ fn start_web_app() {
 
     let web_options = eframe::WebOptions::default();
 
+    let dirty = std::rc::Rc::new(std::cell::Cell::new(false));
+    setup_beforeunload_handler(dirty.clone());
+
     spawn_local(async move {
         let document = web_sys::window()
             .expect("no window exists")
@@ -30,12 +33,10 @@ fn start_web_app() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(DecryptionApp::new(cc))),
+                Box::new(move |cc| Ok(DecryptionApp::new_with_dirty_flag(cc, dirty))),
             )
             .await
             .expect("failed to start eframe");
-
-        setup_beforeunload_handler();
 
         if let Some(loading_element) = document.get_element_by_id("loading_text") {
             loading_element.remove();
@@ -44,7 +45,7 @@ fn start_web_app() {
 }
 
 #[cfg(target_arch = "wasm32")]
-fn setup_beforeunload_handler() {
+fn setup_beforeunload_handler(dirty: std::rc::Rc<std::cell::Cell<bool>>) {
     use eframe::wasm_bindgen::prelude::*;
     use wasm_bindgen::closure::Closure;
 
@@ -54,7 +55,7 @@ fn setup_beforeunload_handler() {
     };
 
     let closure: Closure<dyn Fn(web_sys::Event)> = Closure::new(move |event: web_sys::Event| {
-        if tdector_core::is_app_dirty() {
+        if dirty.get() {
             event.prevent_default();
 
             use js_sys::Reflect;
