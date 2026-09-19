@@ -2,7 +2,8 @@
 
 [Try online](https://tdector.tifa-233.com/)
 
-A GUI tool for assisted text decryption and translation.
+A tool for assisted text decryption and translation, with desktop, browser, and
+headless command-line interfaces.
 
 [![Epigraph](sample/epigraph.png)](https://store.steampowered.com/app/2789770/Epigraph/)
 
@@ -47,12 +48,14 @@ A GUI tool for assisted text decryption and translation.
 - **Typst Export**: Export annotated projects to Typst format for professional typesetting and interlinear glossing suitable for academic publications.
 - **JSON Project Files**: Projects saved with space-optimized format using indexed vocabulary references.
 - **Shared Application API**: Validated editing commands, project sessions, and queries independent of the GUI.
+- **Command-Line Interface**: Query, edit, validate, batch, and export projects from scripts, with versioned JSON reports and atomic file saves.
 
 ## Architecture
 
-The GUI is an adapter over `tdector-app`. The application crate owns project edits,
-validation, query caches, and save revisions; it has no `egui`, `eframe`, or native
-file-dialog dependencies. CLI and MCP adapters can use the same API in later changes.
+The GUI and CLI are adapters over `tdector-app`. The application crate owns project
+edits, validation, query caches, and save revisions; it has no `egui`, `eframe`, or
+native file-dialog dependencies. Its `api` module provides request/response types
+and rule selection that a future MCP adapter can call directly.
 
 ```rust
 use tdector_app::{Command, Session};
@@ -76,19 +79,72 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 See [the architecture guide](docs/architecture.md) for crate boundaries, editing
 semantics, save acknowledgments, and adapter guidance.
 
-Run the shared API tests without building the GUI:
+Run the CLI and shared API tests without building the GUI:
 
 ```bash
-cargo test --locked -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
+cargo test --locked -p tdector-cli -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
 ```
 
 ## Usage
 
+### Building and Using the CLI
+
+Build only the headless `tdector` binary, or run its help directly through Cargo:
+
+```bash
+cargo build --locked --release -p tdector-cli
+cargo run --locked --release -p tdector-cli -- --help
+```
+
+The executable is `target/release/tdector` (`tdector.exe` on Windows). The following
+examples assume it is on your `PATH`:
+
+```bash
+tdector import sample/epigraph.txt --name Example -o project.json
+tdector -p project.json info --json
+tdector -p project.json segment list --limit 10
+tdector -p project.json segment translate 0 --text "A translated segment" --in-place
+tdector -p project.json comment set --segment 0 --text "Review this passage" --dry-run --json
+tdector -p project.json export typst -o project.typ
+tdector -p project.json batch edits.json --in-place --json
+```
+
+For the batch example, `edits.json` contains a versioned list of commands:
+
+```json
+{
+  "schema_version": 1,
+  "commands": [
+    { "op": "set_gloss", "word": "cat", "meaning": "animal" },
+    { "op": "set_translation", "segment_index": 0, "translation": "A revised segment" }
+  ]
+}
+```
+
+Project queries require an explicit `--project` path. Every edit requires exactly one of
+`--output FILE`, `--in-place`, or `--dry-run`. Existing separate output files require
+`--overwrite`; editing the input file requires `--in-place`. Saves stage a complete
+result beside the destination before atomic replacement, and a failed batch leaves
+the destination unchanged. An in-place save rejects changes observed in the source
+since it was loaded; it assumes one writer per project.
+
+Use `--project -` for project JSON on stdin, or `--output -` for a saved project on
+stdout. Only one input can consume stdin. `--json` produces a versioned report and
+cannot be combined with a project or export artifact on stdout. Text inputs use
+UTF-8 and accept one leading BOM. Segment, token, and rule indices are zero-based;
+the GUI displays segment numbers starting at one.
+
+See [the CLI reference](docs/cli-design.md) for all commands, batch request schemas,
+script behavior, exit codes, and persistence guarantees.
+
 ### Building the Desktop Application
 
 ```bash
-cargo build --release
+cargo build --locked --release -p tdector-gui
 ```
+
+The desktop executable remains `tdector-gui` (`tdector-gui.exe` on Windows).
+Native release artifacts include both the desktop and CLI executables.
 
 ### Building for Web
 

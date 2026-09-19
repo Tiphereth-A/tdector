@@ -1,0 +1,21 @@
+[package]
+name = "tdector-cli"
+version = "0.1.8"
+edition = "2024"
+description = "Headless project queries, editing, and exports for tdector"
+
+[[bin]]
+name = "tdector"
+path = "src/main.rs"
+
+[dependencies]
+tdector-app = { path = "../tdector-app" }
+tdector-eval = { path = "../tdector-eval" }
+clap = { version = "4.6", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tempfile = "3"
+same-file = "1"
+
+[lints]
+workspace = true

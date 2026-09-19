@@ -1,3 +1,14 @@
+# Unreleased
+
+## Features
+- Add the headless `tdector` CLI alongside `tdector-gui`, with project queries, import, translation and vocabulary editing, comments, formation rules, similarity, and JSON/Typst exports.
+- Add versioned JSON reports and batch requests, explicit save destinations, dry runs, atomic file replacement, and detection of observed source changes before in-place saves.
+- Expose reusable application request/response types, rule selectors, and batch decoding for CLI and future protocol adapters.
+
+## CI/Deps
+- Test the CLI with the shared headless crates and verify that neither the application nor CLI dependency graph includes GUI packages.
+- Package both CLI and desktop executables for the native release targets, including Alpine musl.
+
 # v0.1.8
 
 ## CI/Deps

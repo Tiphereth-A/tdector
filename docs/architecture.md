@@ -1,7 +1,8 @@
-# Application and UI boundaries
+# Application and adapter boundaries
 
-The desktop and browser interfaces share a headless `tdector-app::Session`.
-CLI and MCP executables are intentionally left for follow-up changes.
+The desktop, browser, and command-line interfaces share a headless
+`tdector-app::Session`. Each CLI invocation owns one session until it exits. A
+future MCP adapter can use the same application API without invoking the CLI.
 
 ## Crates
 
@@ -11,7 +12,8 @@ CLI and MCP executables are intentionally left for follow-up changes.
 | `tdector-eval` | Rhai rules, evaluator execution, compilation caches, and evaluation errors |
 | `tdector-file` | Saved-format DTOs, migration, JSON conversion, and Typst generation |
 | `tdector-text` | Tokenization orchestration, text metrics, and similarity algorithms |
-| `tdector-app` | Sessions, validated commands, queries, revisions, and cache invalidation |
+| `tdector-app` | Sessions, validated commands, queries, revisions, cache invalidation, and reusable API request/response types |
+| `tdector-cli` | The `tdector` binary: argument parsing, stdin/path handling, atomic commits, text/JSON reports, and exit codes |
 | `tdector-gui` | Widgets, drafts, popup state, fonts, and the platform/controller adapters |
 | `tdector-wasm` | Browser startup and the instance-local before-unload notification |
 
@@ -21,6 +23,14 @@ The GUI's `platform` module owns file dialogs and native/browser execution, and
 `controller` delivers their results to the application API. Rendering receives
 immutable project data and emits explicit commands; it cannot borrow the session's
 project mutably.
+
+The CLI depends on the application and evaluator crates without linking a GUI.
+Its argument parser validates option conflicts and counts stdin consumers before
+reading input. It converts arguments into requests for `tdector_app::api`; that
+module owns rule selector resolution, coordinate validation, query response types,
+and the versioned batch request schema. Saved-project JSON remains a separate
+format owned by `tdector-file`; the runtime project and caches are not serialized
+as the CLI query schema.
 
 ## Commands and queries
 
@@ -47,6 +57,9 @@ without recalculating similarity on each translation/comment edit.
 Segment, token, and rule indices are zero-based positions in the current project.
 They are not persistent identifiers across imports or project replacement. Future
 protocol adapters should associate requests with their session and revision.
+Rules are sorted when saved, so their indices can also change after save/reload.
+Description selectors require an exact, unique match; ambiguous descriptions
+return their matching indices so the caller can use a snapshot-local rule index.
 
 ## Loading and importing
 
@@ -74,6 +87,27 @@ from another session, an older edit, or a replaced project cannot clear current
 unsaved changes. Cancellation and I/O failure do not acknowledge the snapshot.
 Typst export likewise returns text; writing it belongs to the adapter.
 
+The CLI requires an explicit output, in-place save, or dry run for every edit.
+It serializes completely before staging a file in the destination directory and
+commits with the platform replacement operation, without deleting the original
+first. Existing separate outputs require `--overwrite`. Identity checks reject
+separate outputs that alias the source, including existing hard links. An in-place
+save compares the source bytes with those originally loaded immediately before
+commit; observed changes reject the save. This assumes one writer and does not
+coordinate with a simultaneous GUI writer. A no-op in-place edit does not rewrite
+the file. Revisions and save tokens stay process-local.
+
+Batch requests are parsed completely, then applied sequentially to the CLI's
+private session. A command or serialization failure discards that invocation's
+session and leaves the destination unchanged; a successful batch commits once.
+This is a file-level guarantee. A future long-lived adapter needs an
+application-owned transaction operation before promising in-memory rollback.
+
+Artifact output to stdout is generated completely before writing. It cannot share
+stdout with a report, and `--json` is rejected for that combination. Stream errors
+can still leave partial artifact bytes in a pipe. Versioned JSON reports distinguish
+typed domain, script, I/O, and persistence failures; script diagnostics use stderr.
+
 Custom fonts, filenames, popup drafts, filtering input, and pagination are GUI
 state. Browser unload handling uses a flag associated with that GUI instance;
 there is no thread-global project dirty flag.
@@ -90,7 +124,7 @@ on an owning worker and pass data-only commands/results to it. It must not assum
 that wrapping the project in a mutex makes it transferable.
 
 Evaluator print/debug output is directed away from native stdout so scripts cannot
-mix diagnostics into future machine-readable output. Browser evaluation does not
+mix diagnostics into CLI machine-readable output. Browser evaluation does not
 write native protocol output.
 
 ## Validation
@@ -98,5 +132,9 @@ write native protocol output.
 Application tests exercise atomic failures, no-op and revision behavior, independent
 sessions, formation chains and comments, query freshness, persistence, and stale save
 completions. File tests preserve the v1 migration fixture and validate malformed
-references and rule failures. The headless CI job checks the app dependency graph
-for GUI packages before testing the reusable crates.
+references and rule failures. CLI tests cover process arguments, UTF-8 and stream
+handling, result envelopes, project round trips, formation/comment scope, and
+failed or conflicting saves. The headless CI job checks both the application and
+CLI dependency graphs for GUI packages before testing the CLI and reusable crates.
+Native release builds package both `tdector-gui` and `tdector`, including the Alpine
+musl target.

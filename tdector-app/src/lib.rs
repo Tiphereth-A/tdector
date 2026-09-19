@@ -4,6 +4,8 @@
 //! intentionally not `Send` or `Sync`. A concurrent adapter should send commands
 //! to the owning thread instead of sharing a mutable project between workers.
 
+pub mod api;
+
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::sync::Arc;
@@ -340,9 +342,10 @@ impl Session {
                     .iter_functions()
                     .any(|function| function.name == "transform" && function.params.len() == 1)
                 {
-                    return Err(Error::InvalidInput(
+                    return Err(AppError::ScriptExecutionError(
                         "A formation rule must define transform(word)".into(),
-                    ));
+                    )
+                    .into());
                 }
                 if self.project.formation_rules.iter().any(|rule| {
                     rule.description == description
