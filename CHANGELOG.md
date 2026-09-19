@@ -1,11 +1,21 @@
-# Unreleased
+# v0.2.0
+
+## Breaking changes
+- Rename the desktop executable from `tdector` to `tdector-gui`; `tdector` now runs the headless CLI.
 
 ## Features
 - Add the headless `tdector` CLI alongside `tdector-gui`, with project queries, import, translation and vocabulary editing, comments, formation rules, similarity, and JSON/Typst exports.
 - Add versioned JSON reports and batch requests, explicit save destinations, dry runs, atomic file replacement, and detection of observed source changes before in-place saves.
 - Expose reusable application request/response types, rule selectors, and batch decoding for CLI and future protocol adapters.
+- Split the application into reusable workspace crates for project data, evaluation, file formats, text processing, and headless operations, with separate desktop and WebAssembly entry points.
+
+## Fixes
+- Preserve the current project when loading or importing fails, and reject invalid project references and formation scripts.
+- Reject non-string results from custom tokenization scripts instead of silently dropping them.
+- Keep newer edits marked as unsaved when an earlier save completes.
 
 ## CI/Deps
+- Bump dependencies, including egui/eframe to 0.36, pollster to 1.0, and scirs2-text to 0.6.
 - Test the CLI with the shared headless crates and verify that neither the application nor CLI dependency graph includes GUI packages.
 - Package both CLI and desktop executables for the native release targets, including Alpine musl.
 

@@ -4047,7 +4047,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-app"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -4059,7 +4059,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-cli"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "clap",
  "same-file",
@@ -4072,7 +4072,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-core"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "ndarray",
  "serde",
@@ -4081,7 +4081,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-eval"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "rhai",
  "serde",
@@ -4089,7 +4089,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-file"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -4099,7 +4099,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-gui"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "egui",
@@ -4115,7 +4115,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-text"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "ndarray",
  "scirs2-text",
@@ -4126,7 +4126,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-wasm"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "getrandom 0.2.17",
