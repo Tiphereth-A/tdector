@@ -275,8 +275,8 @@ jobs:
           git log --reverse --format="- %s ([%h](${repository_url}/commit/%H))" "$range" -- >> release-notes.md
 
           if [[ -n "$previous_tag" ]]; then
-            printf '\n[Full changelog](%s/compare/%s...%s)\n' \
-              "$repository_url" "$previous_tag" "$GITHUB_REF_NAME" >> release-notes.md
+            printf '\n[Full changelog](https://github.com/Tiphereth-A/tdector/blob/%s/CHANGELOG.md)\n' \
+              "$GITHUB_REF_NAME" >> release-notes.md
           fi
 
       - name: Create Release
@@ -285,6 +285,5 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
             --notes-file release-notes.md \
             artifacts/*
