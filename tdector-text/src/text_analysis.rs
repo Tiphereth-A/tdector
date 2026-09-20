@@ -5,8 +5,7 @@ use tdector_eval::{AppError, AppResult, TokenizationRule};
 pub struct TextProcessor;
 
 impl TextProcessor {
-    /// Split text into segments using the provided tokenization rule.
-    /// Empty lines are skipped; other lines become separate segments.
+    /// Split text into segments using the provided tokenization rule. Empty lines are skipped; other lines become separate segments.
     pub fn segment_text_with_rule(
         text: &str,
         tokenization_rule: Option<&TokenizationRule>,
@@ -53,8 +52,7 @@ impl TextProcessor {
         Ok(segments)
     }
 
-    /// Calculate what percentage of a segment has been translated.
-    /// Returns 1.0 if translation is present and non-empty, 0.0 otherwise.
+    /// Calculate what percentage of a segment has been translated. Returns 1.0 if translation is present and non-empty, 0.0 otherwise.
     pub fn calculate_translation_ratio(segment: &Segment) -> f32 {
         if segment.tokens.is_empty() {
             return 0.0;
@@ -66,9 +64,7 @@ impl TextProcessor {
         }
     }
 
-    /// Count how many tokens in a segment have vocabulary definitions.
-    /// A token is considered translated if its original form exists in the project vocabulary
-    /// and has a non-empty definition.
+    /// Count how many tokens in a segment have vocabulary definitions. A token is considered translated if its original form exists in the project vocabulary and has a non-empty definition.
     pub fn count_segment_translated_tokens(segment: &Segment, project: &Project) -> usize {
         segment
             .tokens

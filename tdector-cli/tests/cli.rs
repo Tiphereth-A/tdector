@@ -662,8 +662,7 @@ fn an_observed_external_edit_prevents_an_in_place_commit() {
             collected.push_str(&line);
         }
     });
-    // The stored formation runs only after the input bytes have been read.
-    // The edit then blocks on stdin, allowing a deterministic external write.
+    // The stored formation runs only after the input bytes have been read. The edit then blocks on stdin, allowing a deterministic external write.
     if loaded_rx.recv_timeout(Duration::from_secs(10)).is_err() {
         let _ = child.kill();
         let output = child.wait_with_output().expect("collect blocked CLI");

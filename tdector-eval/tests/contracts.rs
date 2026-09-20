@@ -20,6 +20,11 @@ fn script_diagnostics_leave_stdout_available_for_protocol_output() {
     const CHILD_FLAG: &str = "TDECTOR_TEST_SCRIPT_OUTPUT_CHILD";
     const MARKER: &str = "tdector-script-diagnostic-marker";
     if std::env::var_os(CHILD_FLAG).is_some() {
+        let _guard = tdector_eval::ExecutionPolicy::new(
+            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            std::time::Instant::now() + std::time::Duration::from_secs(30),
+        )
+        .enter();
         tdector_eval::with_engine(|engine| {
             engine.eval::<()>(
                 "print(\"tdector-script-diagnostic-marker\"); debug(\"tdector-script-diagnostic-marker\");",

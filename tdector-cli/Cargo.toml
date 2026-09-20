@@ -11,11 +11,13 @@ path = "src/main.rs"
 [dependencies]
 tdector-app = { path = "../tdector-app" }
 tdector-eval = { path = "../tdector-eval" }
+tdector-io = { path = "../tdector-io" }
 clap = { version = "4.6", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+
+[dev-dependencies]
 tempfile = "3"
-same-file = "1"
 
 [lints]
 workspace = true

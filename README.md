@@ -2,8 +2,7 @@
 
 [Try online](https://tdector.tifa-233.com/)
 
-A tool for assisted text decryption and translation, with desktop, browser, and
-headless command-line interfaces.
+A tool for assisted text decryption and translation, with desktop, browser, headless command-line and MCP interfaces.
 
 [![Epigraph](sample/epigraph.png)](https://store.steampowered.com/app/2789770/Epigraph/)
 
@@ -49,13 +48,11 @@ headless command-line interfaces.
 - **JSON Project Files**: Projects saved with space-optimized format using indexed vocabulary references.
 - **Shared Application API**: Validated editing commands, project sessions, and queries independent of the GUI.
 - **Command-Line Interface**: Query, edit, validate, batch, and export projects from scripts, with versioned JSON reports and atomic file saves.
+- **MCP Server**: Connect an MCP host to one project for bounded queries, revision-checked annotation batches, previews, and explicit saves; read-only by default.
 
 ## Architecture
 
-The GUI and CLI are adapters over `tdector-app`. The application crate owns project
-edits, validation, query caches, and save revisions; it has no `egui`, `eframe`, or
-native file-dialog dependencies. Its `api` module provides request/response types
-and rule selection that a future MCP adapter can call directly.
+The GUI, CLI, and MCP server are adapters over `tdector-app`. The application crate owns project edits, validation, query caches, prepared transactions, and save revisions; it has no GUI, protocol-runtime, or native persistence dependencies. Its `api` module provides shared request/response types and rule selection. The CLI and MCP server share native file persistence through `tdector-io`.
 
 ```rust
 use tdector_app::{Command, Session};
@@ -76,13 +73,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-See [the architecture guide](docs/architecture.md) for crate boundaries, editing
-semantics, save acknowledgments, and adapter guidance.
+See [the architecture guide](docs/architecture.md) for crate boundaries, editing semantics, save acknowledgments, and adapter guidance.
 
-Run the CLI and shared API tests without building the GUI:
+See [MCP setup and usage](docs/mcp.md) to connect a host, and the [MCP server design](docs/mcp-design.md) for protocol and persistence guarantees.
+
+Run the native adapters and shared API tests without building the GUI:
 
 ```bash
-cargo test --locked -p tdector-cli -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
+cargo test --locked -p tdector-cli -p tdector-io -p tdector-mcp -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
 ```
 
 ## Usage
@@ -96,8 +94,7 @@ cargo build --locked --release -p tdector-cli
 cargo run --locked --release -p tdector-cli -- --help
 ```
 
-The executable is `target/release/tdector` (`tdector.exe` on Windows). The following
-examples assume it is on your `PATH`:
+The executable is `target/release/tdector` (`tdector.exe` on Windows). The following examples assume it is on your `PATH`:
 
 ```bash
 tdector import sample/epigraph.txt --name Example -o project.json
@@ -121,21 +118,24 @@ For the batch example, `edits.json` contains a versioned list of commands:
 }
 ```
 
-Project queries require an explicit `--project` path. Every edit requires exactly one of
-`--output FILE`, `--in-place`, or `--dry-run`. Existing separate output files require
-`--overwrite`; editing the input file requires `--in-place`. Saves stage a complete
-result beside the destination before atomic replacement, and a failed batch leaves
-the destination unchanged. An in-place save rejects changes observed in the source
-since it was loaded; it assumes one writer per project.
+Project queries require an explicit `--project` path. Every edit requires exactly one of `--output FILE`, `--in-place`, or `--dry-run`. Existing separate output files require `--overwrite`; editing the input file requires `--in-place`. Saves stage a complete result beside the destination before atomic replacement, and a failed batch leaves the destination unchanged. An in-place save rejects changes observed in the source since it was loaded; it assumes one writer per project.
 
-Use `--project -` for project JSON on stdin, or `--output -` for a saved project on
-stdout. Only one input can consume stdin. `--json` produces a versioned report and
-cannot be combined with a project or export artifact on stdout. Text inputs use
-UTF-8 and accept one leading BOM. Segment, token, and rule indices are zero-based;
-the GUI displays segment numbers starting at one.
+Use `--project -` for project JSON on stdin, or `--output -` for a saved project on stdout. Only one input can consume stdin. `--json` produces a versioned report and cannot be combined with a project or export artifact on stdout. Text inputs use UTF-8 and accept one leading BOM. Segment, token, and rule indices are zero-based; the GUI displays segment numbers starting at one.
 
-See [the CLI reference](docs/cli-design.md) for all commands, batch request schemas,
-script behavior, exit codes, and persistence guarantees.
+See [the CLI reference](docs/cli-design.md) for all commands, batch request schemas, script behavior, exit codes, and persistence guarantees.
+
+### Connecting an MCP Host
+
+Build the native stdio server and select one existing project:
+
+```bash
+cargo build --locked --release -p tdector-mcp
+tdector-mcp --project /absolute/path/project.json
+```
+
+Configure your MCP host to launch `target/release/tdector-mcp` (`tdector-mcp.exe` on Windows) with those arguments. Add `--write` to enable in-memory gloss, translation, and comment batches plus explicit saves. Edits remain unsaved until `project_save`; closing the process discards them. The process owns an independent session and does not synchronize a project open in the GUI.
+
+Read [the MCP reference](docs/mcp.md) for a host configuration example, tool semantics, revision handling, configured limits, and error recovery.
 
 ### Building the Desktop Application
 
@@ -143,8 +143,7 @@ script behavior, exit codes, and persistence guarantees.
 cargo build --locked --release -p tdector-gui
 ```
 
-The desktop executable remains `tdector-gui` (`tdector-gui.exe` on Windows).
-Native release artifacts include both the desktop and CLI executables.
+The desktop executable remains `tdector-gui` (`tdector-gui.exe` on Windows). Native release artifacts include the desktop, CLI, and MCP executables.
 
 ### Building for Web
 

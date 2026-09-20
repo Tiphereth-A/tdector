@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use serde_json::{Value, json};
 
-use tdector_eval::{AppError, AppResult};
+use tdector_eval::{AppError, AppResult, check_execution};
 
 pub fn migrate_v1_to_v2(mut value: Value) -> AppResult<Value> {
+    check_execution()?;
     let version = value
         .get("version")
         .and_then(Value::as_u64)
@@ -34,6 +35,7 @@ pub fn migrate_v1_to_v2(mut value: Value) -> AppResult<Value> {
 
     let mut formatted_index_map: HashMap<Vec<usize>, usize> = HashMap::new();
     for (idx, entry) in formatted_entries.iter().enumerate() {
+        check_execution()?;
         let key = parse_word_indices(entry.get("word"))?;
         formatted_index_map.entry(key).or_insert(idx);
     }
@@ -46,6 +48,7 @@ pub fn migrate_v1_to_v2(mut value: Value) -> AppResult<Value> {
         })?;
 
     for sentence in sentences.iter_mut() {
+        check_execution()?;
         let words = sentence
             .get_mut("words")
             .and_then(Value::as_array_mut)
@@ -57,6 +60,7 @@ pub fn migrate_v1_to_v2(mut value: Value) -> AppResult<Value> {
 
         let mut migrated_words: Vec<Value> = Vec::with_capacity(words.len());
         for word in words.iter() {
+            check_execution()?;
             match word {
                 Value::Number(num) => {
                     let idx = num.as_i64().ok_or_else(|| {
@@ -104,6 +108,7 @@ pub fn migrate_v1_to_v2(mut value: Value) -> AppResult<Value> {
 
     value["version"] = Value::Number(2.into());
 
+    check_execution()?;
     Ok(value)
 }
 
@@ -115,6 +120,7 @@ fn parse_word_indices(word_value: Option<&Value>) -> AppResult<Vec<usize>> {
     array
         .iter()
         .map(|v| {
+            check_execution()?;
             v.as_u64()
                 .and_then(|idx| usize::try_from(idx).ok())
                 .ok_or_else(|| {

@@ -14,6 +14,12 @@ pub enum AppError {
 
     /// User cancelled an operation (e.g., file dialog)
     OperationCancelled,
+
+    /// A scoped operation exhausted its wall-clock deadline.
+    DeadlineExceeded,
+
+    /// A scoped operation exceeded a configured resource bound.
+    LimitExceeded(String),
 }
 
 impl fmt::Display for AppError {
@@ -25,6 +31,8 @@ impl fmt::Display for AppError {
             }
             Self::ScriptExecutionError(msg) => write!(f, "Script error: {msg}"),
             Self::OperationCancelled => write!(f, "Operation cancelled by user"),
+            Self::DeadlineExceeded => write!(f, "Operation deadline exceeded"),
+            Self::LimitExceeded(msg) => write!(f, "Operation limit exceeded: {msg}"),
         }
     }
 }

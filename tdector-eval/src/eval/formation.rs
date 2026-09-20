@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
 use std::rc::Rc;
 
-use super::engine::with_engine;
+use super::engine::{check_execution, compile_error, execution_error, with_engine};
 use crate::{AppError, AppResult, FormationType};
 
 /// Create a new empty cached AST (Abstract Syntax Tree) placeholder
@@ -10,8 +10,7 @@ pub fn default_cached_ast() -> Rc<OnceCell<rhai::AST>> {
     Rc::new(OnceCell::new())
 }
 
-/// A word formation rule that transforms base words using a Rhai script.
-/// Rules can be categorized as derivational, inflectional, or non-morphological transformations.
+/// A word formation rule that transforms base words using a Rhai script. Rules can be categorized as derivational, inflectional, or non-morphological transformations.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormationRule {
     /// Human-readable description of what this rule does
@@ -21,25 +20,22 @@ pub struct FormationRule {
     #[serde(rename = "type")]
     pub rule_type: FormationType,
 
-    /// Rhai script that implements the transformation.
-    /// Must define a `transform(word: String) -> String` function.
+    /// Rhai script that implements the transformation. Must define a `transform(word: String) -> String` function.
     pub command: String,
 
-    /// Compiled AST of the Rhai script, cached for performance.
-    /// Lazily compiled on first execution and reused thereafter.
+    /// Compiled AST of the Rhai script, cached for performance. Lazily compiled on first execution and reused thereafter.
     #[serde(skip, default = "default_cached_ast")]
     pub cached_ast: Rc<OnceCell<rhai::AST>>,
 }
 
 impl FormationRule {
-    /// Apply this rule to a word, returning the transformed result or an error.
-    /// The first call will compile and cache the Rhai script; subsequent calls reuse it.
+    /// Apply this rule to a word, returning the transformed result or an error. The first call will compile and cache the Rhai script; subsequent calls reuse it.
     pub fn apply(&self, word: &str) -> AppResult<String> {
+        check_execution()?;
         with_engine(|engine| {
             if self.cached_ast.get().is_none() {
-                let ast = engine.compile(&self.command).map_err(|e| {
-                    AppError::ScriptExecutionError(format!("Rhai compilation error: {e}"))
-                })?;
+                let ast = engine.compile(&self.command).map_err(compile_error)?;
+                check_execution()?;
                 let _ = self.cached_ast.set(ast);
             }
 
@@ -54,10 +50,9 @@ impl FormationRule {
                     "transform",
                     (word.to_string(),),
                 )
-                .map_err(|e| {
-                    AppError::ScriptExecutionError(format!("Transform function error: {e}"))
-                })?;
+                .map_err(|e| execution_error("Transform function error", &e))?;
 
+            check_execution()?;
             Ok(result)
         })
     }

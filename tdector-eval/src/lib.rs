@@ -3,6 +3,7 @@ pub mod eval;
 pub mod formation_type;
 
 pub use app_error::AppError;
+pub use eval::engine::{ExecutionGuard, ExecutionLimits, ExecutionPolicy, check_execution};
 pub use eval::{FormationRule, TokenizationRule, default_cached_ast, with_engine};
 pub use formation_type::FormationType;
 

@@ -6,9 +6,7 @@ pub type LookupMap = HashMap<String, Vec<usize>>;
 pub type OptionalLookupMap = Option<LookupMap>;
 pub type LookupMapPair = (OptionalLookupMap, OptionalLookupMap);
 
-/// Caches lookup maps for quick token searches across the project.
-/// Stores two separate lookup indices: one for headword (base word) lookups
-/// and one for usage (all occurrences) lookups.
+/// Caches lookup maps for quick token searches across the project. Stores two separate lookup indices: one for headword (base word) lookups and one for usage (all occurrences) lookups.
 #[derive(Debug, Clone, Default)]
 pub struct LookupCache {
     /// Maps headwords to the segment+token indices where they appear as base words
@@ -27,8 +25,7 @@ impl LookupCache {
         }
     }
 
-    /// Extract both lookup maps from the cache (ownership transfer).
-    /// After calling this, the cache is empty until restored.
+    /// Extract both lookup maps from the cache (ownership transfer). After calling this, the cache is empty until restored.
     pub fn take(&mut self) -> LookupMapPair {
         (self.headword_lookup.take(), self.usage_lookup.take())
     }
@@ -46,8 +43,7 @@ impl LookupCache {
     }
 }
 
-/// Caches the TF-IDF (Term Frequency-Inverse Document Frequency) matrix computed from project segments.
-/// Used for similarity search to find semantically similar segments.
+/// Caches the TF-IDF (Term Frequency-Inverse Document Frequency) matrix computed from project segments. Used for similarity search to find semantically similar segments.
 #[derive(Clone)]
 pub struct CachedTfidf {
     /// The cached TF-IDF matrix (None means cache is invalid/dirty)

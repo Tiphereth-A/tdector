@@ -55,8 +55,7 @@ fn main() -> ExitCode {
     }
 }
 
-/// Recognize the global flag even when parsing fails, without mistaking a value
-/// or a positional argument following `--` for an option.
+/// Recognize the global flag even when parsing fails, without mistaking a value or a positional argument following `--` for an option.
 fn recognizes_json(arguments: &[OsString]) -> bool {
     let takes_value = [
         "-p",
@@ -88,8 +87,7 @@ fn recognizes_json(arguments: &[OsString]) -> bool {
     for argument in arguments.iter().skip(1) {
         if skip {
             skip = false;
-            // Clap does not accept leading-hyphen values unless attached with
-            // '='. A missing value must not hide a later recognized flag.
+            // Clap does not accept leading-hyphen values unless attached with '='. A missing value must not hide a later recognized flag.
             if !argument.to_string_lossy().starts_with('-') || argument == "-" {
                 continue;
             }

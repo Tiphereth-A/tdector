@@ -17,9 +17,7 @@ impl FilterOperation {
         haystack.to_lowercase().contains(needle_lower)
     }
 
-    /// Filter segment indices to those matching the query string.
-    /// A segment matches if the query appears in its translation text or in any of its tokens.
-    /// Empty query returns all segment indices.
+    /// Filter segment indices to those matching the query string. A segment matches if the query appears in its translation text or in any of its tokens. Empty query returns all segment indices.
     pub fn apply_filter(project: &Project, query: &str) -> Vec<usize> {
         if query.is_empty() {
             (0..project.segments.len()).collect()

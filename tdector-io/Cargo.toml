@@ -1,0 +1,15 @@
+[package]
+name = "tdector-io"
+version = "0.2.0"
+edition = "2024"
+description = "Native project persistence and checked atomic replacement for tdector"
+
+[dependencies]
+tempfile = "3"
+same-file = "1"
+
+[target.'cfg(windows)'.dependencies]
+winapi-util = "0.1"
+
+[lints]
+workspace = true

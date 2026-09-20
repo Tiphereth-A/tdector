@@ -1,0 +1,25 @@
+[package]
+name = "tdector-mcp"
+version = "0.2.0"
+edition = "2024"
+description = "Bounded stdio MCP server for tdector projects"
+
+[dependencies]
+tdector-app = { path = "../tdector-app", features = ["schema"] }
+tdector-eval = { path = "../tdector-eval" }
+tdector-io = { path = "../tdector-io" }
+clap = { version = "4.6", features = ["derive"] }
+rmcp = { version = "=3.4.0", default-features = false, features = ["server", "transport-io"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "macros", "sync", "time", "io-std", "io-util"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tempfile = "3"
+jsonschema = { version = "0.46", default-features = false }
+
+[lints]
+workspace = true

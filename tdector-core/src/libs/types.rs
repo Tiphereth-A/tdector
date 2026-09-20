@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// Strongly-typed wrapper for segment indices to prevent mixing with token or rule indices.
-/// Segments are top-level containers of tokens (words/characters) that represent logical units of text.
+/// Strongly-typed wrapper for segment indices to prevent mixing with token or rule indices. Segments are top-level containers of tokens (words/characters) that represent logical units of text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SegmentIndex(pub usize);
 
@@ -29,8 +28,7 @@ impl From<SegmentIndex> for usize {
     }
 }
 
-/// Strongly-typed wrapper for token indices within a segment.
-/// Tokens represent individual words or characters depending on segmentation mode.
+/// Strongly-typed wrapper for token indices within a segment. Tokens represent individual words or characters depending on segmentation mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TokenIndex(pub usize);
 
@@ -58,8 +56,7 @@ impl From<TokenIndex> for usize {
     }
 }
 
-/// Strongly-typed wrapper for word formation rule indices.
-/// Rules contain Rhai scripts that transform base words into derived forms.
+/// Strongly-typed wrapper for word formation rule indices. Rules contain Rhai scripts that transform base words into derived forms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RuleIndex(pub usize);
 

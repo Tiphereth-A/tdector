@@ -67,6 +67,10 @@ impl From<tdector_app::Error> for Failure {
             }
             Error::Operation(AppError::IoError(_)) => Self::new("io_error", message, 5),
             Error::Operation(AppError::OperationCancelled) => Self::internal(message),
+            Error::Operation(AppError::DeadlineExceeded) => {
+                Self::new("deadline_exceeded", message, 4)
+            }
+            Error::Operation(AppError::LimitExceeded(_)) => Self::new("limit_exceeded", message, 4),
         }
     }
 }
@@ -116,6 +120,9 @@ impl From<IoError> for Failure {
         match error {
             IoError::Io(_) => Self::new("io_error", message, 5),
             IoError::InvalidUtf8(_) => Self::new("invalid_input", message, 3),
+            IoError::InvalidPath { .. } => Self::new("invalid_input", message, 3),
+            IoError::LimitExceeded { .. } => Self::new("limit_exceeded", message, 3),
+            IoError::CommittedState { .. } => Self::new("committed_state_error", message, 1),
             IoError::OutputExists { path } => {
                 let mut failure = Self::new("output_exists", message, 6);
                 failure.details = Some(json!({"path": path}));

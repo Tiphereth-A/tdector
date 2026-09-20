@@ -3,23 +3,25 @@ use std::collections::HashMap;
 use super::models::{
     FormattedWordEntry, Project, SavedProjectV2, SavedSentenceV2, SavedVocabularyV2, VocabEntry,
 };
-use tdector_eval::{AppError, AppResult};
+use tdector_eval::{AppError, AppResult, check_execution};
 
 const PROJECT_VERSION: u64 = 2;
 
-/// Convert a runtime Project to its serializable `SavedProjectV2` format for JSON export.
-/// This handles:
+/// Convert a runtime Project to its serializable `SavedProjectV2` format for JSON export. This handles:
 /// 1. Deduplicating vocabulary across all segments
 /// 2. Mapping token references to vocabulary indices
 /// 3. Preserving word formation rules and their application chains
 /// 4. Handling both base words and derived words with their rule histories
 pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> {
+    check_execution()?;
     // Collect all unique vocabulary words from the project (for deduplication)
     let mut all_words: std::collections::BTreeSet<&String> = project.vocabulary.keys().collect();
 
     // Add any tokens that have formation rules applied but aren't in main vocabulary
     for segment in &project.segments {
+        check_execution()?;
         for token in &segment.tokens {
+            check_execution()?;
             if token.formation_rule_indices.is_empty() {
                 all_words.insert(&token.original);
             }
@@ -31,6 +33,7 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
     let mut vocabulary: Vec<VocabEntry> = Vec::with_capacity(all_words.len());
 
     for word in all_words {
+        check_execution()?;
         let idx = vocabulary.len();
         word_to_idx.insert(word.as_str(), idx);
 
@@ -59,6 +62,7 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
     });
 
     for (new_idx, (old_idx, _)) in indexed_rules.iter().enumerate() {
+        check_execution()?;
         old_to_new_idx.insert(*old_idx, new_idx);
     }
 
@@ -72,7 +76,9 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
     let mut seen_formatted_words: HashMap<Vec<usize>, bool> = HashMap::new();
 
     for segment in &project.segments {
+        check_execution()?;
         for token in &segment.tokens {
+            check_execution()?;
             if token.formation_rule_indices.is_empty() {
                 continue;
             }
@@ -89,6 +95,7 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
             indices.push(vocab_idx);
 
             for rule_idx in &token.formation_rule_indices {
+                check_execution()?;
                 let new_rule_idx = match old_to_new_idx.get(rule_idx).copied() {
                     Some(idx) => idx,
                     None => {
@@ -126,6 +133,7 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
     // Build a mapping of formatted word index chains to their position in the formatted_word_entries
     let mut formatted_word_map: HashMap<Vec<usize>, usize> = HashMap::new();
     for (idx, entry) in formatted_word_entries.iter().enumerate() {
+        check_execution()?;
         formatted_word_map.insert(entry.word.clone(), idx);
     }
 
@@ -134,10 +142,12 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
         .segments
         .iter()
         .map(|segment| {
+            check_execution()?;
             let words: Vec<i64> = segment
                 .tokens
                 .iter()
                 .map(|t| {
+                    check_execution()?;
                     let lookup_word = t.base_word.as_ref().unwrap_or(&t.original);
 
                     let vocab_idx = word_to_idx.get(lookup_word.as_str()).copied().ok_or_else(
@@ -156,6 +166,7 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
                         indices.push(vocab_idx);
 
                         for rule_idx in &t.formation_rule_indices {
+                            check_execution()?;
                             let new_rule_idx = old_to_new_idx.get(rule_idx).copied().ok_or_else(
                                 || {
                                     AppError::InvalidProjectFormat(
@@ -195,6 +206,7 @@ pub fn convert_to_saved_project(project: &Project) -> AppResult<SavedProjectV2> 
         })
         .collect::<AppResult<Vec<SavedSentenceV2>>>()?;
 
+    check_execution()?;
     Ok(SavedProjectV2 {
         version: PROJECT_VERSION,
         project_name: project.project_name.clone(),

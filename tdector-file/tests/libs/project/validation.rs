@@ -85,3 +85,68 @@ fn version_one_reference_cannot_wrap_into_a_derived_reference() {
     assert!(matches!(error, AppError::InvalidProjectFormat(_)));
     assert!(error.to_string().contains("Invalid word index"));
 }
+
+#[test]
+fn both_sample_projects_reconstruct_with_default_scoped_limits() {
+    use std::sync::{Arc, atomic::AtomicBool};
+    use std::time::{Duration, Instant};
+    use tdector_eval::ExecutionPolicy;
+
+    for (name, source) in [
+        ("ginger", include_str!("../../../../sample/ginger.json")),
+        ("epigraph", include_str!("../../../../sample/epigraph.json")),
+    ] {
+        let _guard = ExecutionPolicy::new(
+            Arc::new(AtomicBool::new(false)),
+            Instant::now() + Duration::from_secs(30),
+        )
+        .enter();
+        let value = serde_json::from_str(source).expect("sample JSON");
+        let project =
+            load_project_from_json(value).unwrap_or_else(|error| panic!("{name}: {error}"));
+        assert!(!project.segments.is_empty(), "{name}");
+        assert!(!project.vocabulary.is_empty(), "{name}");
+        convert_to_saved_project(&project).expect("sample serialization candidate");
+    }
+}
+
+#[test]
+fn reconstruction_preserves_cancellation_deadline_and_resource_error_types() {
+    use std::sync::{Arc, atomic::AtomicBool};
+    use std::time::{Duration, Instant};
+    use tdector_eval::ExecutionPolicy;
+
+    {
+        let _guard = ExecutionPolicy::new(
+            Arc::new(AtomicBool::new(true)),
+            Instant::now() + Duration::from_secs(30),
+        )
+        .enter();
+        assert!(matches!(
+            load_project_from_json(project_json()),
+            Err(AppError::OperationCancelled)
+        ));
+    }
+    {
+        let _guard = ExecutionPolicy::new(Arc::new(AtomicBool::new(false)), Instant::now()).enter();
+        assert!(matches!(
+            load_project_from_json(project_json()),
+            Err(AppError::DeadlineExceeded)
+        ));
+    }
+    {
+        let mut policy = ExecutionPolicy::new(
+            Arc::new(AtomicBool::new(false)),
+            Instant::now() + Duration::from_secs(30),
+        );
+        policy.limits.max_operations = 32;
+        let _guard = policy.enter();
+        let mut value = project_json();
+        value["formation"][0]["command"] = json!("fn transform(word) { loop {} word }");
+        assert!(matches!(
+            load_project_from_json(value),
+            Err(AppError::LimitExceeded(_))
+        ));
+    }
+    load_project_from_json(project_json()).expect("previous failure restored ordinary execution");
+}

@@ -3,8 +3,7 @@ use serde::{Deserialize, Serialize};
 pub use tdector_core::project::{Project, Segment, Token};
 pub use tdector_eval::FormationRule;
 
-/// Serialization format for a single vocabulary entry.
-/// Used when saving projects to JSON in the compressed `SavedVocabularyV2` format.
+/// Serialization format for a single vocabulary entry. Used when saving projects to JSON in the compressed `SavedVocabularyV2` format.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VocabEntry {
     /// The vocabulary word
@@ -18,12 +17,10 @@ pub struct VocabEntry {
     pub comment: String,
 }
 
-/// Serialization format for a word created by applying formation rules.
-/// Represents a derived form as an index chain: [`base_word_idx`, `rule_idx_1`, `rule_idx_2`, ...]
+/// Serialization format for a word created by applying formation rules. Represents a derived form as an index chain: [`base_word_idx`, `rule_idx_1`, `rule_idx_2`, ...]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FormattedWordEntry {
-    /// First element is base word vocabulary index; subsequent elements are formation rule indices.
-    /// This chain allows reconstructing the derived word by applying rules sequentially.
+    /// First element is base word vocabulary index; subsequent elements are formation rule indices. This chain allows reconstructing the derived word by applying rules sequentially.
     pub word: Vec<usize>,
 
     /// Optional comment/note about this derived word
@@ -31,8 +28,7 @@ pub struct FormattedWordEntry {
     pub comment: String,
 }
 
-/// Vocabulary storage for project version 2 format.
-/// Separates original vocabulary from derived/formatted words for efficient storage.
+/// Vocabulary storage for project version 2 format. Separates original vocabulary from derived/formatted words for efficient storage.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedVocabularyV2 {
     /// Collection of base vocabulary words
@@ -43,8 +39,7 @@ pub struct SavedVocabularyV2 {
     pub formatted: Vec<FormattedWordEntry>,
 }
 
-/// Serialization format for a single segment (sentence/line of text).
-/// Word references use positive integers for base vocabulary and negative integers for formatted words.
+/// Serialization format for a single segment (sentence/line of text). Word references use positive integers for base vocabulary and negative integers for formatted words.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedSentenceV2 {
     /// Array of word references:
@@ -60,8 +55,7 @@ pub struct SavedSentenceV2 {
     pub comment: String,
 }
 
-/// Complete project serialization format (version 2).
-/// This is the format used for saving and loading projects from JSON files.
+/// Complete project serialization format (version 2). This is the format used for saving and loading projects from JSON files.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedProjectV2 {
     /// Version number for format compatibility checking and migration

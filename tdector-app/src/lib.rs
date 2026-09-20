@@ -1,8 +1,6 @@
 //! Shared application operations for desktop, CLI, and protocol adapters.
 //!
-//! A session has one owner. Rhai rules contain local AST caches, so `Session` is
-//! intentionally not `Send` or `Sync`. A concurrent adapter should send commands
-//! to the owning thread instead of sharing a mutable project between workers.
+//! A session has one owner. Rhai rules contain local AST caches, so `Session` is intentionally not `Send` or `Sync`. A concurrent adapter should send commands to the owning thread instead of sharing a mutable project between workers.
 
 pub mod api;
 
@@ -109,6 +107,26 @@ pub struct SaveToken {
 pub struct SaveSnapshot {
     pub bytes: Vec<u8>,
     pub token: SaveToken,
+}
+
+/// A validated replacement project, bound to its originating live state.
+///
+/// Dropping this value leaves the session untouched. It cannot be cloned and must be committed on the owner thread after the adapter's final checks.
+#[derive(Debug)]
+pub struct PreparedLoad {
+    project: Project,
+    origin: SaveToken,
+    origin_dirty: bool,
+}
+
+impl PreparedLoad {
+    pub fn projected_revision(&self) -> u64 {
+        self.origin.revision.wrapping_add(1)
+    }
+
+    pub fn projected_dirty(&self) -> bool {
+        false
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -235,11 +253,30 @@ impl Session {
 
     /// Load atomically; parse, migration, and script errors preserve the session.
     pub fn load_json(&mut self, json: &str) -> Result<()> {
+        let prepared = self.prepare_load_json(json)?;
+        self.commit_load(prepared)
+    }
+
+    /// Reconstruct a replacement without changing project data or save authority.
+    pub fn prepare_load_json(&self, json: &str) -> Result<PreparedLoad> {
+        tdector_eval::check_execution()?;
         let value = serde_json::from_str(json).map_err(|error| {
             AppError::InvalidProjectFormat(format!("Failed to parse project JSON: {error}"))
         })?;
         let project = tdector_file::project::load_project_from_json(value)?;
-        self.replace_project(project, false);
+        tdector_eval::check_execution()?;
+        Ok(PreparedLoad {
+            project,
+            origin: self.save_token(),
+            origin_dirty: self.dirty,
+        })
+    }
+
+    /// Install a prepared load only if its originating session is still current. The existing session's identity and counters survive successful reloads.
+    pub fn commit_load(&mut self, prepared: PreparedLoad) -> Result<()> {
+        self.validate_preparation(prepared.origin, prepared.origin_dirty)?;
+        tdector_eval::check_execution()?;
+        self.replace_project(prepared.project, false);
         Ok(())
     }
 
@@ -508,6 +545,31 @@ impl Session {
             session: self.identity,
             generation: self.generation,
             revision: self.revision,
+        }
+    }
+
+    fn validate_preparation(&self, origin: SaveToken, origin_dirty: bool) -> Result<()> {
+        if origin != self.save_token() || origin_dirty != self.dirty {
+            return Err(Error::InvalidInput(
+                "Prepared operation belongs to a different or changed session".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Private execution state has independent authority and independent AST cells. A normal `Project` clone shares the latter through `Rc<OnceCell<_>>`.
+    fn staging_session(&self) -> Self {
+        let mut project = self.project.clone();
+        for rule in &mut project.formation_rules {
+            let cached_ast = tdector_eval::default_cached_ast();
+            if let Some(ast) = rule.cached_ast.get() {
+                let _ = cached_ast.set(ast.clone());
+            }
+            rule.cached_ast = cached_ast;
+        }
+        Self {
+            project,
+            ..Self::default()
         }
     }
 

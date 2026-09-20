@@ -6,6 +6,8 @@ members = [
     "tdector-eval",
     "tdector-file",
     "tdector-gui",
+    "tdector-io",
+    "tdector-mcp",
     "tdector-text",
     "tdector-wasm",
 ]

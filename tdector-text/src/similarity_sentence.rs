@@ -7,9 +7,7 @@ use tdector_core::libs::Project;
 pub struct SimilarityEngine;
 
 impl SimilarityEngine {
-    /// Compute the TF-IDF matrix from all segments in the project.
-    /// Each segment is treated as a document with tokens separated by whitespace.
-    /// Returns None if the project has no segments or computation fails.
+    /// Compute the TF-IDF matrix from all segments in the project. Each segment is treated as a document with tokens separated by whitespace. Returns None if the project has no segments or computation fails.
     pub fn compute_tfidf_matrix(project: &Project) -> Option<Array2<f64>> {
         if project.segments.is_empty() {
             return None;
@@ -39,9 +37,7 @@ impl SimilarityEngine {
         vectorizer.fit_transform(&doc_refs).ok()
     }
 
-    /// Find the most similar segments to a target segment using cosine similarity.
-    /// Returns a vector of (`segment_index`, `similarity_score`) sorted by score in descending order.
-    /// Scores are clamped to be > 0.0 to avoid near-zero or negative similarities.
+    /// Find the most similar segments to a target segment using cosine similarity. Returns a vector of (`segment_index`, `similarity_score`) sorted by score in descending order. Scores are clamped to be > 0.0 to avoid near-zero or negative similarities.
     pub fn find_similar(
         matrix: &Array2<f64>,
         target_idx: usize,

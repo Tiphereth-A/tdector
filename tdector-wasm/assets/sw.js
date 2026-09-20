@@ -6,8 +6,7 @@ var filesToCache = [
   './tdector_bg.wasm',
 ];
 
-/* Start the service worker and cache all of the app's content
-*/
+/* Start the service worker and cache all of the app's content */
 self.addEventListener('install', function (e) {
   e.waitUntil(
     caches.open(cacheName).then(function (cache) {

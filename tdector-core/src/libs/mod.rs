@@ -7,9 +7,7 @@
 /// - `FormationRule`: Rhai script that transforms base words into derived forms
 /// - `TokenizationRule`: Rhai script that splits text into tokens
 ///
-/// This crate provides domain models, filtering, sorting, index types, and cache
-/// containers. Application use cases live in `tdector-app`; text analysis,
-/// script evaluation, and persistence live in their respective headless crates.
+/// This crate provides domain models, filtering, sorting, index types, and cache containers. Application use cases live in `tdector-app`; text analysis, script evaluation, and persistence live in their respective headless crates.
 pub mod cache;
 pub mod filtering;
 pub mod sorting;

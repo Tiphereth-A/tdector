@@ -1,7 +1,6 @@
 //! Versioned adapter-facing requests and explicit, cache-free query results.
 //!
-//! This module owns domain validation, not paths, standard streams, exit codes,
-//! or file commits. Indices refer only to the currently loaded session snapshot.
+//! This module owns domain validation, not paths, standard streams, exit codes, or file commits. Indices refer only to the currently loaded session snapshot.
 
 use std::fmt;
 
@@ -86,6 +85,7 @@ impl From<AppError> for ApiError {
     }
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum BatchStage {
@@ -95,6 +95,7 @@ pub enum BatchStage {
     Commit,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum FormationKind {
@@ -123,6 +124,7 @@ impl From<FormationType> for FormationKind {
     }
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RuleSelector {
@@ -172,6 +174,7 @@ pub fn resolve_rule(session: &Session, selector: &RuleSelector) -> Result<usize>
     }
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Pagination {
@@ -209,6 +212,7 @@ impl Pagination {
     }
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct Page<T> {
     pub items: Vec<T>,
@@ -232,6 +236,7 @@ fn paginate<T>(items: Vec<T>, pagination: Pagination) -> Result<Page<T>> {
     })
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SegmentSort {
@@ -241,6 +246,7 @@ pub enum SegmentSort {
     TokenCount,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LookupKind {
@@ -249,6 +255,7 @@ pub enum LookupKind {
     Headword,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "query", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Query {
@@ -302,6 +309,7 @@ pub enum Query {
     },
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct InfoResult {
     pub project_name: String,
@@ -312,6 +320,7 @@ pub struct InfoResult {
     pub project_format_version: u64,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct ValidationResult {
     pub valid: bool,
@@ -319,6 +328,7 @@ pub struct ValidationResult {
     pub project: InfoResult,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct SegmentRecord {
     pub segment_index: usize,
@@ -327,6 +337,7 @@ pub struct SegmentRecord {
     pub token_count: usize,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum CommentTargetRecord {
@@ -344,6 +355,7 @@ impl From<CommentTarget> for CommentTargetRecord {
     }
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct TokenRecord {
     pub token_index: usize,
@@ -358,6 +370,7 @@ pub struct TokenRecord {
     pub comment_target: CommentTargetRecord,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct SegmentDetail {
     #[serde(flatten)]
@@ -366,6 +379,7 @@ pub struct SegmentDetail {
     pub tokens: Vec<TokenRecord>,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct VocabularyRecord {
     pub word: String,
@@ -373,6 +387,7 @@ pub struct VocabularyRecord {
     pub comment: String,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct CommentResult {
     pub segment_index: usize,
@@ -383,6 +398,7 @@ pub struct CommentResult {
     pub display_comment: String,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct RuleRecord {
     pub rule_index: usize,
@@ -391,6 +407,7 @@ pub struct RuleRecord {
     pub rule_type: FormationKind,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct RuleDetail {
     #[serde(flatten)]
@@ -398,6 +415,7 @@ pub struct RuleDetail {
     pub script: String,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct SimilarSegmentRecord {
     #[serde(flatten)]
@@ -405,6 +423,7 @@ pub struct SimilarSegmentRecord {
     pub score: f64,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct SimilarTokenRecord {
     pub word: String,
@@ -412,6 +431,7 @@ pub struct SimilarTokenRecord {
     pub lcs_length: usize,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct FormationStepRecord {
     pub rule_index: usize,
@@ -421,6 +441,7 @@ pub struct FormationStepRecord {
     pub result: String,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct FormationChainResult {
     pub segment_index: usize,
@@ -430,11 +451,13 @@ pub struct FormationChainResult {
     pub steps: Vec<FormationStepRecord>,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct Items<T> {
     pub items: Vec<T>,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum QueryResponse {
@@ -531,9 +554,7 @@ fn positive_limit(limit: usize) -> Result<()> {
 pub fn query(session: &mut Session, request: Query) -> Result<QueryResponse> {
     match request {
         Query::Info => Ok(QueryResponse::Info(info(session))),
-        // Session loading has already parsed, migrated, validated references,
-        // and reconstructed every used formation. It intentionally does not
-        // execute otherwise unused rules on invented input.
+        // Session loading has already parsed, migrated, validated references, and reconstructed every used formation. It intentionally does not execute otherwise unused rules on invented input.
         Query::Validate => Ok(QueryResponse::Validate(ValidationResult {
             valid: true,
             project: info(session),
@@ -750,6 +771,7 @@ pub fn query(session: &mut Session, request: Query) -> Result<QueryResponse> {
     }
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Mutation {
@@ -787,6 +809,7 @@ pub enum Mutation {
     },
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct MutationReceipt {
     pub changed: bool,
@@ -822,9 +845,7 @@ pub fn apply_mutation(session: &mut Session, request: Mutation) -> Result<Mutati
         } => {
             if let Some(token_index) = token_index {
                 let (target, _) = session.token_comment(segment_index, token_index)?;
-                // Plain token words are included by the project exporter even
-                // without an explicit gloss entry. Formed token targets were
-                // validated when loaded or formed, so both targets persist.
+                // Plain token words are included by the project exporter even without an explicit gloss entry. Formed token targets were validated when loaded or formed, so both targets persist.
                 receipt.scope = Some("shared word comment across matching occurrences".into());
                 Command::SetWordComment { target, comment }
             } else {
@@ -878,6 +899,7 @@ pub fn apply_mutation(session: &mut Session, request: Mutation) -> Result<Mutati
     Ok(receipt)
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BatchRequest {
@@ -885,10 +907,75 @@ pub struct BatchRequest {
     pub commands: Vec<Mutation>,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct BatchReceipt {
     pub changed: bool,
     pub commands: Vec<MutationReceipt>,
+}
+
+/// An opaque, single-use batch candidate. Receipts describe staged changes; preparing or dropping this value does not mutate the live session.
+#[derive(Debug)]
+pub struct PreparedBatch {
+    project: tdector_core::libs::Project,
+    origin: crate::SaveToken,
+    origin_dirty: bool,
+    text_changed: bool,
+    receipt: BatchReceipt,
+}
+
+impl PreparedBatch {
+    pub fn receipt(&self) -> &BatchReceipt {
+        &self.receipt
+    }
+
+    pub fn projected_revision(&self) -> u64 {
+        self.origin
+            .revision
+            .wrapping_add(u64::from(self.receipt.changed))
+    }
+
+    pub fn projected_dirty(&self) -> bool {
+        self.origin_dirty || self.receipt.changed
+    }
+}
+
+/// Validate a transaction against an independent runtime copy of project data.
+///
+/// Commands run in order and see preceding staged edits. Serialization is validated before returning, without reloading or reordering runtime rules. Adapters can inspect receipts and budget their exact response before commit.
+pub fn prepare_batch(session: &Session, request: BatchRequest) -> Result<PreparedBatch> {
+    tdector_eval::check_execution()
+        .map_err(|error| batch_error(BatchStage::Input, None, error.into()))?;
+    let mut staged = session.staging_session();
+    let receipt = execute_batch(&mut staged, request)?;
+    tdector_eval::check_execution()
+        .map_err(|error| batch_error(BatchStage::Serialize, None, error.into()))?;
+    staged
+        .save_snapshot()
+        .map_err(|error| batch_error(BatchStage::Serialize, None, error.into()))?;
+    tdector_eval::check_execution()
+        .map_err(|error| batch_error(BatchStage::Serialize, None, error.into()))?;
+    Ok(PreparedBatch {
+        project: staged.project,
+        origin: session.save_token(),
+        origin_dirty: session.is_dirty(),
+        text_changed: staged.text_revision != 0,
+        receipt,
+    })
+}
+
+/// Consume a candidate after checking that its originating state is current. A changed batch advances the live revision once and preserves save authority. Annotation-only changes retain text-dependent query caches.
+pub fn commit_batch(session: &mut Session, prepared: PreparedBatch) -> Result<BatchReceipt> {
+    session
+        .validate_preparation(prepared.origin, prepared.origin_dirty)
+        .map_err(|error| batch_error(BatchStage::Commit, None, error.into()))?;
+    tdector_eval::check_execution()
+        .map_err(|error| batch_error(BatchStage::Commit, None, error.into()))?;
+    if prepared.receipt.changed {
+        session.project = prepared.project;
+        session.changed(prepared.text_changed);
+    }
+    Ok(prepared.receipt)
 }
 
 fn batch_error(stage: BatchStage, command_index: Option<usize>, source: ApiError) -> ApiError {
@@ -899,8 +986,7 @@ fn batch_error(stage: BatchStage, command_index: Option<usize>, source: ApiError
     }
 }
 
-/// Decode all commands first, retaining the index of a malformed command.
-/// The adapter owns UTF-8 BOM normalization, just as for `Session::load_json`.
+/// Decode all commands first, retaining the index of a malformed command. The adapter owns UTF-8 BOM normalization, just as for `Session::load_json`.
 pub fn parse_batch(json: &str) -> Result<BatchRequest> {
     #[derive(Deserialize)]
     #[serde(deny_unknown_fields)]
@@ -948,9 +1034,7 @@ pub fn parse_batch(json: &str) -> Result<BatchRequest> {
 
 /// Execute sequentially against a privately owned invocation session.
 ///
-/// This is not an in-memory transaction: on failure earlier commands remain
-/// applied. Adapters must discard the private session and never commit a failed
-/// batch. Serialization and file commit happen only after this returns success.
+/// This is not an in-memory transaction: on failure earlier commands remain applied. Adapters must discard the private session and never commit a failed batch. Serialization and file commit happen only after this returns success.
 pub fn execute_batch(session: &mut Session, request: BatchRequest) -> Result<BatchReceipt> {
     if request.schema_version != 1 {
         return Err(batch_error(
@@ -964,6 +1048,8 @@ pub fn execute_batch(session: &mut Session, request: BatchRequest) -> Result<Bat
     }
     let mut commands = Vec::with_capacity(request.commands.len());
     for (index, command) in request.commands.into_iter().enumerate() {
+        tdector_eval::check_execution()
+            .map_err(|error| batch_error(BatchStage::Command, Some(index), error.into()))?;
         commands.push(
             apply_mutation(session, command)
                 .map_err(|error| batch_error(BatchStage::Command, Some(index), error))?,
@@ -975,12 +1061,14 @@ pub fn execute_batch(session: &mut Session, request: BatchRequest) -> Result<Bat
     })
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct PreviewResult {
     pub word: String,
     pub result: String,
 }
 
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Serialize)]
 pub struct TokenizeResult {
     pub tokens: Vec<String>,

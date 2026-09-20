@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use serde_json::Value;
-use tdector_eval::{AppError, AppResult};
+use tdector_eval::{AppError, AppResult, check_execution};
 
 use super::models::{Project, SavedProjectV2, Segment, Token};
 use super::update_v1::migrate_v1_to_v2;
@@ -10,6 +10,7 @@ const PROJECT_VERSION: u64 = 2;
 
 /// Migrate a JSON value from any supported version to the current project format.
 pub fn migrate_to_latest(mut value: Value) -> AppResult<SavedProjectV2> {
+    check_execution()?;
     let version = value.get("version").and_then(Value::as_u64).unwrap_or(0);
     if !(1..=PROJECT_VERSION).contains(&version) {
         return Err(AppError::InvalidProjectFormat(format!(
@@ -19,9 +20,11 @@ pub fn migrate_to_latest(mut value: Value) -> AppResult<SavedProjectV2> {
     if version == 1 {
         value = migrate_v1_to_v2(value)?;
     }
-    serde_json::from_value(value).map_err(|error| {
+    let saved = serde_json::from_value(value).map_err(|error| {
         AppError::InvalidProjectFormat(format!("Failed to parse project: {error}"))
-    })
+    })?;
+    check_execution()?;
+    Ok(saved)
 }
 
 /// Load a project, reporting invalid references and rule failures before returning any state.
@@ -29,14 +32,14 @@ pub fn load_project_from_json(value: Value) -> AppResult<Project> {
     try_convert_from_saved_project_v2(migrate_to_latest(value)?)
 }
 
-/// Compatibility wrapper for callers that only need success or failure.
-/// New callers should use [`try_convert_from_saved_project_v2`] for diagnostics.
+/// Compatibility wrapper for callers that only need success or failure. New callers should use [`try_convert_from_saved_project_v2`] for diagnostics.
 pub fn convert_from_saved_project_v2(saved: SavedProjectV2) -> Option<Project> {
     try_convert_from_saved_project_v2(saved).ok()
 }
 
 /// Validate and reconstruct a saved project without silently discarding invalid data.
 pub fn try_convert_from_saved_project_v2(mut saved: SavedProjectV2) -> AppResult<Project> {
+    check_execution()?;
     if saved.version != PROJECT_VERSION {
         return Err(AppError::InvalidProjectFormat(format!(
             "Expected project version {PROJECT_VERSION}, got {}",
@@ -44,6 +47,7 @@ pub fn try_convert_from_saved_project_v2(mut saved: SavedProjectV2) -> AppResult
         )));
     }
     for rule in &mut saved.formation {
+        check_execution()?;
         rule.cached_ast = tdector_eval::default_cached_ast();
     }
 
@@ -51,6 +55,7 @@ pub fn try_convert_from_saved_project_v2(mut saved: SavedProjectV2) -> AppResult
     let mut formatted_tokens = Vec::with_capacity(saved.vocabulary.formatted.len());
     let mut formatted_word_comments = HashMap::new();
     for (entry_idx, entry) in saved.vocabulary.formatted.iter().enumerate() {
+        check_execution()?;
         let Some((vocab_idx, rule_indices)) = entry.word.split_first() else {
             return Err(AppError::InvalidProjectFormat(format!(
                 "Formatted word {entry_idx} has an empty index chain"
@@ -68,15 +73,17 @@ pub fn try_convert_from_saved_project_v2(mut saved: SavedProjectV2) -> AppResult
         })?;
         let mut original = base_word.word.clone();
         for rule_idx in rule_indices {
+            check_execution()?;
             let rule = saved.formation.get(*rule_idx).ok_or_else(|| {
                 AppError::InvalidProjectFormat(format!(
                     "Formatted word {entry_idx} references missing formation rule {rule_idx}"
                 ))
             })?;
-            original = rule.apply(&original).map_err(|error| {
-                AppError::ScriptExecutionError(format!(
-                    "Formatted word {entry_idx}, formation rule {rule_idx}: {error}"
-                ))
+            original = rule.apply(&original).map_err(|error| match error {
+                AppError::ScriptExecutionError(message) => AppError::ScriptExecutionError(format!(
+                    "Formatted word {entry_idx}, formation rule {rule_idx}: {message}"
+                )),
+                other => other,
             })?;
         }
         formatted_word_comments.insert(original.clone(), entry.comment.clone());
@@ -89,8 +96,10 @@ pub fn try_convert_from_saved_project_v2(mut saved: SavedProjectV2) -> AppResult
 
     let mut segments = Vec::with_capacity(saved.sentences.len());
     for (sentence_idx, sentence) in saved.sentences.into_iter().enumerate() {
+        check_execution()?;
         let mut tokens = Vec::with_capacity(sentence.words.len());
         for (token_idx, word_ref) in sentence.words.into_iter().enumerate() {
+            check_execution()?;
             let invalid_reference = || {
                 AppError::InvalidProjectFormat(format!(
                     "Sentence {sentence_idx}, token {token_idx}: invalid word reference {word_ref}"
@@ -126,19 +135,15 @@ pub fn try_convert_from_saved_project_v2(mut saved: SavedProjectV2) -> AppResult
         });
     }
 
-    let vocabulary = saved
-        .vocabulary
-        .original
-        .iter()
-        .map(|entry| (entry.word.clone(), entry.meaning.clone()))
-        .collect();
-    let vocabulary_comments = saved
-        .vocabulary
-        .original
-        .into_iter()
-        .map(|entry| (entry.word, entry.comment))
-        .collect();
+    let mut vocabulary = HashMap::with_capacity(saved.vocabulary.original.len());
+    let mut vocabulary_comments = HashMap::with_capacity(saved.vocabulary.original.len());
+    for entry in saved.vocabulary.original {
+        check_execution()?;
+        vocabulary.insert(entry.word.clone(), entry.meaning);
+        vocabulary_comments.insert(entry.word, entry.comment);
+    }
 
+    check_execution()?;
     Ok(Project {
         project_name: saved.project_name,
         vocabulary,

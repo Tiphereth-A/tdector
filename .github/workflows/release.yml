@@ -14,6 +14,8 @@ on:
       - 'tdector-eval/**'
       - 'tdector-file/**'
       - 'tdector-gui/**'
+      - 'tdector-io/**'
+      - 'tdector-mcp/**'
       - 'tdector-text/**'
       - 'tdector-wasm/**'
       - '*.toml'
@@ -29,6 +31,8 @@ on:
       - 'tdector-eval/**'
       - 'tdector-file/**'
       - 'tdector-gui/**'
+      - 'tdector-io/**'
+      - 'tdector-mcp/**'
       - 'tdector-text/**'
       - 'tdector-wasm/**'
       - '*.toml'
@@ -42,7 +46,7 @@ env:
 
 jobs:
   headless:
-    name: Headless API and CLI tests and dependency boundary
+    name: Headless API, CLI, MCP tests and dependency boundaries
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,17 +58,22 @@ jobs:
         run: |
           python3 - <<'PY'
           import subprocess
-          tree = subprocess.check_output([
-              "cargo", "tree", "--locked", "-p", "tdector-app", "-p", "tdector-cli", "--target", "all",
-              "--edges", "normal,build", "--prefix", "none", "--format", "{p}",
-          ], text=True)
-          forbidden = {"egui", "eframe", "rfd"}
-          leaked = sorted({line.split()[0] for line in tree.splitlines() if line.strip()} & forbidden)
-          if leaked:
-              raise SystemExit(f"GUI dependencies in tdector-app or tdector-cli: {leaked}")
+          def check(packages, forbidden):
+              arguments = ["cargo", "tree", "--locked", "--target", "all",
+                           "--edges", "normal,build", "--prefix", "none", "--format", "{p}"]
+              for package in packages:
+                  arguments.extend(["-p", package])
+              tree = subprocess.check_output(arguments, text=True)
+              leaked = sorted({line.split()[0] for line in tree.splitlines() if line.strip()} & forbidden)
+              if leaked:
+                  raise SystemExit(f"Forbidden dependencies in {packages}: {leaked}")
+
+          check(["tdector-app", "tdector-cli", "tdector-io", "tdector-mcp"], {"egui", "eframe", "rfd"})
+          check(["tdector-app", "tdector-wasm"], {"rmcp", "tdector-io"})
+          check(["tdector-cli", "tdector-gui"], {"rmcp"})
           PY
-      - name: Test CLI, shared application, and libraries
-        run: cargo test --locked -p tdector-cli -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
+      - name: Test native adapters, shared application, and libraries
+        run: cargo test --locked -p tdector-cli -p tdector-io -p tdector-mcp -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
 
   build:
     name: build (${{ matrix.target }}-${{ matrix.profile }})
@@ -138,11 +147,11 @@ jobs:
         if: matrix.profile == 'test' && (matrix.platform == 'darwin' || matrix.arch != 'arm64')
         run: cargo test --locked --target ${{ matrix.target }}
 
-      - name: Build desktop and CLI binaries
+      - name: Build desktop, CLI, and MCP binaries
         if: matrix.profile != 'test'
         shell: pwsh
         run: |
-          cargo build --locked -p tdector-gui -p tdector-cli --profile ${{ matrix.profile }} --target ${{ matrix.target }}
+          cargo build --locked -p tdector-gui -p tdector-cli -p tdector-mcp --profile ${{ matrix.profile }} --target ${{ matrix.target }}
 
       - name: Copy binaries to output directory
         if: matrix.profile != 'test'
@@ -150,6 +159,7 @@ jobs:
         run: |
           cp "target/${{ matrix.target }}/release/tdector-gui${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}" "tdector-gui-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}"
           cp "target/${{ matrix.target }}/release/tdector${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}" "tdector-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}"
+          cp "target/${{ matrix.target }}/release/tdector-mcp${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}" "tdector-mcp-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}"
 
       - uses: actions/upload-artifact@v7
         if: matrix.profile != 'test'
@@ -162,6 +172,12 @@ jobs:
         with:
           name: tdector-${{ matrix.target }}-${{ matrix.profile }}
           path: tdector-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.profile != 'test'
+        with:
+          name: tdector-mcp-${{ matrix.target }}-${{ matrix.profile }}
+          path: tdector-mcp-${{ matrix.target }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
 
   build_alpine:
     name: build (x86_64-unknown-linux-musl-${{ matrix.profile }})
@@ -191,16 +207,17 @@ jobs:
         if: matrix.profile == 'test'
         run: cargo test --locked --target ${{ env.RUST_TARGET }}
 
-      - name: Build desktop and CLI binaries
+      - name: Build desktop, CLI, and MCP binaries
         if: matrix.profile != 'test'
         run: |
-          cargo build --locked -p tdector-gui -p tdector-cli --profile ${{ matrix.profile }} --target ${{ env.RUST_TARGET }}
+          cargo build --locked -p tdector-gui -p tdector-cli -p tdector-mcp --profile ${{ matrix.profile }} --target ${{ env.RUST_TARGET }}
 
       - name: Copy binaries to output directory
         if: matrix.profile != 'test'
         run: |
           cp "target/${{ env.RUST_TARGET }}/release/tdector-gui" "tdector-gui-${{ env.RUST_TARGET }}"
           cp "target/${{ env.RUST_TARGET }}/release/tdector" "tdector-${{ env.RUST_TARGET }}"
+          cp "target/${{ env.RUST_TARGET }}/release/tdector-mcp" "tdector-mcp-${{ env.RUST_TARGET }}"
 
       - uses: actions/upload-artifact@v7
         if: matrix.profile != 'test'
@@ -213,6 +230,12 @@ jobs:
         with:
           name: tdector-${{ env.RUST_TARGET }}-${{ matrix.profile }}
           path: tdector-${{ env.RUST_TARGET }}
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.profile != 'test'
+        with:
+          name: tdector-mcp-${{ env.RUST_TARGET }}-${{ matrix.profile }}
+          path: tdector-mcp-${{ env.RUST_TARGET }}
 
   release:
     name: Create Release
