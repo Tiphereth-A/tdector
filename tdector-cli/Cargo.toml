@@ -1,6 +1,6 @@
 [package]
 name = "tdector-cli"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "Headless project queries, editing, and exports for tdector"
 

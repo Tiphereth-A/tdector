@@ -1,3 +1,16 @@
+# v0.3.0
+
+## Features
+- Add the read-only-by-default `tdector-mcp` stdio server, with project queries, paginated segment and vocabulary access, word lookup, and Typst exports.
+- Add opt-in, revision-checked MCP annotation batches for glosses, translations, and comments, with atomic previews and edits, explicit saves, and reloads that protect unsaved changes. Saves check for observed external file changes before atomic replacement.
+- Add configurable MCP limits for project, message, and result sizes, pagination, batches, and queued operations, with scoped Rhai resource limits and cooperative cancellation and deadlines.
+- Share native persistence between the CLI and MCP server through `tdector-io`, and expose prepared batch/load operations and optional JSON schemas in the application API.
+
+## CI/Deps
+- Package `tdector-mcp` alongside the CLI and desktop executables for native release targets, including Alpine musl.
+- Add MCP stdio, checked persistence, prepared transaction, and evaluator-limit tests, and extend dependency checks to keep GUI, MCP, and native persistence dependencies within their intended crate boundaries.
+- Generate release notes from commits since the previous release, with commit links and a full changelog comparison.
+
 # v0.2.0
 
 ## Breaking changes

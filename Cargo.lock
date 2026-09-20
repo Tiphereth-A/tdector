@@ -4503,7 +4503,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-app"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "schemars",
  "serde",
@@ -4516,7 +4516,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "clap",
  "serde",
@@ -4529,7 +4529,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "ndarray",
  "serde",
@@ -4538,7 +4538,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-eval"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "rhai",
  "serde",
@@ -4546,7 +4546,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-file"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -4556,7 +4556,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-gui"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "eframe",
  "egui",
@@ -4572,7 +4572,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-io"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "same-file",
  "tempfile",
@@ -4581,7 +4581,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-mcp"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "clap",
  "jsonschema",
@@ -4600,7 +4600,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-text"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "ndarray",
  "scirs2-text",
@@ -4611,7 +4611,7 @@ dependencies = [
 
 [[package]]
 name = "tdector-wasm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "eframe",
  "getrandom 0.2.17",
