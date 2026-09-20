@@ -1,3 +1,8 @@
+# v0.3.1
+
+## CI/Deps
+- Reduce unused dependencies.
+
 # v0.3.0
 
 ## Features
