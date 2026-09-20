@@ -8,7 +8,6 @@ tdector-app = { path = "../tdector-app" }
 tdector-core = { path = "../tdector-core" }
 tdector-eval = { path = "../tdector-eval" }
 rfd = "0.17"
-pollster = "1.0"
 egui = "0.36"
 eframe = { version = "0.36", default-features = false, features = [
     "accesskit",
@@ -24,7 +23,8 @@ wasm-bindgen-futures = "0.4"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11"
-image = "0.25"
+image = { version = "0.25", default-features = false, features = ["ico"] }
+pollster = "1.0"
 
 [lints]
 workspace = true

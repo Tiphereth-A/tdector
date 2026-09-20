@@ -9,7 +9,7 @@ tdector-app = { path = "../tdector-app", features = ["schema"] }
 tdector-eval = { path = "../tdector-eval" }
 tdector-io = { path = "../tdector-io" }
 clap = { version = "4.6", features = ["derive"] }
-rmcp = { version = "=3.4.0", default-features = false, features = ["server", "transport-io"] }
+rmcp = { version = "=3.4.0", default-features = false, features = ["server"] }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
