@@ -27,16 +27,24 @@ pub fn generate_typst_content(project: &Project) -> String {
         content.push_str("#block(inset: 10pt, stroke: none)[\n  ");
 
         for token in &segment.tokens {
+            // Match the GUI's annotation: derived tokens inherit their base gloss
+            // and show each formation description in chain order.
+            let base_word = token.base_word.as_ref().unwrap_or(&token.original);
             let gloss_text = project
                 .vocabulary
-                .get(&token.original)
+                .get(base_word)
                 .map(|s| s.as_str())
                 .unwrap_or("");
-
-            let gloss = if gloss_text.is_empty() {
-                String::new()
-            } else {
+            let formations: Vec<_> = token
+                .formation_rule_indices
+                .iter()
+                .filter_map(|index| project.formation_rules.get(*index))
+                .map(|rule| rule.description.as_str())
+                .collect();
+            let gloss = if formations.is_empty() {
                 escape_typst(gloss_text)
+            } else {
+                escape_typst(&format!("{} ({})", gloss_text, formations.join("; ")))
             };
             let original = escape_typst(&token.original);
 
