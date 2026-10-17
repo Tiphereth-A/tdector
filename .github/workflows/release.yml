@@ -320,12 +320,69 @@ jobs:
           previous_tag="$(git describe --tags --abbrev=0 --first-parent --match 'v*' "${current_commit}^" 2>/dev/null || true)"
           repository_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
 
+          cat > release-notes.md <<'EOF'
+          ## Downloads
+
+          Choose your platform and architecture, then select a variant:
+
+          - **Desktop app**: the graphical application for interactive use.
+          - **Headless CLI**: command-line tools for scripts and automation.
+          - **GUI-control CLI**: all CLI commands plus controlled desktop sessions; includes its own GUI host.
+          - **MCP server**: connects an MCP host to a project over local stdio.
+
+          | Platform | Architecture | Desktop app | Headless CLI | GUI-control CLI | MCP server |
+          | --- | --- | --- | --- | --- | --- |
+          EOF
+
+          # Derive the rows from the files that will be attached to this release.
+          declare -A release_targets=()
+          for artifact in artifacts/tdector-*; do
+            [[ -f "$artifact" ]] || continue
+            filename="${artifact##*/}"
+            target="${filename#tdector-}"
+            target="${target#gui-control-}"
+            target="${target#gui-}"
+            target="${target#mcp-}"
+            release_targets["${target%.exe}"]=1
+          done
+
+          while IFS= read -r target; do
+            [[ -n "$target" ]] || continue
+            extension=''
+            case "$target" in
+              *-pc-windows-msvc) platform='Windows'; extension='.exe' ;;
+              *-unknown-linux-gnu) platform='Linux (glibc)' ;;
+              *-unknown-linux-musl) platform='Linux (musl / Alpine)' ;;
+              *-apple-darwin) platform='macOS' ;;
+              *) platform="$target" ;;
+            esac
+            case "$target" in
+              x86_64-apple-darwin) architecture='Intel (x64)' ;;
+              aarch64-apple-darwin) architecture='Apple Silicon (ARM64)' ;;
+              x86_64-*) architecture='x64' ;;
+              aarch64-*) architecture='ARM64' ;;
+              *) architecture="${target%%-*}" ;;
+            esac
+            printf '| %s | %s |' "$platform" "$architecture" >> release-notes.md
+            for variant in tdector-gui tdector tdector-gui-control tdector-mcp; do
+              filename="${variant}-${target}${extension}"
+              if [[ -f "artifacts/$filename" ]]; then
+                printf ' [Download](%s/releases/download/%s/%s) |' \
+                  "$repository_url" "$GITHUB_REF_NAME" "$filename" >> release-notes.md
+              else
+                printf ' Not available |' >> release-notes.md
+              fi
+            done
+            printf '\n' >> release-notes.md
+          done < <(printf '%s\n' "${!release_targets[@]}" | sort -t- -k2 -k1,1)
+          printf '\n' >> release-notes.md
+
           if [[ -n "$previous_tag" ]]; then
             range="${previous_tag}..${current_commit}"
-            printf '## Changes since %s\n\n' "$previous_tag" > release-notes.md
+            printf '## Changes since %s\n\n' "$previous_tag" >> release-notes.md
           else
             range="$current_commit"
-            printf '## Changes\n\n' > release-notes.md
+            printf '## Changes\n\n' >> release-notes.md
           fi
 
           git log --reverse --format="- %s ([%h](${repository_url}/commit/%H))" "$range" -- >> release-notes.md
