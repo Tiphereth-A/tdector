@@ -1,6 +1,6 @@
 ## Regenerate screenshots
 
-[generate_screenshots.py](../scripts/generate_screenshots.py) regenerates `epigraph.png` and `ginger.png` using the current GUI and the shared [reproduction scenarios](../scripts/gui_control.py). It requires Python 3.9 or later, no third-party Python packages, and a working graphical desktop.
+[generate_screenshots.py](generate_screenshots.py) regenerates `epigraph.png` and `ginger.png` using the current GUI. This single script requires Python 3.9 or later, uses only the standard library, and needs a working graphical desktop.
 
 From the repository root, build the GUI-enabled CLI:
 
@@ -11,18 +11,18 @@ cargo build --locked --release -p tdector-cli --features gui-control --target-di
 On macOS or Linux:
 
 ```bash
-python3 scripts/generate_screenshots.py --tdector ./target/gui-control/release/tdector
+python3 sample/generate_screenshots.py --tdector ./target/gui-control/release/tdector
 ```
 
 On Windows:
 
 ```powershell
-py -3 scripts/generate_screenshots.py --tdector ./target/gui-control/release/tdector.exe
+py -3 sample/generate_screenshots.py --tdector ./target/gui-control/release/tdector.exe
 ```
 
 Use `python` instead of `py -3` if that is how Python is installed. If the GUI-enabled `tdector` is on `PATH`, omit `--tdector`. The generator locates sample files relative to its own location; a supplied executable path is relative to your current directory.
 
-The generator verifies each scenario, captures its rendered framebuffer, and closes its GUI session. It overwrites the two PNG files only after both captures succeed; a failed capture leaves the existing images in place. The sample project files remain unchanged. The compositions use logical client sizes of 1280 × 960 for Epigraph and 1400 × 1000 for Ginger, so output pixel dimensions and font rendering vary with display DPI and platform. See the [GUI-control guide](../docs/gui-control.md#readme-reproduction) for display constraints and scenario details.
+The generator arranges each sample, captures its rendered framebuffer, and closes its GUI session. It overwrites the two PNG files only after both captures succeed; a failed capture leaves the existing images in place. The sample project files remain unchanged. The compositions use logical client sizes of 1280 × 960 for Epigraph and 1400 × 1000 for Ginger, so output pixel dimensions and font rendering vary with display DPI and platform. See the [GUI-control guide](../docs/gui-control.md#readme-reproduction) for display constraints and composition details.
 
 ## Acknowledgments
 

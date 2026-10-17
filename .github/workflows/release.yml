@@ -80,12 +80,41 @@ jobs:
           PY
       - name: Test native adapters, shared application, and libraries
         run: cargo test --locked -p tdector-cli -p tdector-io -p tdector-mcp -p tdector-app -p tdector-core -p tdector-eval -p tdector-file -p tdector-text
-      - name: Verify README fixture coordinates without starting a GUI
+
+  screenshots:
+    name: Rebuild sample screenshots
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target/gui-control"
+
+      - name: Install screenshot build and X11 runtime dependencies
         run: |
-          cargo build --locked -p tdector-cli
-          python3 -m py_compile scripts/gui_control.py scripts/gui_smoke.py
-          python3 scripts/gui_control.py epigraph --tdector ./target/debug/tdector --validate-only
-          python3 scripts/gui_control.py ginger --tdector ./target/debug/tdector --validate-only
+          sudo apt-get update
+          sudo apt-get install -y llvm xvfb libxkbcommon-x11-0 libgl1-mesa-dri
+
+      - name: Build GUI-control screenshot executable
+        run: cargo build --locked -p tdector-cli --features gui-control --target-dir target/gui-control
+
+      - name: Regenerate sample screenshots on Linux/X11
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a -s '-screen 0 1600x1200x24' python3 sample/generate_screenshots.py --tdector ./target/gui-control/debug/tdector
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sample-screenshots
+          path: |
+            sample/epigraph.png
+            sample/ginger.png
+          if-no-files-found: error
 
   build:
     name: build (${{ matrix.target }}-${{ matrix.profile }})
@@ -162,22 +191,6 @@ jobs:
       - name: Test optional GUI-control feature
         if: matrix.profile == 'test' && (matrix.platform == 'darwin' || matrix.arch != 'arm64')
         run: cargo test --locked -p tdector-cli -p tdector-gui --features tdector-cli/gui-control --target-dir target/gui-control --target ${{ matrix.target }}
-
-      - name: Install X11 smoke-test runtime
-        if: matrix.profile == 'test' && matrix.target == 'x86_64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb libxkbcommon-x11-0 libgl1-mesa-dri
-
-      - name: Build GUI-control smoke executable
-        if: matrix.profile == 'test' && matrix.target == 'x86_64-unknown-linux-gnu'
-        run: cargo build --locked -p tdector-cli --features gui-control --target-dir target/gui-control --target ${{ matrix.target }}
-
-      - name: Smoke-test a real GUI host on Linux/X11
-        if: matrix.profile == 'test' && matrix.target == 'x86_64-unknown-linux-gnu'
-        env:
-          LIBGL_ALWAYS_SOFTWARE: '1'
-        run: xvfb-run -a -s '-screen 0 1600x1200x24' python3 scripts/gui_control.py smoke --tdector ./target/gui-control/${{ matrix.target }}/debug/tdector
 
       - name: Build desktop, CLI, and MCP binaries
         if: matrix.profile != 'test'
@@ -298,7 +311,7 @@ jobs:
   release:
     name: Create Release
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [headless, build, build_alpine]
+    needs: [headless, screenshots, build, build_alpine]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -309,6 +322,7 @@ jobs:
 
       - uses: actions/download-artifact@v8
         with:
+          pattern: tdector-*
           path: artifacts
           merge-multiple: true
 

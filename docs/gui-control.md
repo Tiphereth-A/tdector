@@ -145,59 +145,32 @@ The prompt uses the same Clap commands with `shlex` tokenization on every platfo
 
 The REPL reserves stdin for commands and rejects `--value-file -`. Ordinary shell commands can read that value from stdin. `exit` or EOF detaches; `quit` requests GUI shutdown. A session can be reattached from a later prompt or controlled by separate shell commands.
 
-`set --value` parses valid JSON values and otherwise treats its argument as text. For a text field that should contain a number or another JSON literal, encode it as a JSON string (for example `--value '"123"'`) or use `--value-file` to preserve literal text. The reproduction helpers encode values with Python's `json.dumps` and pass argument arrays without a shell.
+`set --value` parses valid JSON values and otherwise treats its argument as text. For a text field that should contain a number or another JSON literal, encode it as a JSON string (for example `--value '"123"'`) or use `--value-file` to preserve literal text. The screenshot generator encodes values with Python's `json.dumps` and passes argument arrays without a shell.
 
 ## README reproduction
 
-The same Python 3.9+ runner handles Windows, macOS, and Linux. It uses only the standard library; no PowerShell, shell utilities, or Python packages are needed for the Python commands. The GUI-enabled executable itself does not require Python.
+[sample/generate_screenshots.py](../sample/generate_screenshots.py) rebuilds both README screenshots on Windows, macOS, and Linux. It requires Python 3.9 or later and uses only the standard library. The GUI-enabled executable itself does not require Python.
 
 On macOS or Linux:
 
 ```bash
-python3 scripts/gui_control.py epigraph --tdector ./target/gui-control/release/tdector
-python3 scripts/gui_control.py ginger --tdector ./target/gui-control/release/tdector
+python3 sample/generate_screenshots.py --tdector ./target/gui-control/release/tdector
 ```
 
 On Windows with the Python launcher (use `python` if preferred):
 
 ```powershell
-py -3 scripts/gui_control.py epigraph --tdector ./target/gui-control/release/tdector.exe
-py -3 scripts/gui_control.py ginger --tdector ./target/gui-control/release/tdector.exe
+py -3 sample/generate_screenshots.py --tdector ./target/gui-control/release/tdector.exe
 ```
 
-The executable can also be a command on `PATH`; `--tdector` defaults to `tdector`. Fixture paths are resolved relative to the script location, so the current directory need not be the repository root. Executable and capture paths resolve from the current directory. `--validate-only` checks fixtures using ordinary headless queries without starting a window. Any mismatch reports the expected coordinate and value and stops. The scripts record sample hashes and assert they remain unchanged; they perform no save, export, or commit action.
+The only option is `--tdector`, which defaults to `tdector` on `PATH`. A supplied executable path resolves from the current directory. Sample projects, the font, and output PNGs are located relative to the script, so the current directory need not be the repository root. The generator performs no project save, export, or draft commit action.
 
-All platforms invoke the Python runner directly. There is one implementation of each scenario, so Unix and Windows run the same checks.
+The Epigraph composition uses a 1280 by 960 logical client area; Ginger uses 1400 by 1000. At high DPI, these can exceed the physical display. If the window manager constrains the startup size, the generator requests the full composition size with `resize` and checks the observed dimensions. It stops if the platform still refuses that size. Renderer screenshots include the full client canvas even when a window extends beyond the desktop.
 
-The Epigraph composition uses a 1280 by 960 logical client area; Ginger uses 1400 by 1000. At high DPI, these can exceed the physical display. If the window manager constrains the startup size, the scripts report its observed dimensions and request the full composition size with `resize`. They stop with a clear assertion if the platform still refuses that size. Renderer screenshots include the full client canvas even when a window extends beyond the desktop.
+Epigraph loads `sample/epigraph.otf`, sets light theme/index ascending/page size 10, scrolls to the latter half of page one, and opens similarity for index 6, references for the plural god at segment 7/token 1, its `Plural Noun` formation draft, and its chain.
 
-Epigraph loads `sample/epigraph.otf`, sets light theme/index ascending/page size 10, scrolls to the latter half of page one, and opens similarity for index 6, references for the plural god at segment 7/token 1, its `Plural Noun` formation draft, and its chain. The base token is identified by its `god` gloss and the exact bundled Unicode form.
+Ginger sets dark theme/filter `k.`/shortest length/page size 50, scrolls to displayed segment `[275]`, and opens similarity for index 274, pinned definition and references for `subteta`, token similarity, and the `subtetaf` chain at segment 187/token 2. The new rule has description `-a`, derivation type, an append-`a` script, test word `subtet`, and preview `subteta`. That draft remains open for the capture without invoking Create.
 
-Ginger sets dark theme/filter `k.`/shortest length/page size 50, opens similarity for index 274, pinned definition and references for `subteta`, token similarity, and the `subtetaf` chain at segment 187/token 2. The current fixture has six shorter-or-equal records before displayed `[275]`; the script reports this prefix and scrolls to the selected target instead of substituting a different record. The new rule has description `-a`, derivation type, an append-`a` script, test word `subtet`, and preview `subteta`. That draft is intentionally left open without invoking Create.
+The generator captures the app's rendered framebuffer, excluding native window decorations and other applications, and closes each session afterward. It replaces `sample/epigraph.png` and `sample/ginger.png` only after both captures succeed. A failed capture leaves the existing images in place. See the [sample instructions](../sample/README.md#regenerate-screenshots) for the build command.
 
-The reference images, `sample/epigraph.png` and `sample/ginger.png`, are framebuffer captures generated by these scenarios. Acceptance compares fixture records, values, views, pin states, and relative arrangement. By default, the runner leaves a successful session open and prints a JSON object containing its locator, main handle, and popup handles to stdout; progress goes to stderr. Add `--close` to close the session after verification, and optionally `--capture capture.png` to save its framebuffer first. The capture path must not already exist. Failed checks attempt to close their own session.
-
-You can also run `tdector gui screenshot --session SESSION --output capture.png` after a reproduction for a visual comparison. It captures the app's rendered framebuffer, excluding native window decorations and other applications; an existing output requires `--overwrite`.
-
-To refresh both bundled reference PNGs, use [scripts/generate_screenshots.py](../scripts/generate_screenshots.py) as described in the [sample instructions](../sample/README.md#regenerate-screenshots). It runs both scenarios with capture and close enabled, then replaces the sample images only after both captures succeed.
-
-## Native verification
-
-Run the portable smoke scenario on an interactive desktop:
-
-```bash
-# macOS or Linux
-python3 scripts/gui_control.py smoke --tdector ./target/gui-control/release/tdector
-
-# Linux/X11 in a virtual display, when Xvfb is installed
-xvfb-run -a -s '-screen 0 1600x1200x24' python3 scripts/gui_control.py smoke --tdector ./target/gui-control/release/tdector
-```
-
-```powershell
-# Windows
-py -3 scripts/gui_control.py smoke --tdector ./target/gui-control/release/tdector.exe
-```
-
-The smoke test launches a real host, checks startup failure/readiness, authentication rejection, REPL exit/EOF detachment, draft cancellation, singleton reuse, pinning, retained geometry, Unicode/multiline text, dirty-close confirmation, explicit save/reload, stale identifiers, and orderly shutdown. It saves only in a temporary directory, checks the sample hash, and closes its session afterward. A Wayland session also checks that native positioning returns `unsupported_operation`.
-
-CI runs default and feature-enabled native Rust tests, checks the default headless dependency graph, validates both demonstration fixtures, and runs the process smoke script under Linux/X11 with Xvfb and software Mesa. It also builds both executable variants in separate output directories. The WASM job continues to build without the native feature. Interactive rendering on Windows/macOS and a real Wayland compositor still require running the smoke script in those environments; cross-compilation or unit tests alone do not verify their window-manager behavior.
+For a separate session you control yourself, use `tdector gui screenshot --session SESSION --output capture.png`. An existing output requires `--overwrite`.

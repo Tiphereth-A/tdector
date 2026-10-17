@@ -163,29 +163,23 @@ $opened = & $tdector gui open references --word subteta --pinned --json | Conver
 
 Each launched session keeps running across shell commands. The REPL accepts the same commands without the `tdector gui` prefix; `exit` detaches and `quit` requests GUI shutdown. Inspect a window to discover its controls, values, actions, and scroll areas. Project edits stay in memory until `gui save`; comment and rule drafts first require their advertised commit action. See the [GUI-control reference](docs/gui-control.md) for session and handle lifetimes, geometry, quoting, and platform capabilities.
 
-The shared Python runner reproduces the selected records and relative window arrangements in the images above on all three desktop platforms. It requires Python 3.9 or later, with no third-party packages. Each scenario validates the bundled fixture before launching a session, checks the resulting controls and window geometry, and leaves the session open for inspection.
+To regenerate both screenshots above, run [sample/generate_screenshots.py](sample/generate_screenshots.py). It requires Python 3.9 or later, uses only the standard library, and closes each GUI session after capture.
 
 On macOS or Linux:
 
 ```bash
-python3 scripts/gui_control.py epigraph --tdector ./target/gui-control/release/tdector
-python3 scripts/gui_control.py ginger --tdector ./target/gui-control/release/tdector
-python3 scripts/gui_control.py smoke --tdector ./target/gui-control/release/tdector
+python3 sample/generate_screenshots.py --tdector ./target/gui-control/release/tdector
 ```
 
 On Windows with the Python launcher:
 
 ```powershell
-py -3 scripts/gui_control.py epigraph --tdector ./target/gui-control/release/tdector.exe
-py -3 scripts/gui_control.py ginger --tdector ./target/gui-control/release/tdector.exe
-py -3 scripts/gui_control.py smoke --tdector ./target/gui-control/release/tdector.exe
+py -3 sample/generate_screenshots.py --tdector ./target/gui-control/release/tdector.exe
 ```
 
-Use `python` instead of `py -3` if that is how Python is installed. All platforms run the same Python scenarios directly.
+Use `python` instead of `py -3` if that is how Python is installed. Omit `--tdector` when the GUI-enabled executable is on `PATH`. The generator locates the sample files relative to its own location and replaces both PNGs after both captures succeed. It leaves the sample projects unchanged; Ginger's new-rule editor remains an uncommitted draft.
 
-Add `--validate-only` to a reproduction to check fixture coordinates without opening a window, or `--close` to close the successful session after checking it. `--capture capture.png` saves a framebuffer screenshot to a new file. The reproductions make no project edits and never save the sample files; Ginger's new-rule editor remains an uncommitted draft. The smoke scenario exercises edits and save/reload using temporary output, then closes its session. An interactive desktop is required for live runs; Linux CI uses Xvfb. The screenshots above are framebuffer captures produced by these scenarios. Font rendering, DPI, and exact pixel positions can differ across platforms. Run on a desktop large enough for the requested composition, or adjust the scripts' window sizes for your display.
-
-To regenerate both bundled PNGs and close the capture sessions automatically, use [scripts/generate_screenshots.py](scripts/generate_screenshots.py). The [sample instructions](sample/README.md#regenerate-screenshots) include build and regeneration commands for each platform.
+A working graphical desktop is required. Font rendering, DPI, and exact pixel positions can differ across platforms. See the [sample instructions](sample/README.md#regenerate-screenshots) for build and regeneration commands and the [GUI-control guide](docs/gui-control.md#readme-reproduction) for display constraints and composition details.
 
 ### Connecting an MCP Host
 
