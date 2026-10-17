@@ -1,3 +1,18 @@
+# v0.4.0
+
+## Features
+- Add optional native GUI control through `tdector gui`, with persistent desktop sessions, window and control inspection, editing, layout commands, screenshots, and an interactive REPL on Windows, macOS, and Linux.
+- Add reproducible sample screenshot generation and document GUI-control setup, commands, and session behavior.
+
+## Fixes
+- Export derived tokens to Typst with their base-word gloss and ordered formation descriptions, matching the GUI annotations.
+- Handle delayed and fragmented GUI-control requests correctly when accepted sockets inherit nonblocking mode on macOS.
+
+## CI/Deps
+- Package a separate GUI-control CLI alongside the desktop app, headless CLI, and MCP server, and add a platform download table to release notes.
+- Test the optional GUI-control feature across native release platforms and automate sample screenshot checks.
+- Update dependencies and sample fonts, including the Epigraph font source.
+
 # v0.3.1
 
 ## CI/Deps
