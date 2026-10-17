@@ -27,3 +27,6 @@ dist
 
 local/
 .vscode/settings.json
+
+# Python GUI automation helpers
+__pycache__/

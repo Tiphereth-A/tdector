@@ -25,11 +25,19 @@ impl DecryptionApp {
                     return;
                 }
             };
-            self.update_comment_popup = Some(crate::ui::states::state::UpdateCommentDialog {
-                word: word.to_string(),
-                comment: current_comment,
-                target,
-            });
+            if !self.open_from_mouse(
+                ui.ctx(),
+                "word-comment",
+                Some(word),
+                Some(sentence_idx),
+                Some(word_idx),
+            ) {
+                self.update_comment_popup = Some(crate::ui::states::state::UpdateCommentDialog {
+                    word: word.to_string(),
+                    comment: current_comment,
+                    target,
+                });
+            }
             *should_close = true;
         }
     }
@@ -44,13 +52,16 @@ impl DecryptionApp {
             );
 
             let mut should_close = false;
-            egui::Window::new(title)
+            self.popup_window("word-comment", None, title)
                 .id(egui::Id::new("update_comment_popup"))
                 .open(&mut open)
                 .default_width(350.0)
                 .show(ctx, |ui| {
                     ui.label("Comment:");
-                    ui.text_edit_multiline(&mut dialog.comment);
+                    ui.add(
+                        egui::TextEdit::multiline(&mut dialog.comment)
+                            .id(crate::ui::managed::control_id(ui, "comment")),
+                    );
 
                     ui.separator();
 
@@ -81,13 +92,16 @@ impl DecryptionApp {
             let mut open = true;
 
             let mut should_close = false;
-            egui::Window::new("Update Sentence Comment")
+            self.popup_window("segment-comment", None, "Update Sentence Comment")
                 .id(egui::Id::new("update_sentence_comment_popup"))
                 .open(&mut open)
                 .default_width(400.0)
                 .show(ctx, |ui| {
                     ui.label("Comment:");
-                    ui.text_edit_multiline(&mut dialog.comment);
+                    ui.add(
+                        egui::TextEdit::multiline(&mut dialog.comment)
+                            .id(crate::ui::managed::control_id(ui, "comment")),
+                    );
 
                     ui.separator();
 

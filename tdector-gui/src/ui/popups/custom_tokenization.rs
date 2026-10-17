@@ -8,9 +8,14 @@ impl DecryptionApp {
         let mut should_apply = false;
         let mut should_test = false;
 
+        let window = self
+            .custom_tokenization_popup
+            .as_ref()
+            .map(|_| self.popup_window("custom-tokenization", None, "Custom Tokenization Script"));
         if let Some(dialog) = &mut self.custom_tokenization_popup {
             let mut open = true;
-            egui::Window::new("Custom Tokenization Script")
+            window
+                .expect("open tokenizer")
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .collapsible(false)
                 .resizable(true)
@@ -23,6 +28,7 @@ impl DecryptionApp {
                     ui.label("Rhai Script (must define fn tokenize(line) -> Array):");
                     ui.add(
                         egui::TextEdit::multiline(&mut dialog.command)
+                            .id(crate::ui::managed::control_id(ui, "script"))
                             .font(egui::TextStyle::Monospace)
                             .desired_rows(10)
                             .desired_width(f32::INFINITY),
@@ -33,7 +39,10 @@ impl DecryptionApp {
                     ui.label("Test your script:");
                     ui.horizontal(|ui| {
                         ui.label("Test text:");
-                        ui.text_edit_singleline(&mut dialog.test_text);
+                        ui.add(
+                            egui::TextEdit::singleline(&mut dialog.test_text)
+                                .id(crate::ui::managed::control_id(ui, "test-text")),
+                        );
                         if ui.button("Test").clicked() {
                             should_test = true;
                         }

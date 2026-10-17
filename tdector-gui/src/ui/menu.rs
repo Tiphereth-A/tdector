@@ -77,7 +77,7 @@ pub fn render_menu_bar(
                     ui.close();
                 }
             });
-            ui.menu_button("Theme", |ui| {
+            let theme_response = ui.menu_button("Theme", |ui| {
                 if ui.button("Light").clicked() {
                     ui.ctx().set_visuals(egui::Visuals::light());
                     ui.close();
@@ -87,6 +87,7 @@ pub fn render_menu_bar(
                     ui.close();
                 }
             });
+            crate::ui::managed::focus_response(ui, "theme", &theme_response.response);
         });
     });
 }

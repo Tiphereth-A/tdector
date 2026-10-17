@@ -124,6 +124,69 @@ Use `--project -` for project JSON on stdin, or `--output -` for a saved project
 
 See [the CLI reference](docs/cli-design.md) for all commands, batch request schemas, script behavior, exit codes, and persistence guarantees.
 
+### Controlling a Desktop Session from the CLI
+
+Build the optional native GUI-control executable in its own output directory on Windows, macOS, or Linux:
+
+```text
+cargo build --locked --release -p tdector-cli --features gui-control --target-dir target/gui-control
+```
+
+On macOS or Linux, use a Bash-compatible shell. These examples use Python 3 to read the CLI's JSON replies:
+
+```bash
+tdector=./target/gui-control/release/tdector
+started=$("$tdector" gui start --project sample/ginger.json --json)
+export TDECTOR_GUI_SESSION=$(printf '%s' "$started" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["session"])')
+main=$(printf '%s' "$started" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["main_handle"])')
+"$tdector" gui set "$main" filter --value 'k.'
+"$tdector" gui set "$main" sort --value length-asc
+"$tdector" gui open references --word subteta --pinned --json
+"$tdector" gui windows --json
+"$tdector" gui repl
+```
+
+On Windows, the equivalent PowerShell example is:
+
+```powershell
+$tdector = './target/gui-control/release/tdector.exe'
+$started = & $tdector gui start --project sample/ginger.json --json | ConvertFrom-Json
+$env:TDECTOR_GUI_SESSION = $started.data.session
+$main = $started.data.main_handle
+& $tdector gui set $main filter --value 'k.'
+& $tdector gui set $main sort --value length-asc
+$opened = & $tdector gui open references --word subteta --pinned --json | ConvertFrom-Json
+& $tdector gui move $opened.data.handle --x 850 --y 120
+& $tdector gui inspect $opened.data.handle --json
+& $tdector gui repl
+```
+
+Each launched session keeps running across shell commands. The REPL accepts the same commands without the `tdector gui` prefix; `exit` detaches and `quit` requests GUI shutdown. Inspect a window to discover its controls, values, actions, and scroll areas. Project edits stay in memory until `gui save`; comment and rule drafts first require their advertised commit action. See the [GUI-control reference](docs/gui-control.md) for session and handle lifetimes, geometry, quoting, and platform capabilities.
+
+The shared Python runner reproduces the selected records and relative window arrangements in the images above on all three desktop platforms. It requires Python 3.9 or later, with no third-party packages. Each scenario validates the bundled fixture before launching a session, checks the resulting controls and window geometry, and leaves the session open for inspection.
+
+On macOS or Linux:
+
+```bash
+python3 scripts/gui_control.py epigraph --tdector ./target/gui-control/release/tdector
+python3 scripts/gui_control.py ginger --tdector ./target/gui-control/release/tdector
+python3 scripts/gui_control.py smoke --tdector ./target/gui-control/release/tdector
+```
+
+On Windows with the Python launcher:
+
+```powershell
+py -3 scripts/gui_control.py epigraph --tdector ./target/gui-control/release/tdector.exe
+py -3 scripts/gui_control.py ginger --tdector ./target/gui-control/release/tdector.exe
+py -3 scripts/gui_control.py smoke --tdector ./target/gui-control/release/tdector.exe
+```
+
+Use `python` instead of `py -3` if that is how Python is installed. All platforms run the same Python scenarios directly.
+
+Add `--validate-only` to a reproduction to check fixture coordinates without opening a window, or `--close` to close the successful session after checking it. `--capture capture.png` saves a framebuffer screenshot to a new file. The reproductions make no project edits and never save the sample files; Ginger's new-rule editor remains an uncommitted draft. The smoke scenario exercises edits and save/reload using temporary output, then closes its session. An interactive desktop is required for live runs; Linux CI uses Xvfb. The screenshots above are framebuffer captures produced by these scenarios. Font rendering, DPI, and exact pixel positions can differ across platforms. Run on a desktop large enough for the requested composition, or adjust the scripts' window sizes for your display.
+
+To regenerate both bundled PNGs and close the capture sessions automatically, use [scripts/generate_screenshots.py](scripts/generate_screenshots.py). The [sample instructions](sample/README.md#regenerate-screenshots) include build and regeneration commands for each platform.
+
 ### Connecting an MCP Host
 
 Build the native stdio server and select one existing project:
@@ -143,7 +206,7 @@ Read [the MCP reference](docs/mcp.md) for a host configuration example, tool sem
 cargo build --locked --release -p tdector-gui
 ```
 
-The desktop executable remains `tdector-gui` (`tdector-gui.exe` on Windows). Native release artifacts include the desktop, CLI, and MCP executables.
+The desktop executable remains `tdector-gui` (`tdector-gui.exe` on Windows). Native releases contain `tdector-gui-<target>`, the default headless `tdector-<target>`, the optional `tdector-gui-control-<target>`, and `tdector-mcp-<target>` (with `.exe` on Windows). The GUI-control artifact is the CLI with `gui-control` enabled and can run both headless commands and controlled desktop sessions. Ordinary desktop launches do not start a control listener.
 
 ### Building for Web
 

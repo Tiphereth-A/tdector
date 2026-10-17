@@ -26,25 +26,33 @@ impl DecryptionApp {
                         DictionaryPopupType::Definition => POPUP_DEFINITION_HEIGHT,
                         DictionaryPopupType::Reference => POPUP_REFERENCE_HEIGHT,
                     };
-                    egui::Window::new(title.as_str())
-                        .id(egui::Id::new(id))
-                        .open(&mut open)
-                        .default_width(POPUP_WIDTH)
-                        .default_height(height)
-                        .show(ctx, |ui| {
-                            self.render_dictionary_content(
-                                ui,
-                                word.as_str(),
-                                *mode,
-                                headword_lookup,
-                                usage_lookup,
-                                popup_request,
-                                Some(*id),
-                            );
-                        });
+                    self.popup_window(
+                        if *mode == DictionaryPopupType::Definition {
+                            "definition"
+                        } else {
+                            "references"
+                        },
+                        Some(*id),
+                        title.as_str(),
+                    )
+                    .id(egui::Id::new(id))
+                    .open(&mut open)
+                    .default_width(POPUP_WIDTH)
+                    .default_height(height)
+                    .show(ctx, |ui| {
+                        self.render_dictionary_content(
+                            ui,
+                            word.as_str(),
+                            *mode,
+                            headword_lookup,
+                            usage_lookup,
+                            popup_request,
+                            Some(*id),
+                        );
+                    });
                 }
                 PinnedPopup::Similar(_target_idx, similar_indices, id, title) => {
-                    egui::Window::new(title.as_str())
+                    self.popup_window("similar-segments", Some(*id), title.as_str())
                         .id(egui::Id::new(id))
                         .open(&mut open)
                         .default_width(POPUP_WIDTH)

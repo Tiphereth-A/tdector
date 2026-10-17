@@ -19,7 +19,7 @@ impl DecryptionApp {
             let mut open = true;
             let target_label = format!("[{}]", target_idx + 1);
             let title = create_popup_title("Similar to ", &target_label, false);
-            egui::Window::new(title)
+            self.popup_window("similar-segments", None, title)
                 .id(egui::Id::new("similar_popup"))
                 .open(&mut open)
                 .default_width(POPUP_WIDTH)
@@ -62,9 +62,9 @@ impl DecryptionApp {
         ui: &mut egui::Ui,
         similar_indices: &[(usize, f64)],
         popup_request: &mut Option<PopupRequest>,
-        popup_id: Option<u64>,
+        _popup_id: Option<u64>,
     ) {
-        egui::ScrollArea::vertical()
+        crate::ui::managed::scroll_area(ui, "content", egui::ScrollArea::vertical())
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 for (idx, score) in similar_indices {
@@ -95,24 +95,23 @@ impl DecryptionApp {
                                 }
                             });
 
-                            let scroll_id = match popup_id {
-                                Some(id) => egui::Id::new(id).with(idx),
-                                None => egui::Id::new(idx),
-                            };
-                            egui::ScrollArea::horizontal()
-                                .id_salt(scroll_id)
-                                .max_width(ui.available_width())
-                                .show(ui, |ui| {
-                                    if let Some(action) = ui::render_clickable_tokens(
-                                        ui,
-                                        &seg.tokens,
-                                        self.session.project(),
-                                        None,
-                                        self.custom_font_name.is_some(),
-                                    ) {
-                                        self.handle_ui_action(ui, action, popup_request, *idx);
-                                    }
-                                });
+                            crate::ui::managed::scroll_area(
+                                ui,
+                                &format!("segment:{idx}"),
+                                egui::ScrollArea::horizontal(),
+                            )
+                            .max_width(ui.available_width())
+                            .show(ui, |ui| {
+                                if let Some(action) = ui::render_clickable_tokens(
+                                    ui,
+                                    &seg.tokens,
+                                    self.session.project(),
+                                    None,
+                                    self.custom_font_name.is_some(),
+                                ) {
+                                    self.handle_ui_action(ui, action, popup_request, *idx);
+                                }
+                            });
                             ui.add_space(5.0);
 
                             if !seg.translation.is_empty() {

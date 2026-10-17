@@ -3,6 +3,10 @@ name = "tdector-gui"
 version = "0.3.1"
 edition = "2024"
 
+[features]
+default = []
+gui-control = ["dep:serde", "dep:serde_json", "dep:getrandom", "dep:tdector-io", "dep:ttf-parser", "dep:raw-window-handle", "image/png"]
+
 [dependencies]
 tdector-app = { path = "../tdector-app" }
 tdector-core = { path = "../tdector-core" }
@@ -23,6 +27,12 @@ wasm-bindgen-futures = "0.4"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11"
+raw-window-handle = { version = "0.6", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+getrandom = { version = "0.3", optional = true }
+tdector-io = { path = "../tdector-io", optional = true }
+ttf-parser = { version = "0.25", optional = true }
 image = { version = "0.25", default-features = false, features = ["ico"] }
 pollster = "1.0"
 

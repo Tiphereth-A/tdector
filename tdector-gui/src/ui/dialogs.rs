@@ -7,7 +7,7 @@ impl DecryptionApp {
         if let Some(msg) = &self.error_message {
             let mut open = true;
             let mut should_close = false;
-            egui::Window::new("Error")
+            self.popup_window("error", None, "Error")
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .collapsible(false)
                 .resizable(false)
@@ -33,7 +33,7 @@ impl DecryptionApp {
 
         if let Some((msg, action)) = confirmation_data {
             let mut open = true;
-            egui::Window::new("Confirmation")
+            self.popup_window("confirmation", None, "Confirmation")
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .collapsible(false)
                 .resizable(false)
@@ -71,7 +71,7 @@ impl DecryptionApp {
             let mut choice = None;
             let mut use_custom = false;
             let mut open = true;
-            egui::Window::new("Import Options")
+            self.popup_window("import-options", None, "Import Options")
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .collapsible(false)
                 .resizable(false)

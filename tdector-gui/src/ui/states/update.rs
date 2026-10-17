@@ -3,12 +3,24 @@ use std::rc::Rc;
 
 use eframe::egui;
 
-use crate::enums::{AppAction, DictionaryPopupType, FormationType, PopupRequest};
+use crate::enums::{AppAction, FormationType};
 use crate::ui;
 
 use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
+    #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+    pub(crate) fn new_controlled(cc: &eframe::CreationContext<'_>) -> Self {
+        use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+        Self::initialize_fonts(&cc.egui_ctx);
+        let mut app = Self::default();
+        app.control_data.native_position = cc
+            .window_handle()
+            .ok()
+            .map(|handle| !matches!(handle.as_raw(), RawWindowHandle::Wayland(_)));
+        app
+    }
+
     #[allow(clippy::new_ret_no_self)]
     pub fn new(cc: &eframe::CreationContext<'_>) -> Box<dyn eframe::App> {
         Self::new_with_dirty_flag(cc, Rc::new(Cell::new(false)))
@@ -32,6 +44,8 @@ impl eframe::App for DecryptionApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         self.process_pending_file_operations(&ctx);
+        self.sync_control_windows();
+        let _control_scope = self.main_control_scope();
 
         let mut do_import = false;
         let mut do_open = false;
@@ -103,15 +117,25 @@ impl eframe::App for DecryptionApp {
             self.trigger_action(AppAction::Quit, &ctx);
         }
 
-        if let Some(new_page) =
-            ui::render_pagination(ui, self.current_page, total_pages, &mut self.page_size)
-        {
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        let external_jump = Some(&mut self.control_data.jump_page);
+        #[cfg(not(all(feature = "gui-control", not(target_arch = "wasm32"))))]
+        let external_jump = None;
+        if let Some(new_page) = ui::render_pagination(
+            ui,
+            self.current_page,
+            total_pages,
+            &mut self.page_size,
+            external_jump,
+        ) {
             self.current_page = new_page;
         }
 
+        self.sync_control_windows();
         self.render_error_dialog(&ctx);
         self.render_confirmation_dialog(&ctx);
         self.render_import_dialog(&ctx);
+        self.sync_control_windows();
         self.render_custom_tokenization_popup(&ctx);
 
         if self.filter_dirty {
@@ -124,78 +148,22 @@ impl eframe::App for DecryptionApp {
         self.render_central_panel(ui, &mut popup_request);
 
         if let Some(req) = popup_request.take() {
-            match req {
-                PopupRequest::Dictionary(word, mode) => match mode {
-                    DictionaryPopupType::Definition => self.definition_popup = Some(word),
-                    DictionaryPopupType::Reference => self.reference_popup = Some(word),
-                },
-                PopupRequest::Similar(idx) => {
-                    self.compute_similar_segments(idx);
-                }
-                PopupRequest::SimilarTokens(word) => {
-                    let similar_indices = self.session.similar_tokens(&word);
-                    self.similar_tokens_popup = Some((word, similar_indices));
-                }
-                PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
-                    self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));
-                }
-                PopupRequest::SentenceMenu(sentence_idx, cursor_pos) => {
-                    self.sentence_menu_popup = Some((sentence_idx, cursor_pos));
-                }
-                PopupRequest::FormattingChain(sentence_idx, word_idx) => {
-                    self.formatting_chain_popup =
-                        Some(crate::ui::states::state::FormattingChainDialog {
-                            sentence_idx,
-                            word_idx,
-                        });
-                }
-                PopupRequest::Filter(text) => {
-                    self.filter_text = text;
-                    self.current_page = 0;
-                    self.filter_dirty = true;
-                }
-            }
+            self.handle_popup_request(req, &ctx);
         }
 
         let (headword_lookup, usage_lookup) = self.session.lookup_maps();
 
+        self.sync_control_windows();
         self.render_popups(&ctx, &headword_lookup, &usage_lookup, &mut popup_request);
 
+        self.sync_control_windows();
         self.render_pinned_popups(&ctx, &headword_lookup, &usage_lookup, &mut popup_request);
 
         if let Some(req) = popup_request {
-            match req {
-                PopupRequest::Dictionary(word, mode) => match mode {
-                    DictionaryPopupType::Definition => self.definition_popup = Some(word),
-                    DictionaryPopupType::Reference => self.reference_popup = Some(word),
-                },
-                PopupRequest::Similar(idx) => {
-                    self.compute_similar_segments(idx);
-                }
-                PopupRequest::SimilarTokens(word) => {
-                    let similar_indices = self.session.similar_tokens(&word);
-                    self.similar_tokens_popup = Some((word, similar_indices));
-                }
-                PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
-                    self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));
-                }
-                PopupRequest::SentenceMenu(sentence_idx, cursor_pos) => {
-                    self.sentence_menu_popup = Some((sentence_idx, cursor_pos));
-                }
-                PopupRequest::FormattingChain(sentence_idx, word_idx) => {
-                    self.formatting_chain_popup =
-                        Some(crate::ui::states::state::FormattingChainDialog {
-                            sentence_idx,
-                            word_idx,
-                        });
-                }
-                PopupRequest::Filter(text) => {
-                    self.filter_text = text;
-                    self.current_page = 0;
-                    self.filter_dirty = true;
-                }
-            }
+            self.handle_popup_request(req, &ctx);
         }
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        self.observe_control_frame(&ctx);
     }
 }
 
@@ -265,13 +233,15 @@ impl DecryptionApp {
             self.trigger_action(AppAction::Quit, ctx);
         }
         if do_add_word_formation_rule {
-            self.new_formation_rule_popup = Some(super::state::NewFormationRuleDialog {
-                description: String::new(),
-                rule_type: FormationType::Derivation,
-                command: "fn transform(word) { word }".to_string(),
-                test_word: String::new(),
-                preview: String::new(),
-            });
+            if !self.open_from_mouse(ctx, "new-formation-rule", None, None, None) {
+                self.new_formation_rule_popup = Some(super::state::NewFormationRuleDialog {
+                    description: String::new(),
+                    rule_type: FormationType::Derivation,
+                    command: "fn transform(word) { word }".to_string(),
+                    test_word: String::new(),
+                    preview: String::new(),
+                });
+            }
         }
     }
 }

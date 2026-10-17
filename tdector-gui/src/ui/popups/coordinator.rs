@@ -30,17 +30,29 @@ impl DecryptionApp {
         usage_lookup: &LookupIndex,
         popup_request: &mut Option<PopupRequest>,
     ) {
+        self.sync_control_windows();
         self.render_definition_popup(ctx, headword_lookup, popup_request);
+        self.sync_control_windows();
         self.render_reference_popup(ctx, usage_lookup, popup_request);
+        self.sync_control_windows();
         self.render_similar_popup(ctx, popup_request);
+        self.sync_control_windows();
         self.render_similar_tokens_popup(ctx, popup_request);
+        self.sync_control_windows();
         self.render_word_menu_popup(ctx, popup_request);
+        self.sync_control_windows();
         self.render_sentence_menu_popup(ctx, popup_request);
+        self.sync_control_windows();
         self.render_formatting_chain_popup(ctx);
+        self.sync_control_windows();
         self.render_remove_formation_rule_popup(ctx);
+        self.sync_control_windows();
         self.render_word_formation_popup(ctx);
+        self.sync_control_windows();
         self.render_new_formation_rule_popup(ctx);
+        self.sync_control_windows();
         self.render_update_comment_popup(ctx);
+        self.sync_control_windows();
         self.render_update_sentence_comment_popup(ctx);
     }
 }

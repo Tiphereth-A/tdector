@@ -2,6 +2,8 @@
 
 mod args;
 mod error;
+#[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+mod gui;
 mod io;
 mod report;
 
@@ -82,6 +84,17 @@ fn recognizes_json(arguments: &[OsString]) -> bool {
         "--word",
         "--base",
         "--line",
+        "--session",
+        "--timeout",
+        "--font",
+        "--width",
+        "--height",
+        "--x",
+        "--y",
+        "--control",
+        "--area",
+        "--value",
+        "--value-file",
     ];
     let mut skip = false;
     for argument in arguments.iter().skip(1) {
@@ -104,6 +117,12 @@ fn recognizes_json(arguments: &[OsString]) -> bool {
 }
 
 fn run(cli: &Cli) -> Result<Option<Value>> {
+    #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+    match &cli.command {
+        Command::Gui(options) => return gui::run(cli, options),
+        Command::GuiHost => return gui::host(),
+        _ => {}
+    }
     let is_batch = matches!(cli.command, Command::Batch { .. });
     cli.validate().map_err(|error| {
         if is_batch {
@@ -133,6 +152,8 @@ fn run(cli: &Cli) -> Result<Option<Value>> {
     })?;
 
     let data = match &cli.command {
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        Command::Gui(_) | Command::GuiHost => unreachable!("GUI dispatched above"),
         Command::Info => query(&mut session, Query::Info)?,
         Command::Validate => query(&mut session, Query::Validate)?,
         Command::Segment(command) => match command {

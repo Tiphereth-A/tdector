@@ -126,41 +126,47 @@ pub fn render_segment(
             action = UiAction::ShowSentenceMenu(seg_num - 1);
         }
 
-        egui::ScrollArea::horizontal()
-            .id_salt(seg_num)
-            .show(ui, |ui| {
-                ui.horizontal_top(|ui| {
-                    ui.spacing_mut().item_spacing.x = SEGMENT_SPACING_X;
-                    for (word_idx, token) in segment.tokens.iter().enumerate() {
-                        let token_action = render_token_column(
-                            ui,
-                            token,
-                            project,
-                            highlight,
-                            use_custom_font,
-                            word_idx,
-                            commands,
-                        );
+        crate::ui::managed::scroll_area(
+            ui,
+            &format!("segment:{}", seg_num - 1),
+            egui::ScrollArea::horizontal(),
+        )
+        .show(ui, |ui| {
+            ui.horizontal_top(|ui| {
+                ui.spacing_mut().item_spacing.x = SEGMENT_SPACING_X;
+                for (word_idx, token) in segment.tokens.iter().enumerate() {
+                    let token_action = render_token_column(
+                        ui,
+                        token,
+                        project,
+                        highlight,
+                        use_custom_font,
+                        word_idx,
+                        seg_num - 1,
+                        commands,
+                    );
 
-                        match token_action {
-                            UiAction::Filter(_) => action = token_action,
-                            UiAction::ShowSimilar(_) => action = token_action,
-                            UiAction::ShowDefinition(_) => action = token_action,
-                            UiAction::ShowReference(_) => action = token_action,
-                            UiAction::ShowSentenceMenu(_) => action = token_action,
-                            UiAction::ShowWordMenu(word, _) => {
-                                action = UiAction::ShowWordMenu(word, word_idx);
-                            }
-                            UiAction::None => {}
+                    match token_action {
+                        UiAction::Filter(_) => action = token_action,
+                        UiAction::ShowSimilar(_) => action = token_action,
+                        UiAction::ShowDefinition(_) => action = token_action,
+                        UiAction::ShowReference(_) => action = token_action,
+                        UiAction::ShowSentenceMenu(_) => action = token_action,
+                        UiAction::ShowWordMenu(word, _) => {
+                            action = UiAction::ShowWordMenu(word, word_idx);
                         }
+                        UiAction::None => {}
                     }
-                });
+                }
             });
+        });
 
         ui.add_space(SEGMENT_VERTICAL_SPACING);
 
         let editbox_highlight = None;
-        if let Some(translation) = render_translation_box(ui, segment, editbox_highlight) {
+        if let Some(translation) =
+            render_translation_box(ui, segment, seg_num - 1, editbox_highlight)
+        {
             commands.push(Command::SetTranslation {
                 segment: seg_num - 1,
                 translation,
@@ -178,6 +184,7 @@ fn render_token_column(
     highlight: Option<&str>,
     use_custom_font: bool,
     word_idx: usize,
+    segment_idx: usize,
     commands: &mut Vec<Command>,
 ) -> UiAction {
     let annotation = annotate_token(project, token);
@@ -268,6 +275,10 @@ fn render_token_column(
                         let edit_resp = ui.add_sized(
                             egui::vec2(width, ui.text_style_height(&egui::TextStyle::Body)),
                             egui::TextEdit::singleline(&mut current_gloss)
+                                .id(crate::ui::managed::control_id(
+                                    ui,
+                                    &format!("segment:{segment_idx}:token:{word_idx}:gloss"),
+                                ))
                                 .text_color(text_color)
                                 .frame(egui::Frame::NONE),
                         );
@@ -306,6 +317,7 @@ fn render_token_column(
 fn render_translation_box(
     ui: &mut egui::Ui,
     segment: &Segment,
+    segment_idx: usize,
     highlight: Option<&str>,
 ) -> Option<String> {
     let mut translation = segment.translation.clone();
@@ -330,6 +342,10 @@ fn render_translation_box(
 
             ui.add(
                 egui::TextEdit::multiline(&mut translation)
+                    .id(crate::ui::managed::control_id(
+                        ui,
+                        &format!("segment:{segment_idx}:translation"),
+                    ))
                     .desired_width(f32::INFINITY)
                     .desired_rows(TRANSLATION_BOX_ROWS)
                     .frame(egui::Frame::NONE)

@@ -21,7 +21,7 @@ impl DecryptionApp {
         if let Some(word) = self.definition_popup.as_ref() {
             let mut open = true;
             let title = create_popup_title("Definition: ", word, self.custom_font_name.is_some());
-            egui::Window::new(title)
+            self.popup_window("definition", None, title)
                 .id(egui::Id::new("def_popup"))
                 .open(&mut open)
                 .default_width(POPUP_WIDTH)
@@ -83,7 +83,7 @@ impl DecryptionApp {
         if let Some(word) = self.reference_popup.as_ref() {
             let mut open = true;
             let title = create_popup_title("References: ", word, self.custom_font_name.is_some());
-            egui::Window::new(title)
+            self.popup_window("references", None, title)
                 .id(egui::Id::new("ref_popup"))
                 .open(&mut open)
                 .default_width(POPUP_WIDTH)
@@ -144,7 +144,7 @@ impl DecryptionApp {
         popup_request: &mut Option<PopupRequest>,
         popup_id: Option<u64>,
     ) {
-        egui::ScrollArea::vertical()
+        crate::ui::managed::scroll_area(ui, "content", egui::ScrollArea::vertical())
             .auto_shrink([false, false])
             .show(ui, |ui| match mode {
                 DictionaryPopupType::Reference => {
@@ -176,7 +176,7 @@ impl DecryptionApp {
         word: &str,
         lookup_map: &LookupIndex,
         popup_request: &mut Option<PopupRequest>,
-        popup_id: Option<u64>,
+        _popup_id: Option<u64>,
         is_definition: bool,
     ) {
         if let Some(map) = lookup_map {
@@ -199,27 +199,25 @@ impl DecryptionApp {
                                 *popup_request = Some(PopupRequest::SentenceMenu(idx, cursor_pos));
                             }
                             ui.vertical(|ui| {
-                                let scroll_id = match popup_id {
-                                    Some(id) => egui::Id::new(id).with(idx),
-                                    None => egui::Id::new(idx),
-                                };
-                                egui::ScrollArea::horizontal()
-                                    .id_salt(scroll_id)
-                                    .max_width(ui.available_width())
-                                    .show(ui, |ui| {
-                                        let highlight =
-                                            if !is_definition { Some(word) } else { None };
+                                crate::ui::managed::scroll_area(
+                                    ui,
+                                    &format!("segment:{idx}"),
+                                    egui::ScrollArea::horizontal(),
+                                )
+                                .max_width(ui.available_width())
+                                .show(ui, |ui| {
+                                    let highlight = if !is_definition { Some(word) } else { None };
 
-                                        if let Some(action) = ui::render_clickable_tokens(
-                                            ui,
-                                            &seg.tokens,
-                                            self.session.project(),
-                                            highlight,
-                                            self.custom_font_name.is_some(),
-                                        ) {
-                                            self.handle_ui_action(ui, action, popup_request, idx);
-                                        }
-                                    });
+                                    if let Some(action) = ui::render_clickable_tokens(
+                                        ui,
+                                        &seg.tokens,
+                                        self.session.project(),
+                                        highlight,
+                                        self.custom_font_name.is_some(),
+                                    ) {
+                                        self.handle_ui_action(ui, action, popup_request, idx);
+                                    }
+                                });
                                 ui.add_space(5.0);
                                 let text = if is_definition {
                                     egui::RichText::new(&seg.translation).strong()

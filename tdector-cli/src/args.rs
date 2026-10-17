@@ -7,7 +7,7 @@ use tdector_app::api::{FormationKind, LookupKind, Pagination, RuleSelector, Segm
 
 use crate::error::{Failure, Result};
 
-const INDICES: &str = "Segment, token, and rule indices are zero-based (the GUI displays segments starting at one). Rule indices refer to the loaded snapshot and may change after saving. No command opens a dialog.";
+const INDICES: &str = "Segment, token, and rule indices are zero-based (the GUI displays segments starting at one). Rule indices refer to the loaded snapshot and may change after saving. Headless commands never open dialogs.";
 
 #[derive(Debug, Parser)]
 #[command(name = "tdector", version, about, after_help = INDICES, propagate_version = true)]
@@ -24,6 +24,12 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Launch or control a native GUI session (opt-in gui-control feature)
+    #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+    Gui(crate::gui::GuiArgs),
+    #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+    #[command(name = "__gui-host", hide = true)]
+    GuiHost,
     /// Show project counts and supported saved format
     Info,
     /// Parse, migrate, validate references, and reconstruct derived words without saving

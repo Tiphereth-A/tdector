@@ -32,6 +32,7 @@ impl DecryptionApp {
                 if ui
                     .add(
                         egui::TextEdit::singleline(&mut self.filter_text)
+                            .id(crate::ui::managed::control_id(ui, "filter"))
                             .font(font_id)
                             .text_color(text_color),
                     )
@@ -54,13 +55,14 @@ impl DecryptionApp {
     }
 
     fn render_sort_selector(&mut self, ui: &mut egui::Ui) {
-        egui::ComboBox::from_id_salt("sort_selector")
+        let response = egui::ComboBox::from_id_salt("sort_selector")
             .selected_text(self.sort_mode.display_text())
             .show_ui(ui, |ui| {
                 for mode in SortMode::all() {
                     self.render_sort_option(ui, mode);
                 }
             });
+        crate::ui::managed::focus_response(ui, "sort", &response.response);
     }
 
     fn render_sort_option(&mut self, ui: &mut egui::Ui, mode: SortMode) {
@@ -99,70 +101,75 @@ impl DecryptionApp {
             if current_page_indices.is_empty() {
                 Self::render_empty_state(ui, filter_text);
             } else {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for &seg_idx in current_page_indices {
-                        if let Some(segment) = project.segments.get(seg_idx) {
-                            let highlight = if filter_text.is_empty() {
-                                None
-                            } else {
-                                Some(filter_text)
-                            };
-                            let action = ui::render_segment(
-                                ui,
-                                segment,
-                                project,
-                                seg_idx + 1,
-                                highlight,
-                                use_custom_font,
-                                &mut commands,
-                            );
+                crate::ui::managed::scroll_area(ui, "main", egui::ScrollArea::vertical()).show(
+                    ui,
+                    |ui| {
+                        for &seg_idx in current_page_indices {
+                            if let Some(segment) = project.segments.get(seg_idx) {
+                                let highlight = if filter_text.is_empty() {
+                                    None
+                                } else {
+                                    Some(filter_text)
+                                };
+                                let action = ui::render_segment(
+                                    ui,
+                                    segment,
+                                    project,
+                                    seg_idx + 1,
+                                    highlight,
+                                    use_custom_font,
+                                    &mut commands,
+                                );
 
-                            match action {
-                                UiAction::Filter(text) => {
-                                    new_filter = Some(text.to_string());
+                                match action {
+                                    UiAction::Filter(text) => {
+                                        new_filter = Some(text.to_string());
+                                    }
+                                    UiAction::ShowWordMenu(word, word_idx) => {
+                                        let cursor_pos = ui
+                                            .ctx()
+                                            .input(|i| i.pointer.interact_pos())
+                                            .unwrap_or_default();
+                                        *popup_request = Some(PopupRequest::WordMenu(
+                                            word.to_string(),
+                                            seg_idx,
+                                            word_idx,
+                                            cursor_pos,
+                                        ));
+                                    }
+                                    UiAction::ShowSentenceMenu(segment_idx) => {
+                                        let cursor_pos = ui
+                                            .ctx()
+                                            .input(|i| i.pointer.interact_pos())
+                                            .unwrap_or_default();
+                                        *popup_request = Some(PopupRequest::SentenceMenu(
+                                            segment_idx,
+                                            cursor_pos,
+                                        ));
+                                    }
+                                    UiAction::ShowSimilar(seg_num) => {
+                                        *popup_request = Some(PopupRequest::Similar(seg_num - 1));
+                                    }
+                                    UiAction::ShowDefinition(word) => {
+                                        *popup_request = Some(PopupRequest::Dictionary(
+                                            word.to_string(),
+                                            DictionaryPopupType::Definition,
+                                        ));
+                                    }
+                                    UiAction::ShowReference(word) => {
+                                        *popup_request = Some(PopupRequest::Dictionary(
+                                            word.to_string(),
+                                            DictionaryPopupType::Reference,
+                                        ));
+                                    }
+                                    UiAction::None => {}
                                 }
-                                UiAction::ShowWordMenu(word, word_idx) => {
-                                    let cursor_pos = ui
-                                        .ctx()
-                                        .input(|i| i.pointer.interact_pos())
-                                        .unwrap_or_default();
-                                    *popup_request = Some(PopupRequest::WordMenu(
-                                        word.to_string(),
-                                        seg_idx,
-                                        word_idx,
-                                        cursor_pos,
-                                    ));
-                                }
-                                UiAction::ShowSentenceMenu(segment_idx) => {
-                                    let cursor_pos = ui
-                                        .ctx()
-                                        .input(|i| i.pointer.interact_pos())
-                                        .unwrap_or_default();
-                                    *popup_request =
-                                        Some(PopupRequest::SentenceMenu(segment_idx, cursor_pos));
-                                }
-                                UiAction::ShowSimilar(seg_num) => {
-                                    *popup_request = Some(PopupRequest::Similar(seg_num - 1));
-                                }
-                                UiAction::ShowDefinition(word) => {
-                                    *popup_request = Some(PopupRequest::Dictionary(
-                                        word.to_string(),
-                                        DictionaryPopupType::Definition,
-                                    ));
-                                }
-                                UiAction::ShowReference(word) => {
-                                    *popup_request = Some(PopupRequest::Dictionary(
-                                        word.to_string(),
-                                        DictionaryPopupType::Reference,
-                                    ));
-                                }
-                                UiAction::None => {}
+
+                                ui.add_space(PANEL_SPACING);
                             }
-
-                            ui.add_space(PANEL_SPACING);
                         }
-                    }
-                });
+                    },
+                );
             }
         });
 

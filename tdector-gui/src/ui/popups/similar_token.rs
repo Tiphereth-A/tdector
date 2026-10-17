@@ -21,7 +21,7 @@ impl DecryptionApp {
                 target_word,
                 self.custom_font_name.is_some(),
             );
-            egui::Window::new(title)
+            self.popup_window("similar-tokens", None, title)
                 .id(egui::Id::new("similar_tokens_popup"))
                 .open(&mut open)
                 .default_width(POPUP_WIDTH)
@@ -54,7 +54,7 @@ impl DecryptionApp {
         };
         let has_custom_font = self.custom_font_name.is_some();
 
-        egui::ScrollArea::vertical()
+        crate::ui::managed::scroll_area(ui, "content", egui::ScrollArea::vertical())
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 for similar_token in similar_tokens {

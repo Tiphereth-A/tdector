@@ -1,12 +1,13 @@
+#[cfg(not(all(feature = "gui-control", not(target_arch = "wasm32"))))]
+use crate::consts::ui::PAGINATION_DEFAULT_PAGE_SIZE;
 use eframe::egui;
 
 use crate::consts::{
     colors::{FONT_DARK, FONT_LIGHT},
     ui::{
-        PAGINATION_BUTTON_ADJACENT_COUNT, PAGINATION_BUTTON_SIDE_COUNT,
-        PAGINATION_DEFAULT_PAGE_SIZE, PAGINATION_DRAG_SPEED, PAGINATION_ITEM_WIDTH,
-        PAGINATION_NAV_WIDTH_DEDUCTION, PAGINATION_SIZE_EXTRA_LARGE, PAGINATION_SIZE_LARGE,
-        PAGINATION_SIZE_MEDIUM, PAGINATION_SIZE_SMALL,
+        PAGINATION_BUTTON_ADJACENT_COUNT, PAGINATION_BUTTON_SIDE_COUNT, PAGINATION_DRAG_SPEED,
+        PAGINATION_ITEM_WIDTH, PAGINATION_NAV_WIDTH_DEDUCTION, PAGINATION_SIZE_EXTRA_LARGE,
+        PAGINATION_SIZE_LARGE, PAGINATION_SIZE_MEDIUM, PAGINATION_SIZE_SMALL,
     },
 };
 
@@ -15,11 +16,14 @@ pub fn render_pagination(
     current_page: usize,
     total_pages: usize,
     page_size: &mut usize,
+    mut external_jump: Option<&mut usize>,
 ) -> Option<usize> {
+    #[cfg(not(all(feature = "gui-control", not(target_arch = "wasm32"))))]
     if total_pages <= 1 && *page_size == PAGINATION_DEFAULT_PAGE_SIZE {
         return None;
     }
 
+    let total_pages = total_pages.max(1);
     let mut new_page = None;
 
     egui::Panel::bottom("bottom_panel").show(ui, |ui| {
@@ -56,7 +60,11 @@ pub fn render_pagination(
                     if is_boundary || near_current {
                         let label = format!("{}", page + 1);
                         if page == current_page {
-                            ui.label(egui::RichText::new(label).strong().color(text_color));
+                            let response = ui.selectable_label(
+                                true,
+                                egui::RichText::new(label).strong().color(text_color),
+                            );
+                            crate::ui::managed::focus_response(ui, "page", &response);
                         } else if ui
                             .button(egui::RichText::new(label).color(text_color))
                             .clicked()
@@ -83,7 +91,7 @@ pub fn render_pagination(
 
                 ui.separator();
 
-                egui::ComboBox::from_id_salt("page_size_selector")
+                let page_size_response = egui::ComboBox::from_id_salt("page_size_selector")
                     .selected_text(format!("Show {page_size} per page"))
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
@@ -109,11 +117,13 @@ pub fn render_pagination(
                     });
 
                 ui.separator();
+                crate::ui::managed::focus_response(ui, "page-size", &page_size_response.response);
                 ui.label(egui::RichText::new("Jump to:").color(text_color));
 
                 let jump_id = ui.make_persistent_id("jump_page_val");
-                let mut jump_page: usize =
-                    ui.data(|d| d.get_temp(jump_id)).unwrap_or(current_page + 1);
+                let mut jump_page: usize = external_jump.as_deref().copied().unwrap_or_else(|| {
+                    ui.data(|d| d.get_temp(jump_id)).unwrap_or(current_page + 1)
+                });
 
                 let res = ui.add(
                     egui::DragValue::new(&mut jump_page)
@@ -121,7 +131,11 @@ pub fn render_pagination(
                         .speed(PAGINATION_DRAG_SPEED),
                 );
 
+                crate::ui::managed::focus_response(ui, "jump", &res);
                 if res.changed() {
+                    if let Some(external) = external_jump.as_deref_mut() {
+                        *external = jump_page;
+                    }
                     ui.data_mut(|d| d.insert_temp(jump_id, jump_page));
                 }
 

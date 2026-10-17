@@ -1,5 +1,7 @@
 pub(crate) mod dialogs;
+pub(crate) mod drafts;
 pub(crate) mod highlight;
+pub(crate) mod managed;
 mod menu;
 mod pagination;
 pub(crate) mod panels;

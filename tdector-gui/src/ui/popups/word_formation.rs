@@ -25,7 +25,7 @@ impl DecryptionApp {
                 self.custom_font_name.is_some(),
             );
 
-            egui::Window::new(title)
+            self.popup_window("word-formation", None, title)
                 .id(egui::Id::new("word_formation_popup"))
                 .open(&mut open)
                 .default_width(400.0)
@@ -45,7 +45,9 @@ impl DecryptionApp {
                     ui.label("Base word:");
                     if ui
                         .add(
-                            egui::TextEdit::singleline(&mut dialog.base_word).font(font_id.clone()),
+                            egui::TextEdit::singleline(&mut dialog.base_word)
+                                .id(crate::ui::managed::control_id(ui, "base-word"))
+                                .font(font_id.clone()),
                         )
                         .changed()
                     {
@@ -69,10 +71,20 @@ impl DecryptionApp {
                         .and_then(|index| self.session.project().formation_rules.get(index))
                         .map(|rule| rule_label(rule.rule_type, &rule.description))
                         .unwrap_or_default();
-                    egui::ComboBox::from_id_salt("formation_rule_combo")
+                    if crate::ui::managed::focus_requested("rule-search") {
+                        // This is the popup id derived by the pinned ComboBox implementation.
+                        egui::Popup::open_id(
+                            ui.ctx(),
+                            ui.make_persistent_id("formation_rule_combo").with("popup"),
+                        );
+                    }
+                    let rule_response = egui::ComboBox::from_id_salt("formation_rule_combo")
                         .selected_text(selected_text)
                         .show_ui(ui, |ui| {
-                            ui.text_edit_singleline(&mut dialog.rule_search_text);
+                            ui.add(
+                                egui::TextEdit::singleline(&mut dialog.rule_search_text)
+                                    .id(crate::ui::managed::control_id(ui, "rule-search")),
+                            );
                             ui.separator();
                             let search = dialog.rule_search_text.to_lowercase();
                             let mut any_visible = false;
@@ -99,18 +111,12 @@ impl DecryptionApp {
                             }
                         });
 
-                    if dialog.base_word.is_empty() {
-                        dialog.preview.clear();
-                    } else if (dialog.preview.is_empty()
+                    crate::ui::managed::focus_response(ui, "rule", &rule_response.response);
+                    if dialog.preview.is_empty()
                         || dialog.base_word != old_base_word
-                        || dialog.selected_rule != old_rule)
-                        && let Some(rule) = dialog
-                            .selected_rule
-                            .and_then(|index| self.session.project().formation_rules.get(index))
+                        || dialog.selected_rule != old_rule
                     {
-                        dialog.preview =
-                            tdector_app::Session::preview_rule(rule, &dialog.base_word)
-                                .unwrap_or_else(|error| format!("Error: {error}"));
+                        crate::ui::drafts::refresh_word_formation(&self.session, &mut dialog);
                     }
 
                     if !dialog.preview.is_empty() {
@@ -168,7 +174,7 @@ impl DecryptionApp {
         if let Some(mut dialog) = self.new_formation_rule_popup.take() {
             let mut open = true;
             let mut should_close = false;
-            egui::Window::new("Create New Word Formation Rule")
+            self.popup_window("new-formation-rule", None, "Create New Word Formation Rule")
                 .id(egui::Id::new("new_formation_rule_popup"))
                 .open(&mut open)
                 .default_width(500.0)
@@ -185,7 +191,10 @@ impl DecryptionApp {
                     let old_command = dialog.command.clone();
                     let old_test_word = dialog.test_word.clone();
                     ui.label("Description:");
-                    ui.text_edit_singleline(&mut dialog.description);
+                    ui.add(
+                        egui::TextEdit::singleline(&mut dialog.description)
+                            .id(crate::ui::managed::control_id(ui, "description")),
+                    );
                     ui.separator();
                     ui.label("Rule Type:");
                     for (rule_type, label) in [
@@ -193,35 +202,34 @@ impl DecryptionApp {
                         (FormationType::Inflection, "Inflection"),
                         (FormationType::Nonmorphological, "Nonmorphological"),
                     ] {
-                        ui.selectable_value(&mut dialog.rule_type, rule_type, label);
+                        let response = ui.selectable_value(&mut dialog.rule_type, rule_type, label);
+                        if dialog.rule_type == rule_type {
+                            crate::ui::managed::focus_response(ui, "type", &response);
+                        }
                     }
                     ui.separator();
                     ui.label("Rhai Script Command (fn transform(word: String) -> String):");
                     ui.add(
                         egui::TextEdit::multiline(&mut dialog.command)
+                            .id(crate::ui::managed::control_id(ui, "script"))
                             .code_editor()
                             .desired_rows(WORD_FORMATION_SCRIPT_ROWS)
                             .desired_width(f32::INFINITY),
                     );
                     ui.separator();
                     ui.label("Test Word:");
-                    ui.add(egui::TextEdit::singleline(&mut dialog.test_word).font(font_id.clone()));
-                    if dialog.test_word.is_empty() || dialog.command.is_empty() {
-                        dialog.preview.clear();
-                    } else if dialog.preview.is_empty()
+                    ui.add(
+                        egui::TextEdit::singleline(&mut dialog.test_word)
+                            .id(crate::ui::managed::control_id(ui, "test-word"))
+                            .font(font_id.clone()),
+                    );
+                    if dialog.preview.is_empty()
                         || dialog.command != old_command
                         || dialog.test_word != old_test_word
                     {
-                        let rule = tdector_eval::FormationRule {
-                            description: dialog.description.clone(),
-                            rule_type: dialog.rule_type,
-                            command: dialog.command.clone(),
-                            cached_ast: tdector_eval::default_cached_ast(),
-                        };
-                        dialog.preview =
-                            tdector_app::Session::preview_rule(&rule, &dialog.test_word)
-                                .unwrap_or_else(|error| format!("Error: {error}"));
+                        crate::ui::drafts::refresh_new_formation(&mut dialog);
                     }
+
                     if !dialog.preview.is_empty() {
                         ui.horizontal_wrapped(|ui| {
                             ui.label("Preview:");

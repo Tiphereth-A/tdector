@@ -34,7 +34,7 @@ impl DecryptionApp {
                 self.custom_font_name.is_some(),
             );
 
-            egui::Window::new(title)
+            self.popup_window("formation-chain", None, title)
                 .id(egui::Id::new("formatting_chain_popup"))
                 .open(&mut open)
                 .default_width(420.0)
@@ -61,34 +61,36 @@ impl DecryptionApp {
                             ui.label("No formation rules applied to this word.");
                         }
                         Ok(steps) => {
-                            egui::ScrollArea::vertical()
-                                .auto_shrink([false, false])
-                                .show(ui, |ui| {
-                                    for (index, step) in steps.iter().enumerate() {
-                                        ui.group(|ui| {
-                                            let type_prefix = match step.rule_type {
-                                                crate::enums::FormationType::Derivation => "[D]",
-                                                crate::enums::FormationType::Inflection => "[I]",
-                                                crate::enums::FormationType::Nonmorphological => {
-                                                    "[N]"
-                                                }
-                                            };
-                                            ui.label(format!(
-                                                "Step {}: {} {}",
-                                                index + 1,
-                                                type_prefix,
-                                                step.description,
-                                            ));
-                                            ui.horizontal(|ui| {
-                                                ui.label("Result: ");
-                                                ui.label(
-                                                    egui::RichText::new(&step.result)
-                                                        .family(font_family.clone()),
-                                                );
-                                            });
+                            crate::ui::managed::scroll_area(
+                                ui,
+                                "content",
+                                egui::ScrollArea::vertical(),
+                            )
+                            .auto_shrink([false, false])
+                            .show(ui, |ui| {
+                                for (index, step) in steps.iter().enumerate() {
+                                    ui.group(|ui| {
+                                        let type_prefix = match step.rule_type {
+                                            crate::enums::FormationType::Derivation => "[D]",
+                                            crate::enums::FormationType::Inflection => "[I]",
+                                            crate::enums::FormationType::Nonmorphological => "[N]",
+                                        };
+                                        ui.label(format!(
+                                            "Step {}: {} {}",
+                                            index + 1,
+                                            type_prefix,
+                                            step.description,
+                                        ));
+                                        ui.horizontal(|ui| {
+                                            ui.label("Result: ");
+                                            ui.label(
+                                                egui::RichText::new(&step.result)
+                                                    .family(font_family.clone()),
+                                            );
                                         });
-                                    }
-                                });
+                                    });
+                                }
+                            });
                         }
                         Err(error) => {
                             ui.colored_label(egui::Color32::LIGHT_RED, error.to_string());

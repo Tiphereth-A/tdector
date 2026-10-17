@@ -3992,10 +3992,13 @@ dependencies = [
  "clap",
  "serde",
  "serde_json",
+ "shlex",
  "tdector-app",
  "tdector-eval",
+ "tdector-gui",
  "tdector-io",
  "tempfile",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4032,12 +4035,18 @@ dependencies = [
  "eframe",
  "egui",
  "env_logger",
+ "getrandom 0.3.4",
  "image",
  "pollster 1.0.1",
+ "raw-window-handle",
  "rfd",
+ "serde",
+ "serde_json",
  "tdector-app",
  "tdector-core",
  "tdector-eval",
+ "tdector-io",
+ "ttf-parser",
  "wasm-bindgen-futures",
 ]
 
@@ -4285,6 +4294,12 @@ checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
 dependencies = [
  "once_cell",
 ]
+
+[[package]]
+name = "ttf-parser"
+version = "0.25.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 
 [[package]]
 name = "type-map"

@@ -2,7 +2,7 @@
 
 Status: implemented by the `tdector-cli` crate. Build only the headless executable with `cargo build --locked -p tdector-cli`; run it with `cargo run --locked -p tdector-cli -- COMMAND` or `target/debug/tdector COMMAND`.
 
-The `tdector-cli` crate provides a `tdector` binary. Each invocation creates one `tdector_app::Session`, optionally loads a project, performs its operation, emits its result, and exits. The existing desktop binary remains `tdector-gui`.
+The `tdector-cli` crate provides a `tdector` binary. Each headless invocation creates one `tdector_app::Session`, optionally loads a project, performs its operation, emits its result, and exits. The existing desktop binary remains `tdector-gui`. The optional native `gui-control` feature adds a `gui` command group that launches and controls a long-lived desktop session; see [GUI control](gui-control.md) for its command reference, handle lifetimes, drafts, geometry, and REPL.
 
 ## Invocation and common options
 
@@ -18,13 +18,13 @@ tdector [--project FILE|-] [--json] COMMAND
 | `-h, --help` | Display help; nested commands have their own help. |
 | `-V, --version` | Display CLI version. |
 
-Common options may appear before or after a subcommand. The interface is noninteractive: missing arguments are errors, and no command opens a dialog. Text and JSON file inputs use UTF-8. A single leading UTF-8 BOM is accepted. Arguments after `--` are positional values, allowing paths beginning with `-`.
+Common options may appear before or after a subcommand. The headless interface is noninteractive: missing arguments are errors, and its commands do not open a dialog. The opt-in `gui` group includes interactive GUI operations and a REPL. Text and JSON file inputs use UTF-8. A single leading UTF-8 BOM is accepted. Arguments after `--` are positional values, allowing paths beginning with `-`.
 
 Only one input source may consume stdin in an invocation. For example, `--project -` conflicts with `--text-file -`, a script from stdin, or a batch from stdin. Validate these conflicts before reading any input.
 
 ## Saving
 
-Every project mutation requires exactly one of the following:
+Every headless project mutation requires exactly one of the following. GUI-control edits remain in memory until an explicit `gui save` and do not take these headless write-mode flags:
 
 | Option | Contract |
 | --- | --- |
@@ -164,6 +164,7 @@ A dry-run receipt sets `saved` to false and includes `dry_run: true`. `changed` 
 | `4` | Script compilation or execution failure. |
 | `5` | Input/output failure. |
 | `6` | Persistence conflict: output exists without `--overwrite`, or source changed before an in-place commit. |
+| `7` | GUI control-session failure, including connection, authentication, protocol mismatch, or timeout (optional `gui-control` build). |
 
 Expected errors get stable codes such as `invalid_project`, `invalid_index`, `invalid_input`, `rule_not_found`, `ambiguous_rule`, `script_error`, `io_error`, `output_exists`, and `input_changed`. Map typed errors; never infer a code by parsing an English error message. With a recognized `--json` flag, normal argument-validation errors use the same error envelope. Help/version are text.
 
@@ -226,7 +227,7 @@ The last command produces raw saved-project JSON suitable for a pipeline. Use `-
 
 Keep argument parsing, path/stdin handling, file commit logic, exit codes, and text/JSON rendering in `tdector-cli`. Put reusable request/response DTOs, rule selector resolution, and any new validation in a GUI-free application API module so CLI and MCP can share them. MCP should call application operations directly. Neither adapter should call or parse the other executable.
 
-Keep session ownership on one thread, matching the existing Rhai cache model. The initial CLI does not need an async runtime. Add neither a server mode nor persistent current-project state in this change.
+Keep session ownership on one thread, matching the existing Rhai cache model. Headless commands do not need an async runtime or persistent current-project state. The optional GUI host owns its session and egui state on its native main thread; transport and window control belong to `tdector-gui`, outside the headless application API.
 
 Before release, test process-level behavior for the following:
 

@@ -28,48 +28,51 @@ impl DecryptionApp {
                 })
                 .unwrap_or((None, None));
 
-            egui::Area::new(egui::Id::new("word_context_menu"))
-                .order(egui::Order::Foreground)
-                .movable(false)
-                .fixed_pos(cursor_pos)
-                .show(ctx, |ui| {
-                    egui::Frame::menu(ui.style()).show(ui, |ui| {
-                        ui.set_min_width(180.0);
+            self.popup_area("word-menu", cursor_pos).show(ctx, |ui| {
+                egui::Frame::menu(ui.style()).show(ui, |ui| {
+                    ui.set_min_width(180.0);
 
-                        if ui
-                            .add(egui::Button::new("Show Definition").frame(false))
-                            .clicked()
-                        {
-                            *popup_request = Some(PopupRequest::Dictionary(
-                                word.clone(),
-                                DictionaryPopupType::Definition,
-                            ));
-                            should_close = true;
-                        }
+                    if ui
+                        .add(egui::Button::new("Show Definition").frame(false))
+                        .clicked()
+                    {
+                        *popup_request = Some(PopupRequest::Dictionary(
+                            word.clone(),
+                            DictionaryPopupType::Definition,
+                        ));
+                        should_close = true;
+                    }
 
-                        if ui
-                            .add(egui::Button::new("Show References").frame(false))
-                            .clicked()
-                        {
-                            *popup_request = Some(PopupRequest::Dictionary(
-                                word.clone(),
-                                DictionaryPopupType::Reference,
-                            ));
-                            should_close = true;
-                        }
+                    if ui
+                        .add(egui::Button::new("Show References").frame(false))
+                        .clicked()
+                    {
+                        *popup_request = Some(PopupRequest::Dictionary(
+                            word.clone(),
+                            DictionaryPopupType::Reference,
+                        ));
+                        should_close = true;
+                    }
 
-                        if ui
-                            .add(egui::Button::new("Show Similar Tokens").frame(false))
-                            .clicked()
-                        {
-                            *popup_request = Some(PopupRequest::SimilarTokens(word.clone()));
-                            should_close = true;
-                        }
+                    if ui
+                        .add(egui::Button::new("Show Similar Tokens").frame(false))
+                        .clicked()
+                    {
+                        *popup_request = Some(PopupRequest::SimilarTokens(word.clone()));
+                        should_close = true;
+                    }
 
-                        if ui
-                            .add(egui::Button::new("Set Word Formation Rule").frame(false))
-                            .clicked()
-                        {
+                    if ui
+                        .add(egui::Button::new("Set Word Formation Rule").frame(false))
+                        .clicked()
+                    {
+                        if !self.open_from_mouse(
+                            ui.ctx(),
+                            "word-formation",
+                            Some(&word),
+                            Some(sentence_idx),
+                            Some(word_idx),
+                        ) {
                             self.word_formation_popup = Some(WordFormationDialog {
                                 selected_word: word.clone(),
                                 base_word: existing_base_word.clone().unwrap_or_default(),
@@ -78,15 +81,28 @@ impl DecryptionApp {
                                 related_words: Vec::new(),
                                 rule_search_text: String::new(),
                             });
-                            should_close = true;
                         }
+                        should_close = true;
+                    }
 
-                        if let Some(rule_idx) = existing_rule_idx
-                            && ui
-                                .add(egui::Button::new("Remove Formation Rule").frame(false))
-                                .clicked()
-                            && let Some(rule) = self.session.project().formation_rules.get(rule_idx)
-                        {
+                    if let Some(rule_idx) = existing_rule_idx
+                        && ui
+                            .add(egui::Button::new("Remove Formation Rule").frame(false))
+                            .clicked()
+                        && let Some(rule) = self
+                            .session
+                            .project()
+                            .formation_rules
+                            .get(rule_idx)
+                            .cloned()
+                    {
+                        if !self.open_from_mouse(
+                            ui.ctx(),
+                            "remove-formation-rule",
+                            Some(&word),
+                            Some(sentence_idx),
+                            Some(word_idx),
+                        ) {
                             self.remove_formation_rule_popup = Some(RemoveFormationRuleDialog {
                                 sentence_idx,
                                 word_idx,
@@ -96,27 +112,28 @@ impl DecryptionApp {
                                     .unwrap_or_else(|| word.clone()),
                                 rule_description: rule.description.clone(),
                             });
-                            should_close = true;
                         }
+                        should_close = true;
+                    }
 
-                        if ui
-                            .add(egui::Button::new("Show Formatting Chain").frame(false))
-                            .clicked()
-                        {
-                            *popup_request =
-                                Some(PopupRequest::FormattingChain(sentence_idx, word_idx));
-                            should_close = true;
-                        }
+                    if ui
+                        .add(egui::Button::new("Show Formatting Chain").frame(false))
+                        .clicked()
+                    {
+                        *popup_request =
+                            Some(PopupRequest::FormattingChain(sentence_idx, word_idx));
+                        should_close = true;
+                    }
 
-                        self.render_update_comment_menu_item(
-                            ui,
-                            &word,
-                            sentence_idx,
-                            word_idx,
-                            &mut should_close,
-                        );
-                    });
+                    self.render_update_comment_menu_item(
+                        ui,
+                        &word,
+                        sentence_idx,
+                        word_idx,
+                        &mut should_close,
+                    );
                 });
+            });
 
             if should_close {
                 self.word_menu_popup = None;

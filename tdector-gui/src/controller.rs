@@ -28,6 +28,14 @@ fn run_file_task<T: 'static>(
 
 impl DecryptionApp {
     pub(crate) fn apply_command(&mut self, command: Command, ctx: &egui::Context) -> bool {
+        self.execute_gui_command(command, ctx).is_ok()
+    }
+
+    pub(crate) fn execute_gui_command(
+        &mut self,
+        command: Command,
+        ctx: &egui::Context,
+    ) -> tdector_app::Result<bool> {
         let text_revision = self.session.text_revision();
         match self.session.execute(command) {
             Ok(changed) => {
@@ -39,12 +47,12 @@ impl DecryptionApp {
                     }
                     ctx.request_repaint();
                 }
-                true
+                Ok(changed)
             }
             Err(error) => {
                 self.error_message = Some(error.to_string());
                 ctx.request_repaint();
-                false
+                Err(error)
             }
         }
     }
@@ -95,7 +103,13 @@ impl DecryptionApp {
         }
     }
 
-    fn reset_project_view(&mut self, ctx: &egui::Context) {
+    pub(crate) fn reset_project_view(&mut self, ctx: &egui::Context) {
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        {
+            self.control_windows.borrow_mut().invalidate_project();
+            self.control_data.source = None;
+            self.control_data.pending = None;
+        }
         self.custom_font_name = None;
         self.pending_import = None;
         self.confirmation = None;
@@ -131,6 +145,13 @@ impl DecryptionApp {
     }
 
     pub(crate) fn save_project(&mut self, ctx: &egui::Context) {
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        if self.control_data.source.is_some() {
+            if let Err(error) = self.control_save(ctx, &serde_json::json!({})) {
+                self.error_message = Some(error.message);
+            }
+            return;
+        }
         let snapshot = match self.session.save_snapshot() {
             Ok(snapshot) => snapshot,
             Err(error) => {
@@ -209,6 +230,16 @@ impl DecryptionApp {
     }
 
     pub(crate) fn trigger_action(&mut self, action: AppAction, ctx: &egui::Context) {
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        if !matches!(action, AppAction::Export) {
+            // A new menu/keyboard operation supersedes the earlier confirmation and its pending file.
+            self.control_data.pending = None;
+            self.confirmation = None;
+            self.control_windows
+                .borrow_mut()
+                .windows
+                .retain(|window| window.kind != "confirmation");
+        }
         if self.session.is_dirty() && !matches!(action, AppAction::Export) {
             let message = if action == AppAction::Quit {
                 "You have unsaved changes. Are you sure you want to quit?"
@@ -222,6 +253,10 @@ impl DecryptionApp {
     }
 
     pub(crate) fn execute_action(&mut self, action: AppAction, ctx: &egui::Context) {
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        if self.execute_control_pending(action, ctx) {
+            return;
+        }
         match action {
             AppAction::Import => self.load_text_file(ctx),
             AppAction::Open => self.load_project(ctx),
@@ -274,8 +309,14 @@ impl DecryptionApp {
                 }
                 Ok((_, content, name, path)) => match self.session.load_json(&content) {
                     Ok(()) => {
+                        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+                        let source_path = path.clone();
                         self.project_filename = path.or(Some(name));
                         self.reset_project_view(ctx);
+                        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+                        if let Some(path) = source_path {
+                            self.control_data.source = Some((path.into(), content.into_bytes()));
+                        }
                     }
                     Err(error) => self.error_message = Some(error.to_string()),
                 },
@@ -326,6 +367,13 @@ impl DecryptionApp {
         if self.session.acknowledge_saved(token) {
             if let Some(path) = path {
                 self.project_filename = Some(path);
+            }
+            #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+            if let (Some(path), Ok(snapshot)) =
+                (&self.project_filename, self.session.save_snapshot())
+            {
+                // Acknowledgement proved this is the exact revision serialized by the completed save.
+                self.control_data.source = Some((path.into(), snapshot.bytes));
             }
             self.update_title(ctx);
         }
@@ -675,6 +723,172 @@ mod tests {
             );
             assert_eq!(app.session.revision(), current_revision);
             assert!(app.error_message.is_none());
+        }
+    }
+}
+
+impl DecryptionApp {
+    /// Mouse interactions share the control lifecycle; transient menus can retarget on a new click.
+    pub(crate) fn open_from_mouse(
+        &mut self,
+        ctx: &egui::Context,
+        kind: &str,
+        word: Option<&str>,
+        segment: Option<usize>,
+        token: Option<usize>,
+    ) -> bool {
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        {
+            // Right-click menus replace their prior target. Draft dialogs retain singleton behavior.
+            match kind {
+                "word-menu"
+                    if self
+                        .word_menu_popup
+                        .as_ref()
+                        .is_some_and(|(_, s, t, _)| Some(*s) != segment || Some(*t) != token) =>
+                {
+                    self.word_menu_popup = None
+                }
+                "segment-menu"
+                    if self
+                        .sentence_menu_popup
+                        .as_ref()
+                        .is_some_and(|(s, _)| Some(*s) != segment) =>
+                {
+                    self.sentence_menu_popup = None
+                }
+                _ => {}
+            }
+            // Reconcile the closed menu before opening its replacement so its handle becomes stale.
+            self.sync_control_windows();
+            let args = serde_json::json!({"kind":kind,"word":word,"segment":segment,"token":token});
+            if let Err(error) = self.control_open(ctx, &args) {
+                self.error_message = Some(error.message);
+            }
+            true
+        }
+        #[cfg(not(all(feature = "gui-control", not(target_arch = "wasm32"))))]
+        {
+            let _ = (ctx, kind, word, segment, token);
+            false
+        }
+    }
+
+    pub(crate) fn handle_popup_request(
+        &mut self,
+        req: crate::enums::PopupRequest,
+        ctx: &egui::Context,
+    ) {
+        use crate::enums::{DictionaryPopupType, PopupRequest};
+        #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+        {
+            match &req {
+                PopupRequest::Filter(_) => {}
+                PopupRequest::Dictionary(word, mode) => {
+                    self.open_from_mouse(
+                        ctx,
+                        if *mode == DictionaryPopupType::Definition {
+                            "definition"
+                        } else {
+                            "references"
+                        },
+                        Some(word),
+                        None,
+                        None,
+                    );
+                    return;
+                }
+                PopupRequest::Similar(segment) => {
+                    self.open_from_mouse(ctx, "similar-segments", None, Some(*segment), None);
+                    return;
+                }
+                PopupRequest::SimilarTokens(word) => {
+                    self.open_from_mouse(ctx, "similar-tokens", Some(word), None, None);
+                    return;
+                }
+                PopupRequest::WordMenu(word, segment, token, pos) => {
+                    self.open_from_mouse(
+                        ctx,
+                        "word-menu",
+                        Some(word),
+                        Some(*segment),
+                        Some(*token),
+                    );
+                    if let Some((_, s, t, cursor)) = &mut self.word_menu_popup
+                        && s == segment
+                        && t == token
+                    {
+                        *cursor = *pos;
+                        if let Some(window) = self
+                            .control_windows
+                            .borrow_mut()
+                            .find_mut("word-menu", None)
+                        {
+                            window.requested_position = Some([pos.x, pos.y]);
+                        }
+                    }
+                    return;
+                }
+                PopupRequest::SentenceMenu(segment, pos) => {
+                    self.open_from_mouse(ctx, "segment-menu", None, Some(*segment), None);
+                    if let Some((s, cursor)) = &mut self.sentence_menu_popup
+                        && s == segment
+                    {
+                        *cursor = *pos;
+                        if let Some(window) = self
+                            .control_windows
+                            .borrow_mut()
+                            .find_mut("segment-menu", None)
+                        {
+                            window.requested_position = Some([pos.x, pos.y]);
+                        }
+                    }
+                    return;
+                }
+                PopupRequest::FormattingChain(segment, token) => {
+                    self.open_from_mouse(
+                        ctx,
+                        "formation-chain",
+                        None,
+                        Some(*segment),
+                        Some(*token),
+                    );
+                    return;
+                }
+            }
+        }
+        #[cfg(not(all(feature = "gui-control", not(target_arch = "wasm32"))))]
+        let _ = ctx;
+        match req {
+            PopupRequest::Dictionary(word, mode) => match mode {
+                DictionaryPopupType::Definition => self.definition_popup = Some(word),
+                DictionaryPopupType::Reference => self.reference_popup = Some(word),
+            },
+            PopupRequest::Similar(idx) => {
+                self.compute_similar_segments(idx);
+            }
+            PopupRequest::SimilarTokens(word) => {
+                let similar_indices = self.session.similar_tokens(&word);
+                self.similar_tokens_popup = Some((word, similar_indices));
+            }
+            PopupRequest::WordMenu(word, sentence_idx, word_idx, cursor_pos) => {
+                self.word_menu_popup = Some((word, sentence_idx, word_idx, cursor_pos));
+            }
+            PopupRequest::SentenceMenu(sentence_idx, cursor_pos) => {
+                self.sentence_menu_popup = Some((sentence_idx, cursor_pos));
+            }
+            PopupRequest::FormattingChain(sentence_idx, word_idx) => {
+                self.formatting_chain_popup =
+                    Some(crate::ui::states::state::FormattingChainDialog {
+                        sentence_idx,
+                        word_idx,
+                    });
+            }
+            PopupRequest::Filter(text) => {
+                self.filter_text = text;
+                self.current_page = 0;
+                self.filter_dirty = true;
+            }
         }
     }
 }

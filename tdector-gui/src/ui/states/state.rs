@@ -105,6 +105,10 @@ pub struct CustomTokenizationDialog {
 
 /// Main application state for the decryption UI
 pub struct DecryptionApp {
+    #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+    pub(crate) control_windows: Rc<std::cell::RefCell<crate::control::lifecycle::WindowRegistry>>,
+    #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+    pub(crate) control_data: crate::control::api::ControlData,
     /// Shared application session; views only receive immutable project data.
     pub(crate) session: Session,
     /// Font selection is presentation state and is never stored in the project.
@@ -202,6 +206,10 @@ impl Default for DecryptionApp {
     /// Create a new default app state with empty project and default UI settings
     fn default() -> Self {
         Self {
+            #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+            control_windows: Rc::new(std::cell::RefCell::new(Default::default())),
+            #[cfg(all(feature = "gui-control", not(target_arch = "wasm32")))]
+            control_data: Default::default(),
             session: Session::default(),
             custom_font_name: None,
             unsaved_changes: Rc::new(Cell::new(false)),

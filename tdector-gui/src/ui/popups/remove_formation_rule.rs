@@ -5,7 +5,9 @@ use crate::ui::states::state::DecryptionApp;
 
 impl DecryptionApp {
     pub(super) fn render_remove_formation_rule_popup(&mut self, ctx: &egui::Context) {
-        if let Some(dialog) = self.remove_formation_rule_popup.take() {
+        if let Some(mut dialog) = self.remove_formation_rule_popup.take() {
+            let can_remove =
+                crate::ui::drafts::refresh_remove_formation(&self.session, &mut dialog);
             let mut open = true;
             let mut should_close = false;
             let title = create_popup_title(
@@ -14,7 +16,7 @@ impl DecryptionApp {
                 self.custom_font_name.is_some(),
             );
 
-            egui::Window::new(title)
+            self.popup_window("remove-formation-rule", None, title)
                 .id(egui::Id::new("remove_formation_rule_popup"))
                 .open(&mut open)
                 .default_width(400.0)
@@ -32,10 +34,17 @@ impl DecryptionApp {
                         ui.strong(&dialog.rule_description);
                     });
                     ui.separator();
-                    ui.label("This removes the latest applied formation rule for this word.");
+                    ui.label(if can_remove {
+                        "This removes the latest applied formation rule for this word."
+                    } else {
+                        "No applied formation rule remains."
+                    });
                     ui.separator();
                     ui.horizontal(|ui| {
-                        if ui.button("Remove").clicked() {
+                        if ui
+                            .add_enabled(can_remove, egui::Button::new("Remove"))
+                            .clicked()
+                        {
                             should_close = self.apply_command(
                                 tdector_app::Command::RemoveFormationRule {
                                     segment: dialog.sentence_idx,

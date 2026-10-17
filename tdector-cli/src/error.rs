@@ -11,7 +11,7 @@ pub type Result<T> = std::result::Result<T, Failure>;
 
 #[derive(Debug, Serialize)]
 pub struct Failure {
-    pub code: &'static str,
+    pub code: String,
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<Value>,
@@ -26,7 +26,7 @@ pub struct Failure {
 impl Failure {
     pub fn new(code: &'static str, message: impl Into<String>, exit_code: u8) -> Self {
         Self {
-            code,
+            code: code.into(),
             message: message.into(),
             details: None,
             stage: None,

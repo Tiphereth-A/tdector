@@ -1,6 +1,6 @@
 # Application and adapter boundaries
 
-The desktop, browser, command-line, and MCP interfaces share a headless `tdector-app::Session`. Each CLI invocation owns one session until it exits. The MCP server owns a long-lived session on a dedicated worker thread and calls this application API directly. Native persistence is shared by the CLI and MCP.
+The desktop, browser, command-line, and MCP interfaces share a headless `tdector-app::Session`. Each headless CLI invocation owns one session until it exits. With the optional native `gui-control` feature, the CLI can also connect to a long-lived GUI host. The MCP server owns a long-lived session on a dedicated worker thread and calls this application API directly. Native persistence is shared by the CLI, controlled GUI, and MCP.
 
 ## Crates
 
@@ -19,7 +19,7 @@ The desktop, browser, command-line, and MCP interfaces share a headless `tdector
 
 The runtime models live in core. File conversion depends on core, never the reverse. The app crate composes the reusable libraries without depending on any GUI crate. The GUI's `platform` module owns file dialogs and native/browser execution, and `controller` delivers their results to the application API. Rendering receives immutable project data and emits explicit commands; it cannot borrow the session's project mutably.
 
-The CLI depends on the application, evaluator, and native I/O crates without linking a GUI. Its argument parser validates option conflicts and counts stdin consumers before reading input. It converts arguments into requests for `tdector_app::api`; that module owns rule selector resolution, coordinate validation, query response types, and the versioned batch request schema. Saved-project JSON remains a separate format owned by `tdector-file`; the runtime project and caches are not serialized as the CLI query schema.
+The default CLI depends on the application, evaluator, and native I/O crates without linking a GUI. Its argument parser validates option conflicts and counts stdin consumers before reading input. It converts arguments into requests for `tdector_app::api`; that module owns rule selector resolution, coordinate validation, query response types, and the versioned batch request schema. Saved-project JSON remains a separate format owned by `tdector-file`; the runtime project and caches are not serialized as the CLI query schema. The optional `gui-control` dependency adds `tdector-gui` and `shlex` only to native builds. GUI protocol DTOs, handles, lifecycle metadata, widget identifiers, and transport remain in the GUI adapter, outside `tdector-app`.
 
 ## Commands and queries
 
@@ -67,8 +67,24 @@ The worker applies a scoped evaluator policy with expression/call depth, allocat
 
 Evaluator print/debug output is directed away from native stdout so scripts cannot mix diagnostics into CLI machine-readable output. Browser evaluation does not write native protocol output.
 
+## Controlled native sessions
+
+The existing desktop binary and CLI-controlled host use the same native runner. `gui start` spawns the GUI-enabled CLI executable with a hidden host command. Its main thread owns the native event loop, application session, typed dialog drafts, and all egui state. Startup configuration travels through a private parent/child channel; startup reports stay separate from diagnostics. Readiness follows the first frame after requested project/font loading and main-window registration. Ordinary desktop launches do not start a listener; controlled launches disable saved layout restoration.
+
+The host binds authenticated loopback TCP to `127.0.0.1` on an allocated port. Each session has a fresh random capability token and a versioned newline-delimited JSON protocol. Requests are limited to 8 MiB; the pending queue is bounded to 64 entries. Startup and command deadlines default to 30 seconds. The listener decodes owned request data, queues it, requests repaint, and writes replies; it never accesses the non-`Send` Rhai session.
+
+`eframe::App::logic` drains requests in order with bounded work per update, including repaint-driven logic while the native UI is hidden. Rendering records observed geometry separately. Commands execute once despite extra egui layout passes. Expired queued commands are rejected before execution. Once execution has started, a lost reply is an unknown outcome, so the client does not retry mutations automatically. State operations can reply immediately; `gui wait` supplies a render barrier.
+
+GUI lifecycle metadata associates an opaque instance handle with its kind, target, pin state, requested geometry, and observed geometry. Drafts remain in the existing typed UI states. Mouse interactions and control operations share lifecycle and edit actions; rendering's temporary `.take()` of a draft is not a close. Close permanently invalidates a handle, pinning preserves it, and project replacement retains the main handle while invalidating project views and generation-scoped controls.
+
+Internal movement and resizing are pending requests consumed by rendering, so subsequent dragging and resizing remain available. Explicit movement removes centered anchoring. Internal coordinates are egui points relative to the viewport; native position is outer-window desktop logical coordinates and native size is client-area size. Inspection reports actual geometry and platform capabilities. Wayland cannot set native outer position and returns `unsupported_operation`; internal movement remains available.
+
+Control bindings preserve immediate versus draft semantics. Translation and base gloss edits call validated application commands immediately. Comment, formation, and tokenizer fields remain drafts until their UI commit action. Derived annotations and previews are read-only. Direct path operations use native I/O for explicit project/font loading, text import, save, and export. Successful saves acknowledge their exact snapshot token. Pending dirty-close confirmations remain associated with the actual operation; shutdown replies before exiting.
+
+The CLI and REPL share Clap definitions. `shlex` only tokenizes REPL input; it runs no shell and performs no expansion. The session locator selects and authenticates the long-lived host. EOF and `exit` detach, while `quit` requests shutdown. See [the GUI-control reference](gui-control.md) for public behavior and reproduction scripts.
+
 ## Validation
 
 Application tests exercise atomic failures, no-op and revision behavior, independent sessions, formation chains and comments, query freshness, persistence, and stale save completions. File tests preserve the v1 migration fixture and validate malformed references and rule failures. CLI tests cover process arguments, UTF-8 and stream handling, result envelopes, project round trips, formation/comment scope, and failed or conflicting saves. Native I/O tests cover bounded reads, exact byte and identity baselines, reload candidates, repeated saves, staging cleanup, symlink redirection, hard links, and platform replacement failures. MCP process tests exercise protocol initialization, tool discovery, schemas, revision conflicts, annotation transactions, reload/save behavior, and stdout integrity.
 
-The headless CI job checks the app, CLI, I/O, and MCP graphs for GUI packages. It also keeps MCP dependencies out of the CLI/GUI graphs and native persistence and MCP dependencies out of the app/WASM graphs. Native release builds package `tdector-gui`, `tdector`, and `tdector-mcp` across the Windows/macOS/Linux matrix, including the Alpine musl target. WASM build validation remains separate.
+The headless CI job checks the default app, CLI, I/O, and MCP graphs for GUI packages. It also keeps MCP dependencies out of the CLI/GUI graphs and native persistence and MCP dependencies out of the app/WASM graphs. Native tests cover both default and GUI-control CLI builds. GUI-enabled tests and separate GUI-control artifact builds use a distinct target directory. Release builds package `tdector-gui`, headless `tdector`, `tdector-gui-control`, and `tdector-mcp` across the Windows/macOS/Linux matrix, including Alpine musl. WASM build validation remains separate and does not enable the native feature.
