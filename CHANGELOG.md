@@ -1,3 +1,16 @@
+# v0.4.0
+
+## Features
+- Add optional CLI control of native desktop sessions, with window inspection, control discovery, project edits, explicit saves, framebuffer screenshots, and an interactive REPL.
+- Add cross-platform GUI-control scripts for reproducing sample screenshots and running smoke checks.
+
+## Fixes
+- Include inherited base-word glosses and ordered formation descriptions in Typst exports for derived tokens.
+
+## CI/Deps
+- Package the optional GUI-control CLI alongside the headless CLI, desktop application, and MCP server for native releases.
+- Expand GUI-control validation and release documentation, update sample fonts, and bump dependencies.
+
 # v0.3.1
 
 ## CI/Deps
