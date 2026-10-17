@@ -39,4 +39,4 @@ The generator verifies each scenario, captures its rendered framebuffer, and clo
 - https://steamcommunity.com/sharedfiles/filedetails/?id=3428231195
 - https://steamcommunity.com/sharedfiles/filedetails/?id=3171688772
 
-[epigraph.otf](epigraph.otf) is made by myself.
+[epigraph.otf](epigraph.otf) is made by myself using FontForge, you can access the source file in [NewNariSans.sfd](NewNariSans.sfd).
