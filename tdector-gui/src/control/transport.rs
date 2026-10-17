@@ -242,6 +242,9 @@ impl HostBridge {
                         if !peer.ip().is_loopback() {
                             continue;
                         }
+                        if configure_accepted_stream(&stream).is_err() {
+                            continue;
+                        }
                         // One additional connection may report saturation, but never queue extra work.
                         if active.load(Ordering::Acquire) >= QUEUE_CAPACITY {
                             let mut stream = stream;
@@ -294,6 +297,11 @@ impl Drop for HostBridge {
     fn drop(&mut self) {
         self.stop.store(true, Ordering::Release);
     }
+}
+fn configure_accepted_stream(stream: &TcpStream) -> std::io::Result<()> {
+    // macOS inherits the listener's nonblocking mode. Connection workers use
+    // blocking I/O with socket deadlines, including the saturation reply path.
+    stream.set_nonblocking(false)
 }
 fn handle_connection(
     mut stream: TcpStream,
@@ -444,9 +452,72 @@ mod tests {
         }
     }
     #[test]
+    fn accepted_stream_waits_for_delayed_and_fragmented_requests() {
+        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).expect("listener");
+        let mut client =
+            TcpStream::connect(listener.local_addr().expect("address")).expect("connect");
+        let (stream, _) = listener.accept().expect("accept");
+        // Reproduce inherited nonblocking mode on every platform.
+        stream.set_nonblocking(true).expect("nonblocking stream");
+        configure_accepted_stream(&stream).expect("blocking connection");
+        client.set_nodelay(true).expect("disable buffering");
+        client
+            .set_read_timeout(Some(Duration::from_millis(500)))
+            .expect("read timeout");
+        client
+            .set_write_timeout(Some(Duration::from_secs(5)))
+            .expect("write timeout");
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let (started, ready) = mpsc::sync_channel(0);
+        let worker = std::thread::spawn(move || {
+            started.send(()).expect("worker ready");
+            handle_connection(stream, "test-token", &sender, &Arc::new(Mutex::new(None)));
+        });
+        ready
+            .recv_timeout(Duration::from_secs(5))
+            .expect("connection worker started");
+        let mut bytes = serde_json::to_vec(&Request {
+            protocol_version: PROTOCOL_VERSION,
+            token: "test-token".into(),
+            command: "set".into(),
+            args: json!({"value": "delayed request"}),
+            timeout_ms: 5000,
+        })
+        .expect("request JSON");
+        bytes.push(b'\n');
+        let split = bytes.len() / 2;
+        for fragment in [&bytes[..split], &bytes[split..]] {
+            // Before the first byte, and again before the rest of the frame,
+            // the worker must wait instead of replying with a read error.
+            let mut byte = [0];
+            let error = client.read(&mut byte).expect_err("no premature reply");
+            assert!(matches!(
+                error.kind(),
+                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+            ));
+            client.write_all(fragment).expect("request fragment");
+        }
+        let request = receiver
+            .recv_timeout(Duration::from_secs(5))
+            .expect("complete request entered GUI queue");
+        assert_eq!(request.command, "set");
+        assert_eq!(request.args, json!({"value": "delayed request"}));
+        assert!(request.begin());
+        request.respond(Ok(json!({"changed": true})));
+        client
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .expect("reply timeout");
+        let response: Response = read_message(client).expect("response");
+        assert_eq!(
+            response.result.expect("successful reply"),
+            json!({"changed": true})
+        );
+        worker.join().expect("connection worker");
+    }
+    #[test]
     fn expired_queued_request_cannot_execute_later() {
         let host = HostBridge::bind().expect("host");
-        let stream = raw_request(&host, 40);
+        let stream = raw_request(&host, 1000);
         let request = next_request(&host);
         let reply: Response = read_message(stream).expect("timeout reply");
         assert_eq!(reply.result.expect_err("expired").code, "timeout");
@@ -458,7 +529,7 @@ mod tests {
     #[test]
     fn begun_request_timeout_reports_unknown_and_cannot_execute_twice() {
         let host = HostBridge::bind().expect("host");
-        let stream = raw_request(&host, 100);
+        let stream = raw_request(&host, 1000);
         let request = next_request(&host);
         assert!(request.begin());
         assert!(!request.begin());
