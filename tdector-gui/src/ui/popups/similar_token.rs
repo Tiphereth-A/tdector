@@ -22,7 +22,7 @@ impl DecryptionApp {
                 self.custom_font_name.is_some(),
             );
             self.popup_window("similar-tokens", None, title)
-                .id(egui::Id::new("similar_tokens_popup"))
+                .id(egui::Id::unique("similar_tokens_popup"))
                 .open(&mut open)
                 .default_width(POPUP_WIDTH)
                 .default_height(POPUP_SIMILAR_HEIGHT)

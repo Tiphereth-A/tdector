@@ -6,11 +6,13 @@ use image::ImageEncoder;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::{Arc, mpsc};
 
 struct Capture {
     request: PendingRequest,
     output: PathBuf,
     overwrite: bool,
+    image: mpsc::Receiver<Arc<egui::ColorImage>>,
 }
 #[derive(Default)]
 pub(crate) struct ScreenshotCapture {
@@ -49,42 +51,31 @@ impl ScreenshotCapture {
         }
         let id = self.next;
         self.next += 1;
+        let (send, image) = mpsc::sync_channel(1);
         self.pending.insert(
             id,
             Capture {
                 request,
                 output,
                 overwrite,
+                image,
             },
         );
         ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
-        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(id)));
+        let repaint = ctx.clone();
+        ctx.request_screenshot(move |image| {
+            if send.send(image).is_ok() {
+                repaint.request_repaint();
+            }
+        });
         ctx.request_repaint();
     }
-    pub(crate) fn poll(&mut self, ctx: &egui::Context) {
-        let frames = ctx.input(|input| {
-            input
-                .events
-                .iter()
-                .filter_map(|event| {
-                    if let egui::Event::Screenshot {
-                        viewport_id,
-                        user_data,
-                        image,
-                    } = event
-                        && *viewport_id == egui::ViewportId::ROOT
-                        && let Some(id) = user_data
-                            .data
-                            .as_ref()
-                            .and_then(|value| value.downcast_ref::<u64>())
-                    {
-                        Some((*id, image.clone()))
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<_>>()
-        });
+    pub(crate) fn poll(&mut self) {
+        let frames = self
+            .pending
+            .iter()
+            .filter_map(|(id, capture)| capture.image.try_recv().ok().map(|image| (*id, image)))
+            .collect::<Vec<_>>();
         for (id, image) in frames {
             if let Some(capture) = self.pending.remove(&id) {
                 if capture.request.expired() {

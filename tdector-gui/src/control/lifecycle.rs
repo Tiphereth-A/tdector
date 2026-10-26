@@ -43,7 +43,7 @@ pub(crate) struct WindowInstance {
 }
 impl WindowInstance {
     pub fn egui_id(&self) -> egui::Id {
-        egui::Id::new(("tdector-window", &self.handle))
+        egui::Id::unique(("tdector-window", &self.handle))
     }
 }
 

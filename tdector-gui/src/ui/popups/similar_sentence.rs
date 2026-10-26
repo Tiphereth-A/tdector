@@ -20,7 +20,7 @@ impl DecryptionApp {
             let target_label = format!("[{}]", target_idx + 1);
             let title = create_popup_title("Similar to ", &target_label, false);
             self.popup_window("similar-segments", None, title)
-                .id(egui::Id::new("similar_popup"))
+                .id(egui::Id::unique("similar_popup"))
                 .open(&mut open)
                 .default_width(POPUP_WIDTH)
                 .default_height(POPUP_SIMILAR_HEIGHT)

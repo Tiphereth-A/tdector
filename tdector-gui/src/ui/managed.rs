@@ -260,7 +260,7 @@ impl DecryptionApp {
         #[cfg(not(all(feature = "gui-control", not(target_arch = "wasm32"))))]
         {
             ManagedArea {
-                inner: egui::Area::new(egui::Id::new(kind))
+                inner: egui::Area::new(egui::Id::unique(kind))
                     .order(egui::Order::Foreground)
                     .movable(false)
                     .fixed_pos(position),

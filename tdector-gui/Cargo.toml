@@ -12,9 +12,10 @@ tdector-app = { path = "../tdector-app" }
 tdector-core = { path = "../tdector-core" }
 tdector-eval = { path = "../tdector-eval" }
 rfd = "0.17"
-egui = "0.36"
-eframe = { version = "0.36", default-features = false, features = [
+egui = { version = "0.37.0", features = ["monochrome_emoji_fonts"] }
+eframe = { version = "0.37.0", default-features = false, features = [
     "accesskit",
+    "clipboard",
     "default_fonts",
     "glow",
     "persistence",

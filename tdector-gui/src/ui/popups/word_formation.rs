@@ -26,7 +26,7 @@ impl DecryptionApp {
             );
 
             self.popup_window("word-formation", None, title)
-                .id(egui::Id::new("word_formation_popup"))
+                .id(egui::Id::unique("word_formation_popup"))
                 .open(&mut open)
                 .default_width(400.0)
                 .show(ctx, |ui| {
@@ -175,7 +175,7 @@ impl DecryptionApp {
             let mut open = true;
             let mut should_close = false;
             self.popup_window("new-formation-rule", None, "Create New Word Formation Rule")
-                .id(egui::Id::new("new_formation_rule_popup"))
+                .id(egui::Id::unique("new_formation_rule_popup"))
                 .open(&mut open)
                 .default_width(500.0)
                 .show(ctx, |ui| {

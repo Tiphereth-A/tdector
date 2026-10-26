@@ -53,7 +53,7 @@ impl DecryptionApp {
 
             let mut should_close = false;
             self.popup_window("word-comment", None, title)
-                .id(egui::Id::new("update_comment_popup"))
+                .id(egui::Id::unique("update_comment_popup"))
                 .open(&mut open)
                 .default_width(350.0)
                 .show(ctx, |ui| {
@@ -93,7 +93,7 @@ impl DecryptionApp {
 
             let mut should_close = false;
             self.popup_window("segment-comment", None, "Update Sentence Comment")
-                .id(egui::Id::new("update_sentence_comment_popup"))
+                .id(egui::Id::unique("update_sentence_comment_popup"))
                 .open(&mut open)
                 .default_width(400.0)
                 .show(ctx, |ui| {

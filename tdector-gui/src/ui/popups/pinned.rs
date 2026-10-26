@@ -35,7 +35,7 @@ impl DecryptionApp {
                         Some(*id),
                         title.as_str(),
                     )
-                    .id(egui::Id::new(id))
+                    .id(egui::Id::unique(id))
                     .open(&mut open)
                     .default_width(POPUP_WIDTH)
                     .default_height(height)
@@ -53,7 +53,7 @@ impl DecryptionApp {
                 }
                 PinnedPopup::Similar(_target_idx, similar_indices, id, title) => {
                     self.popup_window("similar-segments", Some(*id), title.as_str())
-                        .id(egui::Id::new(id))
+                        .id(egui::Id::unique(id))
                         .open(&mut open)
                         .default_width(POPUP_WIDTH)
                         .default_height(POPUP_SIMILAR_HEIGHT)

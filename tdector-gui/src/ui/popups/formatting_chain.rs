@@ -35,7 +35,7 @@ impl DecryptionApp {
             );
 
             self.popup_window("formation-chain", None, title)
-                .id(egui::Id::new("formatting_chain_popup"))
+                .id(egui::Id::unique("formatting_chain_popup"))
                 .open(&mut open)
                 .default_width(420.0)
                 .default_height(260.0)

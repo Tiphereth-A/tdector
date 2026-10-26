@@ -17,7 +17,7 @@ impl DecryptionApp {
             );
 
             self.popup_window("remove-formation-rule", None, title)
-                .id(egui::Id::new("remove_formation_rule_popup"))
+                .id(egui::Id::unique("remove_formation_rule_popup"))
                 .open(&mut open)
                 .default_width(400.0)
                 .show(ctx, |ui| {

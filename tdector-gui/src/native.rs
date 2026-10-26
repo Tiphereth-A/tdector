@@ -76,7 +76,7 @@ mod controlled {
     impl eframe::App for ControlledApp {
         fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
             // A subsequent frame's logic runs after the backend rendered the previous UI frame.
-            self.screenshots.poll(ctx);
+            self.screenshots.poll();
             let current_frame = ctx.cumulative_frame_nr();
             if !self.announced && self.first_frame.is_some_and(|frame| current_frame > frame) {
                 self.announced = true;

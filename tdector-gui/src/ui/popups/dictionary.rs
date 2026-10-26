@@ -22,7 +22,7 @@ impl DecryptionApp {
             let mut open = true;
             let title = create_popup_title("Definition: ", word, self.custom_font_name.is_some());
             self.popup_window("definition", None, title)
-                .id(egui::Id::new("def_popup"))
+                .id(egui::Id::unique("def_popup"))
                 .open(&mut open)
                 .default_width(POPUP_WIDTH)
                 .default_height(POPUP_DEFINITION_HEIGHT)
@@ -84,7 +84,7 @@ impl DecryptionApp {
             let mut open = true;
             let title = create_popup_title("References: ", word, self.custom_font_name.is_some());
             self.popup_window("references", None, title)
-                .id(egui::Id::new("ref_popup"))
+                .id(egui::Id::unique("ref_popup"))
                 .open(&mut open)
                 .default_width(POPUP_WIDTH)
                 .default_height(POPUP_REFERENCE_HEIGHT)
