@@ -11,7 +11,7 @@ gui-control = ["dep:serde", "dep:serde_json", "dep:getrandom", "dep:tdector-io",
 tdector-app = { path = "../tdector-app" }
 tdector-core = { path = "../tdector-core" }
 tdector-eval = { path = "../tdector-eval" }
-rfd = "0.17"
+rfd = "0.18"
 egui = { version = "0.37.0", features = ["monochrome_emoji_fonts"] }
 eframe = { version = "0.37.0", default-features = false, features = [
     "accesskit",
