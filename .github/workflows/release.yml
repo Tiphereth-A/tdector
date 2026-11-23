@@ -317,8 +317,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       - uses: actions/download-artifact@v8
         with:
@@ -329,9 +327,6 @@ jobs:
       - name: Generate release notes
         shell: bash
         run: |
-          current_commit="$(git rev-parse "${GITHUB_REF}^{commit}")"
-          # Follow the release branch and skip the current tag's commit.
-          previous_tag="$(git describe --tags --abbrev=0 --first-parent --match 'v*' "${current_commit}^" 2>/dev/null || true)"
           repository_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
 
           cat > release-notes.md <<'EOF'
@@ -391,20 +386,23 @@ jobs:
           done < <(printf '%s\n' "${!release_targets[@]}" | sort -t- -k2 -k1,1)
           printf '\n' >> release-notes.md
 
-          if [[ -n "$previous_tag" ]]; then
-            range="${previous_tag}..${current_commit}"
-            printf '## Changes since %s\n\n' "$previous_tag" >> release-notes.md
-          else
-            range="$current_commit"
-            printf '## Changes\n\n' >> release-notes.md
-          fi
+          awk -v tag="$GITHUB_REF_NAME" '
+            { sub(/\r$/, "") }
+            /^#[[:blank:]]/ {
+              if (found) exit
+              found = (NF == 2 && $2 == tag)
+            }
+            found { print }
+            END {
+              if (!found) {
+                print "Missing CHANGELOG.md section for " tag > "/dev/stderr"
+                exit 1
+              }
+            }
+          ' CHANGELOG.md >> release-notes.md
 
-          git log --reverse --format="- %s ([%h](${repository_url}/commit/%H))" "$range" -- >> release-notes.md
-
-          if [[ -n "$previous_tag" ]]; then
-            printf '\n[Full changelog](https://github.com/Tiphereth-A/tdector/blob/%s/CHANGELOG.md)\n' \
-              "$GITHUB_REF_NAME" >> release-notes.md
-          fi
+          printf '\n[Full changelog](%s/blob/%s/CHANGELOG.md)\n' \
+            "$repository_url" "$GITHUB_REF_NAME" >> release-notes.md
 
       - name: Create Release
         env:
