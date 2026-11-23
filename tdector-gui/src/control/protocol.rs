@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 pub const PROTOCOL_VERSION: u32 = 1;
 pub const MAX_MESSAGE_BYTES: usize = 8 * 1024 * 1024;
+pub const MAX_MESSAGE_VALUES: usize = 256 * 1024;
 pub const QUEUE_CAPACITY: usize = 64;
 pub const DEFAULT_TIMEOUT_MS: u64 = 30_000;
 pub type Result<T> = std::result::Result<T, ControlError>;

@@ -36,6 +36,8 @@ tdector gui inspect $main --json
 
 Pass `--session SESSION` to address a specific session; `TDECTOR_GUI_SESSION` is the alternative. Treat the session locator as a capability: it contains the authentication material for that host. Session connection failures, authentication failures, protocol mismatches, and timeouts use exit code `7`. Default startup and command timeouts are 30 seconds; `--timeout SECONDS` accepts a positive number. Both options can appear anywhere after `gui`. Do not automatically retry an edit after a timeout: execution may have begun even if its response was lost.
 
+Each GUI control request or reply can contain up to 8 MiB including its final newline and up to 262,144 JSON values. The count includes the root, each array element, and each object member's value. Text counts as one value regardless of its length. The transport rejects an over-limit frame with `message_too_large`. If the client receives such a frame after sending a command, it reports `outcome_unknown` with `message_too_large` as the cause.
+
 Commands return the standard CLI report envelope with `--json`:
 
 ```json

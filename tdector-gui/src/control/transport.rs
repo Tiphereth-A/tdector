@@ -49,36 +49,72 @@ impl SessionLocator {
 }
 
 pub fn read_message<T: DeserializeOwned>(reader: impl Read) -> Result<T> {
-    let mut reader = BufReader::new(reader).take((MAX_MESSAGE_BYTES + 1) as u64);
+    let mut reader = BufReader::new(reader.take((MAX_MESSAGE_BYTES + 1) as u64));
     let mut bytes = Vec::new();
     reader
         .read_until(b'\n', &mut bytes)
         .map_err(|e| session_io("connection_failed", e))?;
-    if bytes.len() > MAX_MESSAGE_BYTES {
+    let json = frame_payload(&bytes)?;
+    serde_json::from_slice(json)
+        .map_err(|e| ControlError::session("protocol_error", format!("Invalid control JSON: {e}")))
+}
+
+fn frame_payload(frame: &[u8]) -> Result<&[u8]> {
+    if frame.len() > MAX_MESSAGE_BYTES {
         return Err(ControlError::session(
             "message_too_large",
             "GUI control message exceeds 8 MiB",
         ));
     }
-    if bytes.last() != Some(&b'\n') {
+    let json = frame
+        .strip_suffix(b"\n")
+        .ok_or_else(|| ControlError::session("protocol_error", "Incomplete GUI control message"))?;
+    if !within_value_limit(json, MAX_MESSAGE_VALUES) {
         return Err(ControlError::session(
-            "protocol_error",
-            "Incomplete GUI control message",
+            "message_too_large",
+            format!("GUI control message exceeds {MAX_MESSAGE_VALUES} JSON values"),
         ));
     }
-    serde_json::from_slice(&bytes)
-        .map_err(|e| ControlError::session("protocol_error", format!("Invalid control JSON: {e}")))
+    Ok(json)
 }
+
+// Count the root and each container entry before Serde allocates them. An object
+// key stands for its member's value. Serde still checks JSON syntax and types.
+fn within_value_limit(json: &[u8], limit: usize) -> bool {
+    let mut bytes = json.iter().copied();
+    let mut starts_entry = true;
+    let mut values = 0;
+    while let Some(byte) = bytes.next() {
+        if byte.is_ascii_whitespace() {
+            continue;
+        }
+        if starts_entry && !matches!(byte, b']' | b'}') {
+            values += 1;
+            if values > limit {
+                return false;
+            }
+        }
+        starts_entry = matches!(byte, b'[' | b'{' | b',');
+        if byte == b'"' {
+            while let Some(quoted) = bytes.next() {
+                match quoted {
+                    b'"' => break,
+                    b'\\' => {
+                        bytes.next();
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    true
+}
+
 pub fn write_message(writer: &mut impl Write, message: &impl Serialize) -> Result<()> {
     let mut bytes = serde_json::to_vec(message)
         .map_err(|e| ControlError::session("protocol_error", e.to_string()))?;
     bytes.push(b'\n');
-    if bytes.len() > MAX_MESSAGE_BYTES {
-        return Err(ControlError::session(
-            "message_too_large",
-            "GUI control message exceeds 8 MiB",
-        ));
-    }
+    frame_payload(&bytes)?;
     writer
         .write_all(&bytes)
         .and_then(|_| writer.flush())
@@ -414,12 +450,59 @@ mod tests {
             read_message::<Value>("{\"word\":\"\u{732b}\"}\n".as_bytes()).expect("valid UTF-8"),
             json!({"word":"\u{732b}"})
         );
-        let oversized = vec![b'x'; MAX_MESSAGE_BYTES + 1];
+        let error = read_message::<Value>(&b"{} {}\n"[..]).expect_err("trailing JSON");
+        assert_eq!(error.code, "protocol_error");
+        let oversized = vec![b'x'; MAX_MESSAGE_BYTES + 2];
+        let mut input = oversized.as_slice();
         assert_eq!(
-            read_message::<Value>(&oversized[..])
-                .expect_err("bounded")
-                .code,
+            read_message::<Value>(&mut input).expect_err("bounded").code,
             "message_too_large"
+        );
+        assert_eq!(input.len(), 1);
+    }
+    #[test]
+    fn value_limit_counts_entries_across_containers() {
+        for (json, count) in [
+            ("null", 1),
+            (" [ \t ] ", 1),
+            (r#"{"a":[1,{"b":null}],"c":{},"c":[]}"#, 7),
+            (
+                r#"{"\"[,{}]":"escaped quote: \", slash: \\","next":"\u005b,猫"}"#,
+                3,
+            ),
+        ] {
+            assert!(within_value_limit(json.as_bytes(), count), "{json}");
+            assert!(!within_value_limit(json.as_bytes(), count - 1), "{json}");
+        }
+    }
+    #[test]
+    fn frames_enforce_the_value_limit_in_both_directions() {
+        let mut entries = vec![(); MAX_MESSAGE_VALUES - 1];
+        let mut frame = Vec::new();
+        write_message(&mut frame, &entries).expect("exactly at limit including the root array");
+        read_message::<serde::de::IgnoredAny>(frame.as_slice()).expect("read exact limit");
+
+        entries.push(());
+        let mut output = Vec::new();
+        let error = write_message(&mut output, &entries).expect_err("one value over limit");
+        assert_eq!(error.code, "message_too_large");
+        assert!(output.is_empty());
+
+        frame.truncate(frame.len() - b"]\n".len());
+        frame.extend_from_slice(b",null]\n");
+        let error = read_message::<serde::de::IgnoredAny>(frame.as_slice())
+            .expect_err("one value over limit");
+        assert_eq!(error.code, "message_too_large");
+    }
+    #[test]
+    fn text_can_use_the_full_frame_byte_limit() {
+        let text = ",".repeat(MAX_MESSAGE_BYTES - 3);
+        let mut frame = Vec::new();
+        write_message(&mut frame, &text).expect("text at byte limit");
+        assert_eq!(frame.len(), MAX_MESSAGE_BYTES);
+        assert_eq!(
+            read_message::<String>(frame.as_slice()).expect("text reply"),
+            text
         );
     }
     fn raw_request(host: &HostBridge, timeout_ms: u64) -> TcpStream {
