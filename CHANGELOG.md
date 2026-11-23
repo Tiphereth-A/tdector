@@ -1,3 +1,12 @@
+# v0.4.1
+
+## Fixes
+- Limit each GUI-control request or reply to 262,144 JSON values in addition to the existing 8 MiB size limit. Frames over either limit report `message_too_large`.
+
+## CI/Deps
+- Use the matching changelog entry for GitHub release notes alongside the platform download table.
+- Update the GUI libraries `egui` and `eframe` to 0.37, the file dialog library `rfd` to 0.18, and the MCP SDK `rmcp` to 3.11.
+
 # v0.4.0
 
 ## Features
